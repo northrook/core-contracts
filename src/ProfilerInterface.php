@@ -2,7 +2,7 @@
 
 namespace Core\Contracts;
 
-use Core\Contracts\Profiler\Event;
+use Core\Contracts\Profiler\ProfilerEvent;
 
 interface ProfilerInterface
 {
@@ -14,12 +14,12 @@ interface ProfilerInterface
      * @param non-empty-string      $name     the name of the event to retrieve
      * @param null|non-empty-string $category an optional category for the event
      *
-     * @return null|Event
+     * @return null|ProfilerEvent
      */
     public function __invoke(
         string  $name,
         ?string $category = null,
-    ) : ?Event;
+    ) : ?ProfilerEvent;
 
     /**
      * Retrieve or create an {@see Event} by `name` and optional `category`
@@ -27,12 +27,12 @@ interface ProfilerInterface
      * @param non-empty-string      $name     name of the event to start
      * @param null|non-empty-string $category optional category name to associate with the event
      *
-     * @return null|Event
+     * @return null|ProfilerEvent
      */
     public function event(
         string  $name,
         ?string $category = null,
-    ) : ?Event;
+    ) : ?ProfilerEvent;
 
     /**
      * Starts an {@see Event} with the specified `name` and optional `category` and returns it.
@@ -43,12 +43,12 @@ interface ProfilerInterface
      * @param non-empty-string      $name     the name of the event to start
      * @param null|non-empty-string $category an optional category for the event
      *
-     * @return null|Event
+     * @return null|ProfilerEvent
      */
     public function start(
         string  $name,
         ?string $category = null,
-    ) : ?Event;
+    ) : ?ProfilerEvent;
 
     /**
      * Stops an ongoing stopwatch event by name, or all events in the given category.

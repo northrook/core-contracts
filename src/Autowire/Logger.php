@@ -16,6 +16,9 @@ use RuntimeException;
 use Exception;
 use const Support\LOG_LEVEL;
 
+/**
+ * {@see Autowire} the container {@see LoggerInterface} to {@see static::$logger}.
+ */
 trait Logger
 {
     protected readonly LoggerInterface $logger;

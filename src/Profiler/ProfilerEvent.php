@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Core\Contracts\Profiler;
 
-abstract class Event
+abstract class ProfilerEvent
 {
     public readonly string $name;
 

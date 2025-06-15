@@ -6,6 +6,10 @@ namespace Core\Contracts\Autowire;
 
 use Core\Contracts\Container\Autowire;
 use Core\Contracts\{ProfilerInterface};
+
+/**
+ * {@see Autowire} the container {@see ProfilerInterface} to {@see static::$profiler}.
+ */
 trait Profiler
 {
     protected readonly ProfilerInterface $profiler;

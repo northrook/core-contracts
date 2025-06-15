@@ -5,6 +5,9 @@ namespace Core\Contracts\Autowire;
 use Core\Contracts\Container\{Autowire};
 use Core\Contracts\SettingsInterface;
 
+/**
+ * {@see Autowire} the container {@see SettingsInterface} to {@see static::$settings}.
+ */
 trait Settings
 {
     protected readonly SettingsInterface $settings;

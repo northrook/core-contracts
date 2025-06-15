@@ -7,6 +7,9 @@ namespace Core\Contracts\Autowire;
 use Core\Contracts\Container\Autowire;
 use Core\Contracts\PathfinderInterface;
 
+/**
+ * {@see Autowire} the container {@see PathfinderInterface} to {@see static::$pathfinder}.
+ */
 trait Pathfinder
 {
     protected readonly PathfinderInterface $pathfinder;
