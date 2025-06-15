@@ -71,4 +71,11 @@ interface ProfilerInterface
      * @return static
      */
     public function setCategory( ?string $category ) : static;
+
+    /**
+     * Closes all running events.
+     *
+     * @return void
+     */
+    public function close() : void;
 }
