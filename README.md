@@ -1,6 +1,8 @@
 # Core Contracts
 
+
 > [!IMPORTANT]
-> Do not use
->
-> Work in progress
+> Do not use!
+> 
+> These contracts are subject to change.
+> 

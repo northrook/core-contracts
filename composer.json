@@ -1,0 +1,38 @@
+{
+  "name": "northrook/core-contracts",
+  "description": "A set of Interfaces, Traits, and abstract Services for decoupled package integration.",
+  "type": "library",
+  "license": "BSD-3-Clause",
+  "authors": [
+    {
+      "name": "Martin Nielsen",
+      "email": "mn@northrook.com",
+      "role": "Developer"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Core\\Contracts\\": "src"
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "require": {
+    "php": ">=8.3",
+    "psr/log": "@stable",
+    "psr/cache": "@stable",
+    "psr/container": "@stable",
+    "psr/event-dispatcher": "@stable"
+  },
+  "require-dev": {
+    "jetbrains/phpstorm-attributes": "@stable",
+    "phpstan/phpstan": " @stable",
+    "northrook/php-cs": "dev-main",
+    "northrook/dev": "dev-main",
+    "symfony/http-foundation": "^7.3",
+    "symfony/event-dispatcher-contracts": "^3.6"
+  },
+  "scripts": {
+    "phpstan": "vendor/bin/phpstan analyse"
+  }
+}
