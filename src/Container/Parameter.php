@@ -6,9 +6,7 @@ namespace Core\Contracts\Container;
 
 use InvalidArgumentException;
 
-/**
- */
-final readonly class Parameter
+readonly class Parameter
 {
     /**
      * @param 'array'|'boolean'|'double'|'integer'|'NULL'|'object'|'string' $type
@@ -36,7 +34,7 @@ final readonly class Parameter
      *
      * @return Parameter
      */
-    public static function from( mixed $value ) : Parameter
+    final public static function from( mixed $value ) : Parameter
     {
         return match ( \gettype( $value ) ) {
             'NULL'    => new self( 'NULL' ),

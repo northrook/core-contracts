@@ -4,6 +4,8 @@ namespace Core\Contracts\Container;
 
 use Psr\Container\NotFoundExceptionInterface;
 
+\class_exists( Parameter::class );
+
 interface ParameterMapInterface
 {
     /**
