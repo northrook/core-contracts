@@ -8,50 +8,22 @@ use Attribute;
 use InvalidArgumentException;
 
 /**
- * @template T of object
+ * @template T of CompilerPassInterface
  */
 #[Attribute( Attribute::TARGET_CLASS )]
 final readonly class CompilerPass
 {
-    /**
-     * # 1
-     * First pass.
-     *  - Resolve {@see ConfigInterface}s
-     * - {@see Autodiscover} services
-     * - {@see Autowire} dependencies
-     */
-    public const string DISCOVERY = 'compiler.discovery';
-
-    /**
-     * # 2
-     * Modify discovered {@see Compiler} arguments
-     */
-    public const string PARSE = 'compiler.parse';
-
-    /** # 3
-     * Normalize {@see Parameters} by context
-     */
-    public const string OPTIMIZE = 'compiler.optimize';
-
-    /**
-     * # 4
-     * Final pass
-     * - Validating {@see ConfigInterface} values
-     * - Ensures required {@see Services} and {@see Parameters} are set
-     */
-    public const string VALIDATE = 'compiler.validate';
-
     /** @var class-string<T> */
     public string $compilerPass;
 
     /**
-     * @param null|int                $priority  lower executed first
-     * @param self::*                 $type
-     * @param array<array-key, mixed> $arguments
+     * @param null|int                 $priority  lower executed first
+     * @param CompilerPassInterface::* $type
+     * @param array<array-key, mixed>  $arguments
      */
     public function __construct(
         public ?int   $priority = null,
-        public string $type = CompilerPass::PARSE,
+        public string $type = CompilerPassInterface::PARSE,
         public array  $arguments = [],
     ) {}
 
