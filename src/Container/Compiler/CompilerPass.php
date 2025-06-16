@@ -18,12 +18,12 @@ final readonly class CompilerPass
 
     /**
      * @param null|int                 $priority  lower executed first
-     * @param CompilerPassInterface::* $type
+     * @param CompilerPassInterface::* $pass
      * @param array<array-key, mixed>  $arguments
      */
     public function __construct(
         public ?int   $priority = null,
-        public string $type = CompilerPassInterface::PARSE,
+        public string $pass = CompilerPassInterface::PARSE,
         public array  $arguments = [],
     ) {}
 
@@ -31,11 +31,10 @@ final readonly class CompilerPass
      * @internal called by the {@see CompilerInterface}
      *
      * @param class-string<T> $class
-     * @param ?string         $id
      *
      * @return self<T>
      */
-    final public function register( string $class, ?string $id = null ) : self
+    final public function register( string $class ) : self
     {
         $this->compilerPass = \class_exists( $class )
                 ? $class
