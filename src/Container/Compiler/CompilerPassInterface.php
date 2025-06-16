@@ -1,6 +1,8 @@
 <?php
 
-namespace Core\Contracts\Container;
+namespace Core\Contracts\Container\Compiler;
+
+use Core\Contracts\Container\CompilerInterface;
 
 interface CompilerPassInterface
 {
