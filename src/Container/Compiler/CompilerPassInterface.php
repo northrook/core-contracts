@@ -39,9 +39,13 @@ interface CompilerPassInterface
      *
      * @internal called when compiling the {@see ContainerInterface}
      *
-     * @param CompilerInterface $compiler
+     * @param CompilerInterface        $compiler
+     * @param CompilerPassInterface::* $pass
      *
      * @return void
      */
-    public function process( CompilerInterface $compiler ) : void;
+    public function process(
+        CompilerInterface $compiler,
+        string            $pass,
+    ) : void;
 }
