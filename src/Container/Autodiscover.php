@@ -48,10 +48,11 @@ class Autodiscover implements Stringable
      * ]
      * ```
      *
-     * ## `$singleton`
-     * Whether to use the same instance on instantiation.
-     * - `true` provides a singleton, shared instance
-     * - `false` instantiates a new independent object
+     * ## `$scope`
+     * How to handle instantiation.
+     * - `container` provides a singleton, shared instance
+     * - `service` provides a new instance per service
+     * - `clone` instantiates a new independent object every time
      * - `null` uses the `container` default
      *
      * ## `$autowire`
@@ -78,7 +79,7 @@ class Autodiscover implements Stringable
      *
      * @param array<array-key, array<string, string>|string>|string  $role
      * @param array<string, array<array-key, mixed>>|string|string[] $callMethod
-     * @param null|bool                                              $singleton
+     * @param null|Service\Scope::*                                  $scope
      * @param null|bool                                              $autowire
      * @param null|bool                                              $lazy
      * @param null|bool|list<bool|class-string|string>               $alias
@@ -88,7 +89,7 @@ class Autodiscover implements Stringable
     public function __construct(
         string|array            $role = [],
         string|array            $callMethod = [],
-        public readonly ?bool   $singleton = null,
+        public readonly ?string $scope = null,
         public readonly ?bool   $autowire = null,
         public readonly ?bool   $lazy = null,
         null|bool|string|array  $alias = null,
