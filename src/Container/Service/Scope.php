@@ -38,7 +38,7 @@ final class Scope extends Autodiscover
      *
      * @param null|'clone'|'container'|'service' $scope
      */
-    public function __construct( null|string $scope )
+    public function __construct( ?string $scope )
     {
         parent::__construct( scope : $scope );
     }
