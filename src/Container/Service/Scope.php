@@ -27,10 +27,18 @@ final class Scope extends Autodiscover
     /** Instantiates a new independent object every time */
     public const string CLONE = 'clone';
 
+    /** Let the `container` handle scoping */
+    public const null AUTO = null;
+
     /**
-     * @param Scope::* $scope
+     * How to handle instantiation.
+     * - `container` provides a singleton, shared instance
+     * - `service` provides a new instance per service
+     * - `clone` instantiates a new independent object every time
+     *
+     * @param null|'clone'|'container'|'service' $scope
      */
-    public function __construct( string $scope )
+    public function __construct( null|string $scope )
     {
         parent::__construct( scope : $scope );
     }

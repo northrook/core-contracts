@@ -22,11 +22,11 @@ class Autodiscover implements Stringable
     /** @var class-string<T> */
     public readonly string $class;
 
-    /** @var null|bool|list<bool|class-string|string> */
-    public readonly null|bool|array $alias;
-
     /** @var array<array-key, array<array-key, string>|string> */
     public readonly array $roles;
+
+    /** @var null|bool|list<bool|class-string|string> */
+    public readonly null|bool|array $alias;
 
     /** @var array<string, array<array-key,mixed>> */
     public readonly array $callMethods;
@@ -78,33 +78,30 @@ class Autodiscover implements Stringable
      * Uses `autowire` and `$arguments` if set
      *
      * @param array<array-key, array<string, string>|string>|string  $role
+     * @param null|false|string|string[]                             $alias
      * @param array<string, array<array-key, mixed>>|string|string[] $callMethod
-     * @param null|Service\Scope::*                                  $scope
+     * @param null|'clone'|'container'|'service'                     $scope
      * @param null|bool                                              $autowire
      * @param null|bool                                              $lazy
-     * @param null|bool|list<bool|class-string|string>               $alias
      * @param array<array-key, mixed>                                $arguments
      * @param null|string                                            $fromStatic
      */
     public function __construct(
         string|array            $role = [],
+        null|false|string|array $alias = null,
         string|array            $callMethod = [],
         public readonly ?string $scope = null,
         public readonly ?bool   $autowire = null,
         public readonly ?bool   $lazy = null,
-        null|bool|string|array  $alias = null,
         public readonly array   $arguments = [],
         public readonly ?string $fromStatic = null,
     ) {
-        $this->alias = \is_string( $alias ) ? [$alias] : $alias;
+        $this->alias = ( $alias === null || $alias === false ) ? $alias : \array_values( (array) $alias );
         $this->roles = \is_string( $role ) === true ? [$role => []] : $role;
 
-        $addMethodCall = [];
-        $callMethods   = \is_string( $callMethod ) === true
-                ? [$callMethod => []]
-                : $callMethod;
+        $callMethods = [];
 
-        foreach ( $callMethods as $key => $value ) {
+        foreach ( \is_string( $callMethod ) ? [$callMethod => []] : $callMethod as $key => $value ) {
             if ( \is_int( $key ) ) {
                 if ( \is_string( $value ) ) {
                     $key   = $value;
@@ -114,15 +111,15 @@ class Autodiscover implements Stringable
                     throw new InvalidArgumentException(
                         "Unable to set 'callMethod[{$key}]', invalid format.\n"
                             ."Only 'methodName', 'methodName[]', or 'methodName=>arguments[]' accepted.\n"
-                            .\var_export( $callMethods, true ),
+                            .\var_export( $callMethod, true ),
                     );
                 }
             }
 
-            $addMethodCall[$key] = (array) $value;
+            $callMethods[$key] = (array) $value;
         }
 
-        $this->callMethods = $addMethodCall;
+        $this->callMethods = $callMethods;
     }
 
     /**

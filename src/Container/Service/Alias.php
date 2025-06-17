@@ -14,9 +14,11 @@ use Core\Contracts\Container\Autodiscover;
 final class Alias extends Autodiscover
 {
     /**
-     * @param bool|class-string|string ...$alias
+     * - Set one or more aliases for the service.
+     *
+     * @param string ...$alias
      */
-    public function __construct( bool|string ...$alias )
+    public function __construct( string ...$alias )
     {
         parent::__construct( alias : \array_values( $alias ) );
     }

@@ -14,6 +14,12 @@ use Core\Contracts\Container\Autodiscover;
 final class Role extends Autodiscover
 {
     /**
+     *  Tag this service with one or more roles, with optional arguments.
+     *  ```
+     *  role : [
+     *    'tagged.role' => [ .. arguments ]
+     *  ]
+     *
      * @param array<string, string>|string ...$role , $role
      */
     public function __construct( array|string ...$role )
