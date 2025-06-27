@@ -10,6 +10,7 @@ readonly class Parameter
 {
     /**
      * @param 'array'|'boolean'|'double'|'integer'|'NULL'|'object'|'string' $type
+     * @param bool                                                          $secret
      * @param null|string                                                   $string
      * @param null|bool                                                     $bool
      * @param null|array<array-key, mixed>                                  $array
@@ -20,6 +21,7 @@ readonly class Parameter
      */
     private function __construct(
         public string  $type,
+        public bool    $secret,
         public ?string $string = null,
         public ?bool   $bool = null,
         public ?array  $array = null,
@@ -31,19 +33,22 @@ readonly class Parameter
 
     /**
      * @param mixed $value
+     * @param bool  $secret
      *
      * @return Parameter
      */
-    final public static function from( mixed $value ) : Parameter
-    {
+    final public static function from(
+        mixed $value,
+        bool  $secret = false,
+    ) : Parameter {
         return match ( \gettype( $value ) ) {
-            'NULL'    => new self( 'NULL' ),
-            'string'  => new self( 'string', string : $value ),
-            'boolean' => new self( 'boolean', bool : $value ),
-            'integer' => new self( 'integer', int : $value ),
-            'double'  => new self( 'double', float : $value ),
-            'array'   => new self( 'array', array : $value ),
-            'object'  => new self( 'object', object : $value ),
+            'NULL'    => new self( 'NULL', $secret ),
+            'string'  => new self( 'string', $secret, string : $value ),
+            'boolean' => new self( 'boolean', $secret, bool : $value ),
+            'integer' => new self( 'integer', $secret, int : $value ),
+            'double'  => new self( 'double', $secret, float : $value ),
+            'array'   => new self( 'array', $secret, array : $value ),
+            'object'  => new self( 'object', $secret, object : $value ),
             default   => throw new InvalidArgumentException(
                 'Unsupported Parameter type '.\var_export( $value, true ),
             ),
