@@ -1,5 +1,6 @@
 ### Editor
 /.ide/
+/.dev/
 /.idea/
 *.code-workspace
 

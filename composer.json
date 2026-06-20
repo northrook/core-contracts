@@ -12,13 +12,13 @@
   ],
   "autoload": {
     "psr-4": {
-      "Core\\Contracts\\": "src"
+      "Northrook\\": "src"
     }
   },
   "minimum-stability": "dev",
   "prefer-stable": true,
   "require": {
-    "php": ">=8.3",
+    "php": ">=8.4",
     "psr/log": "@stable",
     "psr/cache": "@stable",
     "psr/container": "@stable",
@@ -26,13 +26,18 @@
   },
   "require-dev": {
     "jetbrains/phpstorm-attributes": "@stable",
-    "phpstan/phpstan": " @stable",
     "northrook/php-cs": "dev-main",
-    "northrook/dev": "dev-main",
     "symfony/http-foundation": "^7.3",
-    "symfony/event-dispatcher-contracts": "^3.6"
+    "symfony/event-dispatcher-contracts": "^3.6",
+    "phpstan/phpstan": "^2.2",
+    "phpstan/extension-installer": "^1.4"
   },
   "scripts": {
     "phpstan": "vendor/bin/phpstan analyse"
+  },
+  "config": {
+    "allow-plugins": {
+      "phpstan/extension-installer": true
+    }
   }
 }
