@@ -4,16 +4,23 @@ declare(strict_types = 1);
 
 namespace Northrook\Contracts;
 
+/**
+ * @method static register():self
+ *
+ * @requires-method static register():self
+ */
 abstract class ContractSingleton
 {
     protected static null|self $instance = null;
 
     protected readonly float $registeredTimestamp;
 
-    final protected static function getInstance(): self
+    final protected static function getInstance(): static
     {
         return self::$instance ??= self::register();
     }
+
+    final public static function include(): void {}
 
     final public static function isRegistered(): bool
     {
@@ -29,16 +36,5 @@ abstract class ContractSingleton
         $this->registeredTimestamp = \microtime(true);
 
         static::$instance = $this;
-    }
-
-    /**
-     *
-     * @abstract
-     *
-     * @return self
-     */
-    public static function register(): self
-    {
-        throw new \BadMethodCallException('This method must be implemented by the child class.');
     }
 }
