@@ -20,8 +20,6 @@ abstract class ContractSingleton
         return self::$instance ??= self::register();
     }
 
-    final public static function include(): void {}
-
     final public static function isRegistered(): bool
     {
         return isset(self::$instance);
