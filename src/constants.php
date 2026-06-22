@@ -5,7 +5,7 @@ declare(strict_types = 1);
 namespace {
     defined('CHARSET') || define('CHARSET', 'UTF-8');
     defined('DIR_SEP') || define('DIR_SEP', '/');
-    defined('SLASH') || define('SLASH', '/');
+    defined('SLASH') || define('SLASH', DIR_SEP);
     defined('TAB') || define('TAB', "\t");
     defined('NEWLINE') || define('NEWLINE', "\n");
     defined('EMPTY_STRING') || define('EMPTY_STRING', '');
@@ -14,12 +14,6 @@ namespace {
 }
 
 namespace Northrook\Contracts {
-    /** Indicates a `default` value will be used unless provided */
-    const AUTO = null;
-
-    /** Value is `required`, but can be inferred at runtime if none is provided */
-    const INFER = null;
-
     /** Line Feed  */
     const LF = "\n";
     /** Carriage Return */
