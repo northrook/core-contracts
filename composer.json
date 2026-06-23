@@ -25,7 +25,8 @@
     "psr/log": "@stable",
     "psr/cache": "@stable",
     "psr/container": "@stable",
-    "psr/event-dispatcher": "@stable"
+    "psr/event-dispatcher": "@stable",
+    "symfony/http-client-contracts": "^3.7"
   },
   "require-dev": {
     "jetbrains/phpstorm-attributes": "@stable",
