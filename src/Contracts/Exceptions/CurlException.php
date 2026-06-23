@@ -15,7 +15,7 @@ final class CurlException extends RuntimeException
         null|\Throwable $previous = null,
     ) {
         parent::__construct(
-            $message ?? ( "HTTP request to '{$url}' failed" )($previous ? ": {$previous->getMessage()}" : ''),
+            $message ?? "HTTP request to '{$url}' failed" . ( $previous ? ": {$previous->getMessage()}" : '' ),
             $code,
             $previous,
         );
