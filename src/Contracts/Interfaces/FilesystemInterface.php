@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Northrook\Contracts\Interfaces;
 
@@ -214,6 +214,8 @@ interface FilesystemInterface
 
     /**
      * Synchronizes a source directory into a destination directory.
+     *
+     * @param Traversable<int, \SplFileInfo|string>|null $entries
      *
      * @throws FilesystemException
      */

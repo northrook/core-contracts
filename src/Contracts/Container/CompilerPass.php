@@ -1,13 +1,11 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Northrook\Contracts\Container;
 
 use Attribute;
 use InvalidArgumentException;
-
-use const Northrook\Contracts\AUTO;
 
 /**
  * Registers a compiler pass against a pipeline phase.
@@ -75,28 +73,13 @@ final class CompilerPass
     /**
      * Lower executed first.
      *
-     * {@see AUTO} uses next available priority
-     * - Must be between `-1_024` and `1_024`.
+     * `null` uses the next available priority.
      *
-     * @var null|int
+     * @var null|int<Priority::MIN, Priority::MAX>
      */
     public null|int $priority {
         get => $this->priority ?? null;
-        set {
-            if ($value === null) {
-                $this->priority = null;
-
-                return;
-            }
-
-            if ($value < -1_024 || $value > 1_024) {
-                throw new InvalidArgumentException(
-                    "CompilerPass priority must be between `-1_024` and `1_024`, `{$value}` given.",
-                );
-            }
-
-            $this->priority = $value;
-        }
+        set => Priority::resolve($value);
     }
 
     /** @var T */
@@ -117,16 +100,16 @@ final class CompilerPass
     }
 
     /**
-     * @param null|int                       $priority  lower executed first
-     * @param value-of<CompilerPass::PASSES> $pass
-     * @param array<array-key, mixed>        $arguments
+     * @param null|int<Priority::MIN, Priority::MAX>  $priority  lower executed first
+     * @param value-of<CompilerPass::PASSES>          $pass
+     * @param array<array-key, mixed>                 $arguments
      */
     public function __construct(
-        null|int $priority = AUTO,
+        null|int $priority = Priority::AUTO,
         string $pass = CompilerPass::PARSE,
         public readonly array $arguments = [],
     ) {
-        $this->priority = $priority;
+        $this->priority = Priority::resolve($priority);
         $this->pass     = $pass;
     }
 

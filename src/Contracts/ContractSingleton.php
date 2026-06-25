@@ -1,11 +1,11 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Northrook\Contracts;
 
 /**
- * @method static register():self
+ * @method static self register()
  *
  * @requires-method static register():self
  */
@@ -15,7 +15,7 @@ abstract class ContractSingleton
 
     protected readonly float $registeredTimestamp;
 
-    final protected static function getInstance(): static
+    final protected static function getInstance(): self
     {
         return self::$instance ??= self::register();
     }
