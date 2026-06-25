@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Northrook\Contracts\Container\Autowire;
 
 use Exception;
-use JetBrains\PhpStorm\Language;
 use LogicException;
 use Northrook\Contracts\Container\Autowire;
 use Psr\Log\{LoggerInterface, NullLogger};
@@ -17,8 +16,7 @@ use const Northrook\Logger\LOG_LEVEL;
 /**
  * Autowires a PSR-3 logger and provides exception logging helpers.
  *
- * When no logger is bound, assignment is skipped unless `$assignNull` is true,
- * in which case a {@see NullLogger} is used.
+ * When no logger is bound, the assignment is skipped unless `$assignNull` is true, in which case a {@see NullLogger} is used.
  */
 trait Logger
 {
@@ -34,8 +32,10 @@ trait Logger
      * @final
      */
     #[Autowire]
-    final public function assignLogger(null|LoggerInterface $logger, bool $assignNull = false): void
-    {
+    final public function assignLogger(
+        null|LoggerInterface $logger,
+        bool $assignNull = false,
+    ): void {
         if ($logger === null && $assignNull === false) {
             return;
         }
@@ -56,7 +56,6 @@ trait Logger
      */
     final protected function logException(
         Throwable $exception,
-        #[Language('Smarty')]
         null|string $message = null,
         array $context = [],
         bool $continue = false,
@@ -70,7 +69,11 @@ trait Logger
 
         $context['exception'] = $exception;
 
-        $this->logger->log($level, $message, $context);
+        $this->logger->log(
+            $level,
+            $message,
+            $context,
+        );
 
         if ($continue === true) {
             return;

@@ -20,7 +20,10 @@ interface ParameterStoreInterface extends ParameterMapInterface
      *
      * @return void
      */
-    public function assign(array $parameters, bool $replace = false): void;
+    public function assign(
+        array $parameters,
+        bool $replace = false,
+    ): void;
 
     /**
      * Will not override existing parameters.
@@ -30,7 +33,10 @@ interface ParameterStoreInterface extends ParameterMapInterface
      *
      * @return self
      */
-    public function add(string $parameter, mixed $value): self;
+    public function add(
+        string $parameter,
+        mixed $value,
+    ): self;
 
     /**
      * Replaces exising parameters.
@@ -40,7 +46,10 @@ interface ParameterStoreInterface extends ParameterMapInterface
      *
      * @return self
      */
-    public function set(string $parameter, mixed $value): self;
+    public function set(
+        string $parameter,
+        mixed $value,
+    ): self;
 
     /**
      * Remove one or more parameters by key.
@@ -49,7 +58,9 @@ interface ParameterStoreInterface extends ParameterMapInterface
      *
      * @return self
      */
-    public function remove(string ...$parameter): self;
+    public function remove(
+        string ...$parameter,
+    ): self;
 
     /**
      * Clear all parameters.

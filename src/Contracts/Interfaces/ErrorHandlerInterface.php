@@ -26,14 +26,21 @@ interface ErrorHandlerInterface
      * @param callable(): T $callback
      * @return T
      */
-    public function box(callable $callback): mixed;
+    public function box(
+        callable $callback,
+    ): mixed;
 
     public function getLastError(): null|string;
 
     /**
      * @param array<string, mixed> $context
      */
-    public function report(Throwable $throwable, array $context = []): ErrorReport;
+    public function report(
+        Throwable $throwable,
+        array $context = [],
+    ): ErrorReport;
 
-    public function handle(Throwable $throwable): never;
+    public function handle(
+        Throwable $throwable,
+    ): never;
 }

@@ -20,8 +20,9 @@ final class Alias extends Autodiscover
      *
      * @param string ...$alias
      */
-    public function __construct(string ...$alias)
-    {
+    public function __construct(
+        string ...$alias,
+    ) {
         parent::__construct(alias: \array_values($alias));
     }
 }

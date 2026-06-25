@@ -6,8 +6,6 @@ namespace Northrook\Contracts;
 
 /**
  * @method static self register()
- *
- * @requires-method static register():self
  */
 abstract class ContractSingleton
 {

@@ -128,8 +128,9 @@ final class CompilerPass
      *
      * @return self<T>
      */
-    final public function register(string $className): self
-    {
+    final public function register(
+        string $className,
+    ): self {
         $this->class = \class_exists($className)
             ? $className
             : throw new InvalidArgumentException($this::class . " cannot register '{$className}', it does not exist.");

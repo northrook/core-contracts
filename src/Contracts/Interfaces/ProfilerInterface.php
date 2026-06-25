@@ -24,7 +24,10 @@ interface ProfilerInterface
      *
      * @return null|ProfilerEvent
      */
-    public function __invoke(string $name, null|string $category = null): null|ProfilerEvent;
+    public function __invoke(
+        string $name,
+        null|string $category = null,
+    ): null|ProfilerEvent;
 
     /**
      * Sets the category for the current instance.
@@ -33,7 +36,9 @@ interface ProfilerInterface
      *
      * @return static
      */
-    public function setCategory(null|string $category): static;
+    public function setCategory(
+        null|string $category,
+    ): static;
 
     /**
      * Retrieve or create an {@see ProfilerEvent} by `name` and optional `category`
@@ -43,7 +48,10 @@ interface ProfilerInterface
      *
      * @return null|ProfilerEvent
      */
-    public function event(string $name, null|string $category = null): null|ProfilerEvent;
+    public function event(
+        string $name,
+        null|string $category = null,
+    ): null|ProfilerEvent;
 
     /**
      * Starts an {@see ProfilerEvent} with the specified `name` and optional `category` and returns it.
@@ -57,7 +65,11 @@ interface ProfilerInterface
      *
      * @return null|ProfilerEvent
      */
-    public function start(string $name, null|string $category = null, null|string $note = null): null|ProfilerEvent;
+    public function start(
+        string $name,
+        null|string $category = null,
+        null|string $note = null,
+    ): null|ProfilerEvent;
 
     /**
      * Take a snapshot of current `microtime`
@@ -68,7 +80,11 @@ interface ProfilerInterface
      *
      * @return static
      */
-    public function snapshot(string $name, null|string $category = null, null|string $note = null): static;
+    public function snapshot(
+        string $name,
+        null|string $category = null,
+        null|string $note = null,
+    ): static;
 
     /**
      * Stops an ongoing stopwatch event by name, or all events in the given category.
@@ -78,7 +94,10 @@ interface ProfilerInterface
      *
      * @return void
      */
-    public function stop(null|string $name = null, null|string $category = null): void;
+    public function stop(
+        null|string $name = null,
+        null|string $category = null,
+    ): void;
 
     /**
      * Closes all running events.

@@ -27,8 +27,9 @@ final readonly class Autowire
      *
      * @param mixed ...$arguments
      */
-    public function __construct(mixed ...$arguments)
-    {
+    public function __construct(
+        mixed ...$arguments,
+    ) {
         $this->arguments = $arguments;
     }
 }

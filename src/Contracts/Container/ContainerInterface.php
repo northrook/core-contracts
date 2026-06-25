@@ -11,16 +11,24 @@ interface ContainerInterface extends \Psr\Container\ContainerInterface
      * @param  class-string<T> $id
      * @return T
      */
-    public function get(string $id): mixed;
+    public function get(
+        string $id,
+    ): mixed;
 
-    public function hasParameter(string $name): bool;
+    public function hasParameter(
+        string $name,
+    ): bool;
 
-    public function getParameter(string $name): Parameter;
+    public function getParameter(
+        string $name,
+    ): Parameter;
 
     /**
      * @return list<object>
      */
-    public function getByRole(string $role): array;
+    public function getByRole(
+        string $role,
+    ): array;
 
     /**
      * Reset scoped / request-lifetime services (ResetInterface).

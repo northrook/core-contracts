@@ -24,9 +24,15 @@ abstract class ProfilerEvent
         $this->createdAt = \microtime(true);
     }
 
-    abstract public function start(null|string $note = null): static;
+    abstract public function start(
+        null|string $note = null,
+    ): static;
 
-    abstract public function stop(null|string $note = null): static;
+    abstract public function stop(
+        null|string $note = null,
+    ): static;
 
-    abstract public function snapshot(null|string $note = null): static;
+    abstract public function snapshot(
+        null|string $note = null,
+    ): static;
 }

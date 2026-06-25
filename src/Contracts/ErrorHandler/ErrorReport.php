@@ -92,8 +92,9 @@ final class ErrorReport implements JsonSerializable
     /**
      * @return StackFrame[]
      */
-    private static function buildTrace(Throwable $throwable): array
-    {
+    private static function buildTrace(
+        Throwable $throwable,
+    ): array {
         $frames = [];
 
         /**
@@ -122,8 +123,9 @@ final class ErrorReport implements JsonSerializable
     /**
      * @return ErrorReport[]
      */
-    private static function buildPreviousChain(null|Throwable $previous): array
-    {
+    private static function buildPreviousChain(
+        null|Throwable $previous,
+    ): array {
         if ($previous === null) {
             return [];
         }
@@ -140,8 +142,9 @@ final class ErrorReport implements JsonSerializable
         ];
     }
 
-    private static function resolveSeverity(Throwable $throwable): string
-    {
+    private static function resolveSeverity(
+        Throwable $throwable,
+    ): string {
         $code = $throwable->getCode();
 
         if (\is_string(LOG_LEVEL[$code] ?? null)) {
@@ -180,8 +183,9 @@ final class ErrorReport implements JsonSerializable
     /**
      * @return array<string, mixed>
      */
-    private static function buildMeta(Throwable $throwable): array
-    {
+    private static function buildMeta(
+        Throwable $throwable,
+    ): array {
         return match (true) {
             $throwable instanceof CurlException => ['url' => $throwable->url],
             $throwable instanceof FilesystemException => \array_filter([

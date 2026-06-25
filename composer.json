@@ -15,7 +15,16 @@
       "Northrook\\": "src"
     },
     "files": [
-      "src/constants.php"
+      "src/constants.php",
+      "src/functions.php"
+    ]
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Northrook\\Contracts\\Tests\\": "tests/"
+    },
+    "classmap": [
+      "tests/TraitsForAnalysis.php"
     ]
   },
   "minimum-stability": "dev",
@@ -26,18 +35,19 @@
     "psr/cache": "@stable",
     "psr/container": "@stable",
     "psr/event-dispatcher": "@stable",
+    "symfony/http-foundation": "^7.3",
     "symfony/http-client-contracts": "^3.7"
   },
   "require-dev": {
-    "jetbrains/phpstorm-attributes": "@stable",
+    "ext-ctype": "*",
     "northrook/php-cs": "dev-main",
-    "symfony/http-foundation": "^7.3",
-    "symfony/event-dispatcher-contracts": "^3.6",
+    "phpunit/phpunit": "^11.5",
     "phpstan/phpstan": "^2.2",
     "phpstan/extension-installer": "^1.4"
   },
   "scripts": {
-    "phpstan": "vendor/bin/phpstan analyse"
+    "phpstan": "vendor/bin/phpstan analyse",
+    "test": "vendor/bin/phpunit"
   },
   "config": {
     "allow-plugins": {

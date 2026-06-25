@@ -24,8 +24,9 @@ trait Profiler
      * @final
      */
     #[Autowire]
-    final public function assignProfiler(ProfilerInterface $profiler): void
-    {
+    final public function assignProfiler(
+        ProfilerInterface $profiler,
+    ): void {
         $this->profiler = $profiler;
     }
 }

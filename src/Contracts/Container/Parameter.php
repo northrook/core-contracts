@@ -43,8 +43,10 @@ readonly class Parameter
      *
      * @return Parameter
      */
-    final public static function from(mixed $value, bool $secret = false): Parameter
-    {
+    final public static function from(
+        mixed $value,
+        bool $secret = false,
+    ): Parameter {
         return match (\gettype($value)) {
             'NULL'    => new self('NULL', $secret),
             'string'  => new self('string', $secret, string: $value),
@@ -57,8 +59,9 @@ readonly class Parameter
         };
     }
 
-    public function is(mixed $type): bool
-    {
+    public function is(
+        mixed $type,
+    ): bool {
         return $this->type === \gettype($type);
     }
 
@@ -83,8 +86,10 @@ readonly class Parameter
      *
      * @return ($nullable is true ? null|T : T)
      */
-    public function object(string $of, bool $nullable = false): null|object
-    {
+    public function object(
+        string $of,
+        bool $nullable = false,
+    ): null|object {
         if ($this->object instanceof $of) {
             return $this->object;
         }

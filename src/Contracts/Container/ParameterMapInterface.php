@@ -18,7 +18,9 @@ interface ParameterMapInterface
      *
      * @param non-empty-string $parameter
      */
-    public function has(string $parameter): bool;
+    public function has(
+        string $parameter,
+    ): bool;
 
     /**
      * @param non-empty-string $parameter
@@ -26,7 +28,10 @@ interface ParameterMapInterface
      *
      * @throws NotFoundExceptionInterface
      */
-    public function get(string $parameter, mixed $default): Parameter;
+    public function get(
+        string $parameter,
+        mixed $default,
+    ): Parameter;
 
     /**
      * @return array<non-empty-string, Parameter>

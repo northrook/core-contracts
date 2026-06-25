@@ -6,5 +6,7 @@ namespace Northrook\Contracts\Container;
 
 interface CompilerPassInterface
 {
-    public function process(CompilerInterface $compiler): void;
+    public function process(
+        CompilerInterface $compiler,
+    ): void;
 }

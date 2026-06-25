@@ -32,8 +32,10 @@ final readonly class StackFrame implements JsonSerializable
      *     args?: array<string, mixed>,
      * } $trace
      */
-    public static function from(array $trace, int $codeRadius = 3): self
-    {
+    public static function from(
+        array $trace,
+        int $codeRadius = 3,
+    ): self {
         $file     = $trace['file'] ?? null;
         $line     = $trace['line'] ?? null;
         $function = $trace['function'] ?? null;
@@ -52,8 +54,11 @@ final readonly class StackFrame implements JsonSerializable
     /**
      * @return array<int, string>
      */
-    private static function readCodeSnippet(string $file, int $line, int $radius): array
-    {
+    private static function readCodeSnippet(
+        string $file,
+        int $line,
+        int $radius,
+    ): array {
         $lines   = \file($file, FILE_IGNORE_NEW_LINES);
         $snippet = [];
 

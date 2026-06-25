@@ -24,8 +24,9 @@ trait Settings
      * @final
      */
     #[Autowire]
-    final public function assignSettings(SettingsInterface $settings): void
-    {
+    final public function assignSettings(
+        SettingsInterface $settings,
+    ): void {
         $this->settings = $settings;
     }
 }

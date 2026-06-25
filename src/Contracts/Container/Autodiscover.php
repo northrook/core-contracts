@@ -7,16 +7,17 @@ namespace Northrook\Contracts\Container;
 use Attribute;
 use InvalidArgumentException;
 use LogicException;
-use Northrook\Contracts\Container\Service\Scope;
 use ReflectionClass;
 use SplFileInfo;
 use Stringable;
 
+use function Northrook\Contracts\is_valid_key;
+
 const VALID_SCOPES = [
-    Scope::AUTO,
-    Scope::CONTAINER,
-    Scope::SERVICE,
-    Scope::CLONE,
+    null,
+    'container',
+    'service',
+    'clone',
 ];
 
 /**
@@ -107,15 +108,18 @@ class Autodiscover implements Stringable
      * ## `$role`
      * Tag this service with one or more roles, with optional arguments.
      * ```
-     * role : [
-     *   'tagged.role' => [ ... arguments ]
+     * string : 'role'
+     * array  : [
+     *   'role',
+     *   'tagged.role' => [ ... arguments ],
      * ]
      * ```
      *
      * ## `$callMethod`
      * Public methods to be called on instantiation.
      * ```
-     * callMethod : [
+     *  string : 'methodName'
+     *  array  : [
      *   'methodName' => [ ... arguments ],
      * ]
      * ```
@@ -151,7 +155,7 @@ class Autodiscover implements Stringable
      *
      * @param array<array-key, array<string, string>|string>|string  $role
      * @param null|false|string|string[]                             $alias
-     * @param array<string, array<array-key, mixed>>|string|string[] $callMethod
+     * @param array<callable-string, array<array-key, mixed>>|callable-string|callable-string[] $callMethod
      * @param null|'clone'|'container'|'service'                     $scope
      * @param null|bool                                              $autowire
      * @param null|bool                                              $lazy
@@ -189,7 +193,9 @@ class Autodiscover implements Stringable
      */
     final public function register(string $class, null|string $id = null): self
     {
-        \assert($this->registered === false, $this::class . ' cannot be registered twice.');
+        if ($this->registered) {
+            throw new LogicException($this::class . ' cannot be registered twice.');
+        }
 
         $this->setClass($class)->setID($id)->configure();
 
@@ -205,10 +211,11 @@ class Autodiscover implements Stringable
      */
     final public function getReflectionClass(): ReflectionClass
     {
-        \assert(
-            \class_exists($this->class),
-            $this::class . " cannot reflect class '{$this->class}', it does not exist.",
-        );
+        if (! \class_exists($this->class)) {
+            throw new InvalidArgumentException(
+                $this::class . " cannot reflect class '{$this->class}', it does not exist.",
+            );
+        }
 
         return new ReflectionClass($this->class);
     }
@@ -228,20 +235,40 @@ class Autodiscover implements Stringable
      *
      * @return self<T>
      */
-    final protected function setRoles(string|array $roles): self
-    {
-        \assert($this->registered === false, __METHOD__ . ' must be before registering.');
+    final protected function setRoles(
+        string|array $roles,
+    ): self {
+        $this->assertNotRegistered(__METHOD__);
 
-        $this->properties['roles'] = \is_string($roles) === true ? [$roles => []] : $roles;
+        if (\is_string($roles)) {
+            $this->properties['roles'] = [$roles => []];
+        } else {
+            $normalized = [];
+
+            foreach ($roles as $key => $value) {
+                if (\is_int($key)) {
+                    if (\is_string($value)) {
+                        $key   = $value;
+                        $value = [];
+                    } else {
+                        throw new InvalidArgumentException(
+                            "Unable to set 'role[{$key}]', invalid format.\n"
+                                . "Only 'roleName', or 'roleName=>arguments[]' accepted.\n"
+                                . \var_export($roles, true),
+                        );
+                    }
+                }
+
+                $normalized[$key] = (array) $value;
+            }
+
+            $this->properties['roles'] = $normalized;
+        }
 
         foreach (\array_keys($this->properties['roles']) as $role) {
-            \assert(is_ascii($role), $this::class . " cannot use role {$role}, only ASCII is allowed.");
-
-            \assert(\strlen($role) > 1, $this::class . " cannot use role {$role}, it must be longer than 1 character.");
-
-            \assert(
-                \strlen($role) < 1_024,
-                $this::class . " cannot use role {$role}, it must not be longer than 1024 characters.",
+            $this->validateKey(
+                $role,
+                __METHOD__,
             );
         }
 
@@ -253,9 +280,10 @@ class Autodiscover implements Stringable
      *
      * @return self<T>
      */
-    final protected function setAlias(null|false|string|array $alias = null): self
-    {
-        \assert($this->registered === false, __METHOD__ . ' must be before registering.');
+    final protected function setAlias(
+        null|false|string|array $alias = null,
+    ): self {
+        $this->assertNotRegistered(__METHOD__);
 
         if ($alias === null || $alias === false) {
             $this->properties['alias'] = $alias;
@@ -267,16 +295,9 @@ class Autodiscover implements Stringable
 
         if (\is_array($this->properties['alias'])) {
             foreach ($this->properties['alias'] as $alias) {
-                \assert(is_ascii($alias), $this::class . " cannot use alias {$alias}, only ASCII is allowed.");
-
-                \assert(
-                    \strlen($alias) > 1,
-                    $this::class . " cannot use alias {$alias}, it must be longer than 1 character.",
-                );
-
-                \assert(
-                    \strlen($alias) < 1_024,
-                    $this::class . " cannot use alias {$alias}, it must not be longer than 1024 characters.",
+                $this->validateKey(
+                    $alias,
+                    __METHOD__,
                 );
             }
         }
@@ -289,9 +310,10 @@ class Autodiscover implements Stringable
      *
      * @return self<T>
      */
-    final protected function setCallMethods(string|array $callMethod = []): self
-    {
-        \assert($this->registered === false, __METHOD__ . ' must be before registering.');
+    final protected function setCallMethods(
+        string|array $callMethod = [],
+    ): self {
+        $this->assertNotRegistered(__METHOD__);
 
         $callMethods = [];
 
@@ -321,14 +343,16 @@ class Autodiscover implements Stringable
      * @return self<T>
      * @param  ?string $scope
      */
-    final protected function setScope(null|string $scope): self
-    {
-        \assert($this->registered === false, __METHOD__ . ' must be before registering.');
+    final protected function setScope(
+        null|string $scope,
+    ): self {
+        $this->assertNotRegistered(__METHOD__);
 
-        \assert(
-            \in_array($scope, VALID_SCOPES, true),
-            $this::class . " cannot set scope '{$scope}', it must be one of: " . \implode(', ', VALID_SCOPES),
-        );
+        if (! \in_array($scope, VALID_SCOPES, true)) {
+            throw new InvalidArgumentException(
+                $this::class . " cannot set scope '{$scope}', it must be one of: " . \implode(', ', VALID_SCOPES),
+            );
+        }
 
         $this->properties['scope'] = $scope;
 
@@ -339,9 +363,10 @@ class Autodiscover implements Stringable
      * @return self<T>
      * @param  ?bool   $autowire
      */
-    final protected function setAutowire(null|bool $autowire): self
-    {
-        \assert($this->registered === false, __METHOD__ . ' must be before registering.');
+    final protected function setAutowire(
+        null|bool $autowire,
+    ): self {
+        $this->assertNotRegistered(__METHOD__);
 
         $this->properties['autowire'] = $autowire;
 
@@ -352,9 +377,10 @@ class Autodiscover implements Stringable
      * @return self<T>
      * @param  ?bool   $lazy
      */
-    final protected function setLazy(null|bool $lazy): self
-    {
-        \assert($this->registered === false, __METHOD__ . ' must be before registering.');
+    final protected function setLazy(
+        null|bool $lazy,
+    ): self {
+        $this->assertNotRegistered(__METHOD__);
 
         $this->properties['lazy'] = $lazy;
 
@@ -366,9 +392,10 @@ class Autodiscover implements Stringable
      *
      * @return self<T>
      */
-    final protected function setArguments(array $arguments = []): self
-    {
-        \assert($this->registered === false, __METHOD__ . ' must be before registering.');
+    final protected function setArguments(
+        array $arguments = [],
+    ): self {
+        $this->assertNotRegistered(__METHOD__);
 
         $this->properties['arguments'] = $arguments;
 
@@ -379,9 +406,10 @@ class Autodiscover implements Stringable
      * @return self<T>
      * @param  ?string $fromStatic
      */
-    final protected function setFromStatic(null|string $fromStatic): self
-    {
-        \assert($this->registered === false, __METHOD__ . ' must be before registering.');
+    final protected function setFromStatic(
+        null|string $fromStatic,
+    ): self {
+        $this->assertNotRegistered(__METHOD__);
 
         $this->properties['fromStatic'] = $fromStatic;
 
@@ -392,18 +420,20 @@ class Autodiscover implements Stringable
     {
         $fromStatic = $this->properties['fromStatic'] ?? null;
 
-        \assert(
-            $fromStatic === null || \is_callable($fromStatic),
-            $this::class . ' cannot use static initializer ' . $fromStatic . ', it is not callable.',
-        );
+        if ($fromStatic !== null && ! \is_callable($fromStatic)) {
+            throw new InvalidArgumentException(
+                $this::class . ' cannot use static initializer ' . $fromStatic . ', it is not callable.',
+            );
+        }
 
         $reflection = $this->getReflectionClass();
 
         foreach (\array_keys($this->properties['callMethods'] ?? []) as $callMethod) {
-            \assert(
-                $reflection->hasMethod($callMethod),
-                $this::class . " does not have required method '{$callMethod}'",
-            );
+            if (! $reflection->hasMethod($callMethod)) {
+                throw new InvalidArgumentException(
+                    $this::class . " does not have required method '{$callMethod}'",
+                );
+            }
         }
     }
 
@@ -412,17 +442,28 @@ class Autodiscover implements Stringable
      *
      * @return self<T>
      */
-    private function setClass(string $class): self
-    {
-        \assert(\class_exists($class), $this::class . " cannot register {$class}, it does not exist.");
+    private function setClass(
+        string $class,
+    ): self {
+        if (! \class_exists($class)) {
+            throw new InvalidArgumentException($this::class . " cannot register {$class}, it does not exist.");
+        }
 
         $this->properties['className'] = $class;
 
         $filePath = $this->getReflectionClass()->getFileName();
 
-        \assert($filePath !== false, $this::class . " cannot register {$class}, its source file is unknown.");
+        if ($filePath === false) {
+            throw new InvalidArgumentException(
+                $this::class . " cannot register {$class}, its source file is unknown.",
+            );
+        }
 
-        \assert(\file_exists($filePath), $this::class . " cannot register {$class}, it does not exist at {$filePath}.");
+        if (! \file_exists($filePath)) {
+            throw new InvalidArgumentException(
+                $this::class . " cannot register {$class}, it does not exist at {$filePath}.",
+            );
+        }
 
         $this->properties['classFileInfo'] = new SplFileInfo($filePath);
 
@@ -433,16 +474,13 @@ class Autodiscover implements Stringable
      * @return self<T>
      * @param  ?string $id
      */
-    private function setID(null|string $id = null): self
-    {
+    private function setID(
+        null|string $id = null,
+    ): self {
         if ($id !== null) {
-            \assert(is_ascii($id), $this::class . " cannot use ID {$id}, only ASCII is allowed.");
-
-            \assert(\strlen($id) > 1, $this::class . " cannot use ID {$id}, it must be longer than 1 character.");
-
-            \assert(
-                \strlen($id) < 1_024,
-                $this::class . " cannot use ID {$id}, it must not be longer than 1024 characters.",
+            $this->validateKey(
+                $id,
+                __METHOD__,
             );
         }
 
@@ -455,18 +493,31 @@ class Autodiscover implements Stringable
     {
         throw new LogicException('Call ' . $this::class . '->register first.');
     }
-}
 
-function is_ascii(string $string): bool
-{
-    $i = 0;
-    while (isset($string[$i])) {
-        if (\ord($string[$i]) & 0x80) {
-            return false;
+    private function assertNotRegistered(
+        string $caller,
+    ): void {
+        if ($this->registered) {
+            throw new LogicException($caller . ' must be called before registering.');
         }
-
-        $i++;
     }
 
-    return true;
+    private function validateKey(
+        string $string,
+        string $caller,
+    ): void {
+        if (! is_valid_key(
+            key: $string,
+            min: 1,
+            max: 1_024,
+            separator: '.',
+            charset: \CHARSET_ALNUM . '-_\\/',
+        )) {
+            throw new InvalidArgumentException(
+                "{$caller} cannot use key '{$string}'"
+                . ', must be dot-separated alphanumeric segments (dash, underscore, slash, backslash allowed)'
+                . ' between 1 and 1024 characters.',
+            );
+        }
+    }
 }

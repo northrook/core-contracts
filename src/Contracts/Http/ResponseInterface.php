@@ -42,7 +42,9 @@ interface ResponseInterface
      *
      * @return $this
      */
-    public function setContent(null|string $content): static;
+    public function setContent(
+        null|string $content,
+    ): static;
 
     /**
      * Gets the current response content.

@@ -19,10 +19,22 @@ use Northrook\Contracts\Container\Autodiscover;
 final class Role extends Autodiscover
 {
     /**
-     * @param array<string, string>|string ...$role
+     *
+     *  Tag a service with one or more roles, with optional arguments.
+     *
+     *  ```
+     *  string : 'role'
+     *  array  : [
+     *    'role',
+     *    'tagged.role' => [ ... arguments ],
+     *  ]
+     *  ```
+     *
+     * @param array<array-key, array<string, string>|string>|string $role
      */
-    public function __construct(array|string ...$role)
-    {
+    public function __construct(
+        array|string $role,
+    ) {
         parent::__construct(role: $role);
     }
 }

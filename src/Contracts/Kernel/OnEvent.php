@@ -41,8 +41,10 @@ final class OnEvent
      *
      * @return self<T>
      */
-    public function register(string $class, string $method): self
-    {
+    public function register(
+        string $class,
+        string $method,
+    ): self {
         $this->class = \class_exists($class)
             ? $class
             : throw new InvalidArgumentException(

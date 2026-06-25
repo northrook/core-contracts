@@ -37,7 +37,10 @@ interface RequestInterface
      * @param string     $key
      * @param null|mixed $default
      */
-    public function get(string $key, mixed $default = null): mixed;
+    public function get(
+        string $key,
+        mixed $default = null,
+    ): mixed;
 
     /**
      * Gets the request's scheme.

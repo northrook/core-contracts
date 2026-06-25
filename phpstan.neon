@@ -5,6 +5,7 @@ parameters:
 		- tests
 	excludePaths:
 		- tests/Cases/**
+		- tests/Support/**
 		- var/*
 	treatPhpDocTypesAsCertain: false
 rules:
