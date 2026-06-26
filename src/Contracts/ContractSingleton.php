@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Northrook\Contracts;
 
 /**
- * @method static static register()
+ * @method static register()
  */
 abstract class ContractSingleton
 {
