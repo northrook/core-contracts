@@ -24,8 +24,9 @@ trait Pathfinder
      * @final
      */
     #[Autowire]
-    final public function assignPathfinder(PathfinderInterface $pathfinder): void
-    {
+    final public function assignPathfinder(
+        PathfinderInterface $pathfinder,
+    ): void {
         $this->pathfinder = $pathfinder;
     }
 }

@@ -133,7 +133,9 @@ final class CompilerPass
     ): self {
         $this->class = \class_exists($className)
             ? $className
-            : throw new InvalidArgumentException($this::class . " cannot register '{$className}', it does not exist.");
+            : throw new InvalidArgumentException(
+                $this::class . " cannot register '{$className}', it does not exist.",
+            );
 
         return $this;
     }

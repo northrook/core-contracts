@@ -191,10 +191,14 @@ class Autodiscover implements Stringable
      *
      * @return self<T>
      */
-    final public function register(string $class, null|string $id = null): self
-    {
+    final public function register(
+        string $class,
+        null|string $id = null,
+    ): self {
         if ($this->registered) {
-            throw new LogicException($this::class . ' cannot be registered twice.');
+            throw new LogicException(
+                $this::class . ' cannot be registered twice.',
+            );
         }
 
         $this->setClass($class)->setID($id)->configure();
@@ -446,7 +450,9 @@ class Autodiscover implements Stringable
         string $class,
     ): self {
         if (! \class_exists($class)) {
-            throw new InvalidArgumentException($this::class . " cannot register {$class}, it does not exist.");
+            throw new InvalidArgumentException(
+                $this::class . " cannot register {$class}, it does not exist.",
+            );
         }
 
         $this->properties['className'] = $class;
@@ -491,14 +497,18 @@ class Autodiscover implements Stringable
 
     private function notInitialized(): never
     {
-        throw new LogicException('Call ' . $this::class . '->register first.');
+        throw new LogicException(
+            'Call ' . $this::class . '->register first.',
+        );
     }
 
     private function assertNotRegistered(
         string $caller,
     ): void {
         if ($this->registered) {
-            throw new LogicException($caller . ' must be called before registering.');
+            throw new LogicException(
+                $caller . ' must be called before registering.',
+            );
         }
     }
 
