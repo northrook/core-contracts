@@ -32,7 +32,7 @@ final class AutodiscoverTest extends TestCase
 
     public function testRegisterWithStringRole(): void
     {
-        $definition = (new Autodiscover(role: 'middleware'))->register($this->targetClass);
+        $definition = new Autodiscover(role: 'middleware')->register($this->targetClass);
 
         self::assertSame(['middleware' => []], $definition->roles);
         self::assertSame($this->targetClass, $definition->class);
@@ -40,7 +40,7 @@ final class AutodiscoverTest extends TestCase
 
     public function testRegisterWithListRoles(): void
     {
-        $definition = (new Autodiscover(role: ['middleware', 'listener']))->register($this->targetClass);
+        $definition = new Autodiscover(role: ['middleware', 'listener'])->register($this->targetClass);
 
         self::assertSame(
             ['middleware' => [], 'listener' => []],
@@ -50,10 +50,10 @@ final class AutodiscoverTest extends TestCase
 
     public function testRegisterWithMixedRoleList(): void
     {
-        $definition = (new Autodiscover(role: [
+        $definition = new Autodiscover(role: [
             'middleware',
             'tagged.role' => ['priority' => '10'],
-        ]))->register($this->targetClass);
+        ])->register($this->targetClass);
 
         self::assertSame(
             ['middleware' => [], 'tagged.role' => ['priority' => '10']],
@@ -63,14 +63,14 @@ final class AutodiscoverTest extends TestCase
 
     public function testRoleAttributeRegisters(): void
     {
-        $definition = (new Role('middleware'))->register($this->targetClass);
+        $definition = new Role('middleware')->register($this->targetClass);
 
         self::assertSame(['middleware' => []], $definition->roles);
     }
 
     public function testScopeAttributeRegisters(): void
     {
-        $definition = (new Scope(Scope::CONTAINER))->register($this->targetClass);
+        $definition = new Scope(Scope::CONTAINER)->register($this->targetClass);
 
         self::assertSame('container', $definition->scope);
     }
@@ -84,7 +84,7 @@ final class AutodiscoverTest extends TestCase
 
     public function testDoubleRegisterThrows(): void
     {
-        $definition = (new Autodiscover())->register($this->targetClass);
+        $definition = new Autodiscover()->register($this->targetClass);
 
         $this->expectException(LogicException::class);
 

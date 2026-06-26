@@ -15,8 +15,8 @@ use LogicException;
 interface ParameterStoreInterface extends ParameterMapInterface
 {
     /**
-     * @param array<string, mixed> $parameters
-     * @param bool                 $replace
+     * @param array<non-empty-string, Parameter>  $parameters
+     * @param bool                                $replace
      *
      * @return void
      */
@@ -28,33 +28,37 @@ interface ParameterStoreInterface extends ParameterMapInterface
     /**
      * Will not override existing parameters.
      *
-     * @param non-empty-string $parameter
-     * @param mixed            $value
+     * @param non-empty-string  $parameter
+     * @param mixed             $value
+     * @param bool              $secret
      *
      * @return self
      */
     public function add(
         string $parameter,
         mixed $value,
+        bool $secret = false,
     ): self;
 
     /**
      * Replaces exising parameters.
      *
-     * @param non-empty-string $parameter
-     * @param mixed            $value
+     * @param non-empty-string  $parameter
+     * @param mixed             $value
+     * @param bool              $secret
      *
      * @return self
      */
     public function set(
         string $parameter,
         mixed $value,
+        bool $secret = false,
     ): self;
 
     /**
      * Remove one or more parameters by key.
      *
-     * @param string ...$parameter
+     * @param non-empty-string ...$parameter
      *
      * @return self
      */

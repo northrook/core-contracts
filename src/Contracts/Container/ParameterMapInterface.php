@@ -24,13 +24,11 @@ interface ParameterMapInterface
 
     /**
      * @param non-empty-string $parameter
-     * @param mixed            $default
      *
      * @throws NotFoundExceptionInterface
      */
     public function get(
         string $parameter,
-        mixed $default,
     ): Parameter;
 
     /**
