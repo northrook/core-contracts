@@ -5,17 +5,38 @@ declare(strict_types=1);
 namespace Northrook\Contracts;
 
 /**
- * @method static self register()
+ * @method static static register()
  */
 abstract class ContractSingleton
 {
-    protected static null|self $instance = null;
+    private static null|self $instance = null;
 
     protected readonly float $registeredTimestamp;
 
-    final protected static function getInstance(): static
+    /**
+     * @protected
+     */
+    protected function __construct()
     {
-        return self::$instance ??= self::register();
+        if (static::$instance !== null) {
+            throw new \LogicException(
+                $this::class . ' is a singleton and cannot be instantiated twice.',
+            );
+        }
+
+        $this->registeredTimestamp = \microtime(true);
+
+        static::$instance = $this;
+    }
+
+    /**
+     * Returns the singleton instance.
+     *
+     * {@see static::register()} must be called before this method.
+     */
+    final public static function get(): static
+    {
+        return self::getInstance();
     }
 
     final public static function isRegistered(): bool
@@ -23,14 +44,11 @@ abstract class ContractSingleton
         return isset(self::$instance);
     }
 
-    protected function __construct()
+    /**
+     * @internal auto-ininitializer, calls {@see static::register()} if not already registered
+     */
+    final protected static function getInstance(): static
     {
-        if (static::$instance !== null) {
-            throw new \LogicException($this::class . ' is a singleton and cannot be instantiated twice.');
-        }
-
-        $this->registeredTimestamp = \microtime(true);
-
-        static::$instance = $this;
+        return self::$instance ??= self::register();
     }
 }
