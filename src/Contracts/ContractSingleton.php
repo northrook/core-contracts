@@ -13,7 +13,7 @@ abstract class ContractSingleton
 
     protected readonly float $registeredTimestamp;
 
-    final protected static function getInstance(): self
+    final protected static function getInstance(): static
     {
         return self::$instance ??= self::register();
     }
