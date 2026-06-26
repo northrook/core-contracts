@@ -59,13 +59,13 @@ readonly class Parameter
         };
     }
 
-    public function is(
+    final public function is(
         mixed $type,
     ): bool {
         return $this->type === \gettype($type);
     }
 
-    public function value(): mixed
+    final public function value(): mixed
     {
         return match ($this->type) {
             'string'  => $this->string,
@@ -86,7 +86,7 @@ readonly class Parameter
      *
      * @return ($nullable is true ? null|T : T)
      */
-    public function object(
+    final public function object(
         string $of,
         bool $nullable = false,
     ): null|object {
