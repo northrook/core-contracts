@@ -41,7 +41,7 @@ interface ProfilerInterface
     ): static;
 
     /**
-     * Retrieve or create an {@see ProfilerEvent} by `name` and optional `category`
+     * Retrieve or create a {@see ProfilerEvent} by `name` and optional `category`
      *
      * @param non-empty-string      $name     name of the event to start
      * @param null|non-empty-string $category optional category name to associate with the event

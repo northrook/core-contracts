@@ -77,7 +77,7 @@ final class ErrorReport implements JsonSerializable
             severity: self::resolveSeverity($throwable),
             class: $throwable::class,
             message: $throwable->getMessage(),
-            code: (int) $throwable->getCode(),
+            code: $throwable->getCode(),
             file: $throwable->getFile(),
             line: $throwable->getLine(),
             trace: self::buildTrace($throwable),

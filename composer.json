@@ -35,7 +35,6 @@
     "psr/cache": "@stable",
     "psr/container": "@stable",
     "psr/event-dispatcher": "@stable",
-    "symfony/http-foundation": "^7.3",
     "symfony/http-client-contracts": "^3.7"
   },
   "require-dev": {

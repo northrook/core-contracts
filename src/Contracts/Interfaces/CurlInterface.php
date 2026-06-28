@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Northrook\Contracts\Http;
+namespace Northrook\Contracts\Interfaces;
 
 use Northrook\Contracts\Exceptions\CurlException;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
