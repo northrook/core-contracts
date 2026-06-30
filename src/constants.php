@@ -235,14 +235,14 @@ namespace Northrook\Logger {
     /**
      * Log levels, following [Monolog](https://github.com/Seldaek/monolog/blob/main/src/Monolog/Level.php).
      *
-     * 7 `100` `Debug` debug-level messages
-     * 6 `200` `Informational` informational messages
-     * 5 `250` `Notice` normal but significant condition
-     * 4 `300` `Warning` warning conditions
-     * 3 `400` `Error` error conditions
-     * 2 `500` `Critical` critical conditions
-     * 1 `550` `Alert` action must be taken immediately
-     * 0 `600` `Emergency` system is unusable
+     * - `100` `Debug` debug-level messages
+     * - `200` `Informational` informational messages
+     * - `250` `Notice` normal but significant condition
+     * - `300` `Warning` warning conditions
+     * - `400` `Error` error conditions
+     * - `500` `Critical` critical conditions
+     * - `550` `Alert` action must be taken immediately
+     * - `600` `Emergency` system is unusable
      */
     const LOG_LEVEL = [
         'debug'     => 100,

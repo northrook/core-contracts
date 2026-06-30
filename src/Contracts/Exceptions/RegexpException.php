@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Exceptions;
 
-use RuntimeException;
 use Throwable;
 
-use const PREG_BACKTRACK_LIMIT_ERROR,
+use const Northrook\Logger\LOG_LEVEL,
+    PREG_BACKTRACK_LIMIT_ERROR,
     PREG_BAD_UTF8_ERROR,
     PREG_BAD_UTF8_OFFSET_ERROR,
     PREG_INTERNAL_ERROR,
@@ -29,25 +29,23 @@ final class RegexpException extends RuntimeException
     public function __construct(
         int|string $message,
         null|int $code = null,
-        null|Throwable $previous = null,
+        null|false|Throwable $previous = null,
     ) {
         if (\is_int($message)) {
+            $code ??= $message;
             $message = RegexpException::MESSAGES[$message] ?? null;
         }
 
-        $code ??= $previous?->getCode() ?? 0;
-
         parent::__construct(
             message: $message ?? 'Unspecified error - invalid flag or message provided.',
-            code: $code,
             previous: $previous,
+            code: $code ?? LOG_LEVEL['error'],
         );
     }
 
     /**
      * Checks the {@see preg_last_error}.
      *
-     * @return void
      * @throws RegexpException on error
      */
     public static function check(): void

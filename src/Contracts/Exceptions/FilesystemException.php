@@ -4,19 +4,42 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Exceptions;
 
-class FilesystemException extends \RuntimeException
+use Northrook\Contracts\ContextSnapshot;
+use Throwable;
+
+use const Northrook\Logger\LOG_LEVEL;
+
+class FilesystemException extends RuntimeException
 {
     public function __construct(
-        string $message,
-        int $code = 0,
-        null|\Throwable $previous = null,
-        private readonly null|string $path = null,
+        null|string $message = null,
+        null|string $path = null,
+        null|array $context = null,
+        null|false|Throwable $previous = null,
+        int $code = LOG_LEVEL['error'],
     ) {
-        parent::__construct($message, $code, $previous);
+        parent::__construct(
+            message: $message,
+            context: $path !== null || $context !== null
+                ? ['path' => $path, ...($context ?? [])]
+                : null,
+            previous: $previous,
+            code: $code,
+        );
     }
 
     public function getPath(): null|string
     {
-        return $this->path;
+        $path = $this->context['path'] ?? null;
+
+        if (\is_string($path)) {
+            return $path;
+        }
+
+        if ($path instanceof ContextSnapshot && \is_string($path->value)) {
+            return $path->value;
+        }
+
+        return null;
     }
 }

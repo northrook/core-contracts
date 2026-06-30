@@ -96,9 +96,9 @@ final class TraitsForAnalysisSettings implements SettingsInterface
         return false;
     }
 
-    public function get(string $parameter, mixed $default): Parameter
+    public function get(string $parameter): Parameter
     {
-        return Parameter::from($default);
+        return Parameter::from($parameter);
     }
 
     public function all(): array

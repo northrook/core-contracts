@@ -22,6 +22,8 @@ interface ErrorHandlerInterface
     public function uninstall(): void;
 
     /**
+     * Runs a callback under a scoped error handler that records PHP errors into {@see errors()}.
+     *
      * @template T
      * @param callable(): T $callback
      * @return T
@@ -30,7 +32,13 @@ interface ErrorHandlerInterface
         callable $callback,
     ): mixed;
 
-    public function getLastError(): null|string;
+    /**
+     * Returns the handler-owned error buffer.
+     *
+     * Implementations should call {@see ErrorBufferInterface::reset()} at request bootstrap
+     * (e.g. between FrankenPHP requests).
+     */
+    public function errors(): ErrorBufferInterface;
 
     /**
      * @param array<string, mixed> $context

@@ -61,12 +61,12 @@ namespace Northrook\Contracts {
      * - Path-style keys: `CHARSET_ALPHA` with `-_/` and `.`
      * - Container keys: `CHARSET_ALNUM` with `-_\/` and `.`
      *
-     * @param int|string       $key       Candidate key
-     * @param positive-int     $min       Minimum inclusive byte length (default `1`).
-     * @param positive-int     $max       Maximum inclusive byte length (default `MAX_PATH_LENGTH`).
-     * @param string           $separator Single-character segment delimiter. An empty string
+     * @param int|string    $key       Candidate key
+     * @param positive-int  $min       Minimum inclusive byte length (default `1`).
+     * @param positive-int  $max       Maximum inclusive byte length (default `MAX_PATH_LENGTH`).
+     * @param string        $separator Single-character segment delimiter. An empty string
      *                                    disables segment rules and treats the key as a single token.
-     * @param non-empty-string $charset   Allowed bytes for segment bodies (and the whole key when
+     * @param string        $charset   Allowed bytes for segment bodies (and the whole key when
      *                                    no separator is configured).
      *
      * @return bool `true` when `$key` satisfies every rule above; `false` otherwise.
@@ -97,7 +97,7 @@ namespace Northrook\Contracts {
 
         if ($charset === '') {
             throw new \InvalidArgumentException(
-                'The charset cannot be empty.',
+                message: 'The charset cannot be empty.',
             );
         }
 
@@ -161,9 +161,9 @@ namespace Northrook\Contracts {
     /**
      * Validates the length of a path string.
      *
-     * @param string $path path to validate
-     * @param bool $assertive whether to throw an exception when `$path` exceeds `$max` bytes (default `true`)
-     * @param positive-int $max maximum byte length (default `MAX_PATH_LENGTH`)
+     * @param string            $path       path to validate
+     * @param bool              $assertive  whether to throw an exception when `$path` exceeds `$max` bytes (default `true`)
+     * @param non-negative-int  $maxLength  maximum byte length (default `MAX_PATH_LENGTH`)
      *
      * @return bool
      * @phpstan-assert-if-true non-empty-string $path
@@ -173,17 +173,21 @@ namespace Northrook\Contracts {
     function is_valid_path_length(
         string $path,
         bool $assertive = true,
-        int $max = MAX_PATH_LENGTH,
+        int $maxLength = MAX_PATH_LENGTH,
     ): bool {
-        $length = \strlen($path);
+        if ($maxLength <= 0) {
+            throw new \InvalidArgumentException(
+                message: "Invalid max length: `{$maxLength}`. Must be greater than zero.",
+            );
+        }
 
-        if ($length <= $max && $length > 0) {
+        if (\strlen($path) <= $maxLength) {
             return true;
         }
 
         return $assertive
             ? throw new FilesystemException(
-                message: "Path `{$path}` exceeds maximum byte length of `{$max}`",
+                message: "Path `{$path}` exceeds maximum byte length of `{$maxLength}`",
                 path: $path,
             )
             : false;

@@ -1,9 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Northrook\Contracts\Exceptions;
 
-use Northrook\Contracts\Exceptions\RuntimeException;
 use Psr\Container\NotFoundExceptionInterface;
+use Throwable;
+
+use const Northrook\Logger\LOG_LEVEL;
 
 class ServiceNotFoundException extends RuntimeException implements NotFoundExceptionInterface
 {
@@ -13,24 +17,21 @@ class ServiceNotFoundException extends RuntimeException implements NotFoundExcep
 
     /**
      * @param class-string $id
-     * @param null|string $reference
      * @param list<string> $alternatives
-     * @param null|string $message
-     * @param int $code
-     * @param null|\Throwable $previous
      */
     public function __construct(
         public readonly string $id,
         public readonly null|string $reference = null,
         public readonly array $alternatives = [],
         null|string $message = null,
-        int $code = 0,
-        null|\Throwable $previous = null,
+        null|array $context = null,
+        null|false|Throwable $previous = null,
+        int $code = LOG_LEVEL['error'],
     ) {
         $message ??= "Service {$this->serviceId} could not be found.";
 
-        if (! empty($alternatives)) {
-            if (count($alternatives) === 1) {
+        if ($alternatives !== []) {
+            if (\count($alternatives) === 1) {
                 $message .= " Did you mean `{$alternatives[0]}`?";
             } else {
                 $message .= ' Did you mean one of these: `' . \implode('`, `', $alternatives) . '`?';
@@ -38,9 +39,15 @@ class ServiceNotFoundException extends RuntimeException implements NotFoundExcep
         }
 
         parent::__construct(
-            $message,
-            $code,
-            $previous,
+            message: $message,
+            context: [
+                'id'            => $id,
+                'reference'     => $reference,
+                'alternatives'  => $alternatives,
+                ...($context ?? []),
+            ],
+            previous: $previous,
+            code: $code,
         );
     }
 }
