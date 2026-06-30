@@ -40,6 +40,8 @@ namespace Northrook\Contracts\Internal {
 }
 
 namespace Northrook\Contracts {
+    use Northrook\Contracts\Exceptions\FilesystemException;
+
     use function Northrook\Contracts\Internal\_match_charset;
 
     /**
@@ -154,6 +156,37 @@ namespace Northrook\Contracts {
             $key,
             $allowed,
         );
+    }
+
+    /**
+     * Validates the length of a path string.
+     *
+     * @param string $path path to validate
+     * @param bool $assertive whether to throw an exception when `$path` exceeds `$max` bytes (default `true`)
+     * @param positive-int $max maximum byte length (default `MAX_PATH_LENGTH`)
+     *
+     * @return bool
+     * @phpstan-assert-if-true non-empty-string $path
+     *
+     * @throws FilesystemException when `$assertive` is `true` and `$path` exceeds `$max` bytes
+     */
+    function is_valid_path_length(
+        string $path,
+        bool $assertive = true,
+        int $max = MAX_PATH_LENGTH,
+    ): bool {
+        $length = \strlen($path);
+
+        if ($length <= $max && $length > 0) {
+            return true;
+        }
+
+        return $assertive
+            ? throw new FilesystemException(
+                message: "Path `{$path}` exceeds maximum byte length of `{$max}`",
+                path: $path,
+            )
+            : false;
     }
 
     /**

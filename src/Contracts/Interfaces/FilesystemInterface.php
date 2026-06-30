@@ -27,12 +27,12 @@ interface FilesystemInterface
     ): void;
 
     /**
-     * Returns true when every given path exists.
+     * Returns true if the file or directory exists.
      *
-     * @param string ...$paths
+     * @param string $paths
      */
-    public function pathsExist(
-        string ...$paths,
+    public function fileExists(
+        string $path,
     ): bool;
 
     /**
@@ -46,7 +46,7 @@ interface FilesystemInterface
      * @throws FilesystemException
      */
     public function createDirectory(
-        string|iterable $paths,
+        string|array $paths,
         int $mode = 0777,
     ): void;
 
