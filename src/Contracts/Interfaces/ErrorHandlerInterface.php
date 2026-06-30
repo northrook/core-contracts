@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Northrook\Contracts\Interfaces;
 
 use Northrook\Contracts\ErrorHandler\ErrorReport;
+use Northrook\Contracts\ErrorHandler\RuntimeError;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -31,6 +32,20 @@ interface ErrorHandlerInterface
     public function box(
         callable $callback,
     ): mixed;
+
+    /**
+     * Returns the last PHP error recorded during the innermost active {@see box()} scope.
+     *
+     * `null` when no `box()` is active or that scope recorded no errors.
+     */
+    public function lastBoxError(): null|RuntimeError;
+
+    /**
+     * Returns the last buffered PHP error, if any.
+     *
+     * Shortcut for {@see errors()}->{@see ErrorBufferInterface::last() last()}.
+     */
+    public function lastError(): null|RuntimeError;
 
     /**
      * Returns the handler-owned error buffer.
