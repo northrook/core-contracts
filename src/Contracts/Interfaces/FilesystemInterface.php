@@ -46,7 +46,7 @@ interface FilesystemInterface
      * @throws FilesystemException
      */
     public function createDirectory(
-        string|array $paths,
+        string|iterable $paths,
         int $mode = 0777,
     ): void;
 
