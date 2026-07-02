@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 namespace Northrook\Contracts\Internal {
+    use Northrook\Contracts\Exceptions\RuntimeException;
+
     /**
      * Tests whether every character in a string belongs to a fixed character set.
      *
@@ -19,7 +21,7 @@ namespace Northrook\Contracts\Internal {
      *
      * @return bool `true` when `$string` is a non-empty sequence of valid bytes, otherwise `false`
      *
-     * @throws \InvalidArgumentException when `$characters` is empty
+     * @throws RuntimeException when `$characters` is empty
      */
     function _match_charset(
         string $string,
@@ -30,8 +32,9 @@ namespace Northrook\Contracts\Internal {
         }
 
         if ($characters === '') {
-            throw new \InvalidArgumentException(
-                'The characters string cannot be empty.',
+            throw new RuntimeException(
+                message: 'The characters string cannot be empty.',
+                context: \func_get_args(),
             );
         }
 
@@ -41,6 +44,7 @@ namespace Northrook\Contracts\Internal {
 
 namespace Northrook\Contracts {
     use Northrook\Contracts\Exceptions\FilesystemException;
+    use Northrook\Contracts\Exceptions\RuntimeException;
 
     use function Northrook\Contracts\Internal\_match_charset;
 
@@ -71,7 +75,7 @@ namespace Northrook\Contracts {
      *
      * @return bool `true` when `$key` satisfies every rule above; `false` otherwise.
      *
-     * @throws \InvalidArgumentException When `$min`/`$max` are out of range, `$charset` is empty,
+     * @throws RuntimeException When `$min`/`$max` are out of range, `$charset` is empty,
      *                                   or `$separator` is invalid (not exactly one character, or
      *                                   present in `$charset`).
      *
@@ -90,14 +94,16 @@ namespace Northrook\Contracts {
     ): bool {
         if ($min > $max || $min < 1 || $max > MAX_PATH_LENGTH) {
             $limit = MAX_PATH_LENGTH;
-            throw new \InvalidArgumentException(
-                "Invalid property key length: {$min} to {$max}. Must be between 1 and {$limit}.",
+            throw new RuntimeException(
+                message: "Invalid property key length: {$min} to {$max}. Must be between 1 and {$limit}.",
+                context: \func_get_args(),
             );
         }
 
         if ($charset === '') {
-            throw new \InvalidArgumentException(
+            throw new RuntimeException(
                 message: 'The charset cannot be empty.',
+                context: \func_get_args(),
             );
         }
 
@@ -109,14 +115,16 @@ namespace Northrook\Contracts {
 
         if ($separator !== '') {
             if (\strlen($separator) !== 1) {
-                throw new \InvalidArgumentException(
-                    "Invalid separator: `{$separator}`. Must be exactly one character.",
+                throw new RuntimeException(
+                    message: "Invalid separator: `{$separator}`. Must be exactly one character.",
+                    context: \func_get_args(),
                 );
             }
 
             if (\str_contains($charset, $separator)) {
-                throw new \InvalidArgumentException(
-                    "Invalid separator: `{$separator}`. Must not appear in `{$charset}`.",
+                throw new RuntimeException(
+                    message: "Invalid separator: `{$separator}`. Must not appear in `{$charset}`.",
+                    context: \func_get_args(),
                 );
             }
 
@@ -176,8 +184,9 @@ namespace Northrook\Contracts {
         int $maxLength = MAX_PATH_LENGTH,
     ): bool {
         if ($maxLength <= 0) {
-            throw new \InvalidArgumentException(
+            throw new RuntimeException(
                 message: "Invalid max length: `{$maxLength}`. Must be greater than zero.",
+                context: \func_get_args(),
             );
         }
 
@@ -189,6 +198,7 @@ namespace Northrook\Contracts {
             ? throw new FilesystemException(
                 message: "Path `{$path}` exceeds maximum byte length of `{$maxLength}`",
                 path: $path,
+                context: \func_get_args(),
             )
             : false;
     }
