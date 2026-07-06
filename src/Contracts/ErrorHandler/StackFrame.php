@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\ErrorHandler;
 
-use JsonSerializable;
+use Northrook\Contracts\DataObject;
 
-final readonly class StackFrame implements JsonSerializable
+final readonly class StackFrame extends DataObject
 {
     /**
-     * @param array<int, string> $code
+     * @param array<int, string>   $code
      * @param array<string, mixed> $args
      */
     public function __construct(
@@ -20,7 +20,9 @@ final readonly class StackFrame implements JsonSerializable
         public null|string $type,
         public array $args = [],
         public array $code = [],
-    ) {}
+    ) {
+        parent::__construct();
+    }
 
     /**
      * @param array{
@@ -74,19 +76,5 @@ final readonly class StackFrame implements JsonSerializable
         }
 
         return $snippet;
-    }
-
-    /** @return array<string, mixed> */
-    public function jsonSerialize(): array
-    {
-        return [
-            'file'     => $this->file,
-            'line'     => $this->line,
-            'function' => $this->function,
-            'class'    => $this->class,
-            'type'     => $this->type,
-            'args'     => $this->args,
-            'code'     => $this->code,
-        ];
     }
 }

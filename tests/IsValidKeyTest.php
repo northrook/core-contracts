@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use InvalidArgumentException;
+use Northrook\Contracts\Exceptions\RuntimeException;
 use Northrook\Contracts\Tests\Support\InvalidValidationCalls;
 use Northrook\Contracts\Tests\Support\ValidationTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -111,7 +111,7 @@ final class IsValidKeyTest extends ValidationTestCase
     #[DataProvider('provideInvalidLengthConfigCases')]
     public function testThrowsWhenLengthConfigIsInvalid(int $min, int $max, string $message): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage($message);
 
         self::validKey('abc', $min, $max);
@@ -122,18 +122,18 @@ final class IsValidKeyTest extends ValidationTestCase
      */
     public static function provideInvalidLengthConfigCases(): iterable
     {
-        yield 'min greater than max' => [5, 2, 'Invalid property key length: 5 to 2.'];
-        yield 'min below one' => [0, 10, 'Invalid property key length: 0 to 10.'];
+        yield 'min greater than max' => [5, 2, 'Invalid property key length: 5 to 2. Must be between 1 and ' . MAX_PATH_LENGTH . '.'];
+        yield 'min below one' => [0, 10, 'Invalid property key length: 0 to 10. Must be between 1 and ' . MAX_PATH_LENGTH . '.'];
         yield 'max above limit' => [
             1,
             MAX_PATH_LENGTH + 1,
-            'Invalid property key length: 1 to ' . ( MAX_PATH_LENGTH + 1 ) . '.',
+            'Invalid property key length: 1 to ' . ( MAX_PATH_LENGTH + 1 ) . '. Must be between 1 and ' . MAX_PATH_LENGTH . '.',
         ];
     }
 
     public function testThrowsWhenCharsetIsEmpty(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('The charset cannot be empty.');
 
         InvalidValidationCalls::validKeyWithEmptyCharset();
@@ -141,7 +141,7 @@ final class IsValidKeyTest extends ValidationTestCase
 
     public function testThrowsWhenSeparatorIsMultiByte(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Invalid separator: `..`. Must be exactly one character.');
 
         InvalidValidationCalls::validKeyWithMultiByteSeparator();
@@ -149,7 +149,7 @@ final class IsValidKeyTest extends ValidationTestCase
 
     public function testThrowsWhenSeparatorAppearsInCharset(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Invalid separator: `-`. Must not appear in `abc-`.');
 
         InvalidValidationCalls::validKeyWithSeparatorInCharset();

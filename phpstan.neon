@@ -1,14 +1,6 @@
+includes:
+	- vendor/northrook/php-cs/extension.neon
 parameters:
-	level: 9
 	paths:
 		- src
 		- tests
-	excludePaths:
-		- tests/Cases/**
-		- tests/Support/**
-		- var/*
-	treatPhpDocTypesAsCertain: false
-rules:
-	- Northrook\Dev\PHPStan\ClassRequiresMemberRule
-	- Northrook\Dev\PHPStan\InterfaceRequiresMemberRule
-	- Northrook\Dev\PHPStan\LooseAbstractMemberRule

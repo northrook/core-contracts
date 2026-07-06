@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use InvalidArgumentException;
+use Northrook\Contracts\Exceptions\RuntimeException;
 use Northrook\Contracts\Tests\Support\InvalidValidationCalls;
 use Northrook\Contracts\Tests\Support\ValidationTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -55,7 +55,7 @@ final class MatchCharsetTest extends ValidationTestCase
 
     public function testThrowsWhenCharsetIsEmpty(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('The characters string cannot be empty.');
 
         InvalidValidationCalls::matchCharsetWithEmptyCharset();

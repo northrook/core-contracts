@@ -42,7 +42,8 @@
     "northrook/php-cs": "dev-main",
     "phpunit/phpunit": "^11.5",
     "phpstan/phpstan": "^2.2",
-    "phpstan/extension-installer": "^1.4"
+    "phpstan/extension-installer": "^1.4",
+    "tracy/tracy": "^2.12"
   },
   "scripts": {
     "phpstan": "vendor/bin/phpstan analyse",

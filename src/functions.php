@@ -43,6 +43,7 @@ namespace Northrook\Contracts\Internal {
 }
 
 namespace Northrook\Contracts {
+    use Northrook\Contracts\Attributes\Secret;
     use Northrook\Contracts\Exceptions\FilesystemException;
     use Northrook\Contracts\Exceptions\RuntimeException;
 

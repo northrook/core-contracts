@@ -4,195 +4,148 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts\ErrorHandler\ErrorBuffer;
 use Northrook\Contracts\ErrorHandler\ErrorReport;
+use Northrook\Contracts\ErrorHandler\ErrorSnapshot;
 use Northrook\Contracts\ErrorHandler\RuntimeError;
-use Northrook\Contracts\Exceptions\CurlException;
-use Northrook\Contracts\Exceptions\ErrorException;
-use Northrook\Contracts\Exceptions\FilesystemException;
-use Northrook\Contracts\Exceptions\RuntimeException;
-use Northrook\Contracts\Exceptions\ServiceNotFoundException;
+use Northrook\Contracts\ErrorHandler\StackFrame;
 use PHPUnit\Framework\TestCase;
-
-use const Northrook\Logger\LOG_LEVEL;
 
 final class ErrorReportTest extends TestCase
 {
-    private ErrorBuffer $buffer;
-
-    protected function setUp(): void
+    public function testConstructsWithErrorSnapshotAndRuntimeError(): void
     {
-        error_clear_last();
-        ErrorBuffer::setShared($this->buffer = new ErrorBuffer());
-    }
-
-    protected function tearDown(): void
-    {
-        error_clear_last();
-        ErrorBuffer::setShared(null);
-    }
-
-    public function testFromMergesExceptionContextIntoReportContext(): void
-    {
-        $exception = new ServiceNotFoundException(
-            id: 'App\\Service',
-            reference: 'default',
-            alternatives: ['App\\Other'],
-        );
-
-        $report = ErrorReport::from($exception);
-
-        self::assertSame('App\\Service', $report->context['id']);
-        self::assertSame('default', $report->context['reference']);
-        self::assertSame([
-            'type'  => 'array',
-            'value' => ['App\\Other'],
-        ], $report->context['alternatives']);
-        self::assertArrayHasKey('sapi', $report->context);
-    }
-
-    public function testFromCallerContextOverridesDefaultButNotExceptionContext(): void
-    {
-        $exception = new RuntimeException(
+        $error = ErrorSnapshot::from(
+            class: \RuntimeException::class,
             message: 'failure',
-            context: ['requestId' => 'abc-123'],
-            previous: false,
+            code: 1,
+            file: '/tmp/example.php',
+            line: 10,
+            meta: ['url' => 'https://example.test'],
         );
-
-        $report = ErrorReport::from(
-            $exception,
-            context: ['requestId' => 'caller', 'route' => '/test'],
-        );
-
-        self::assertSame('abc-123', $report->context['requestId']);
-        self::assertSame('/test', $report->context['route']);
-        self::assertArrayNotHasKey('sapi', $report->context);
-    }
-
-    public function testFromResolvesPhpErrorAndPhpErrorsFromErrorException(): void
-    {
-        @\trigger_error('report me', E_USER_WARNING);
-
-        $exception = new ErrorException();
-        $report    = ErrorReport::from($exception);
-
-        self::assertNotNull($report->phpError);
-        self::assertSame(E_USER_WARNING, $report->phpError['type']);
-        self::assertSame('report me', $report->phpError['message']);
-        self::assertSame($exception->getFile(), $report->phpError['file']);
-        self::assertSame($exception->getLine(), $report->phpError['line']);
-        self::assertCount(1, $report->phpErrors);
-        self::assertSame($report->phpError, $report->phpErrors[0]);
-    }
-
-    public function testFromBuildsMetaForCurlAndFilesystemExceptions(): void
-    {
-        $curlReport = ErrorReport::from(new CurlException('https://example.test'));
-        $fileReport = ErrorReport::from(new FilesystemException(
-            message: 'Denied',
-            path: '/tmp/data.txt',
-        ));
-
-        self::assertSame(['url' => 'https://example.test'], $curlReport->meta);
-        self::assertSame(['path' => '/tmp/data.txt'], $fileReport->meta);
-    }
-
-    public function testFromResolvesSeverityFromLogLevelCode(): void
-    {
-        $report = ErrorReport::from(new CurlException('https://example.test'));
-
-        self::assertSame('error', $report->severity);
-    }
-
-    public function testFromResolvesCriticalSeverityForContractsRuntimeExceptionWithoutMappedCode(): void
-    {
-        $report = ErrorReport::from(new RuntimeException(
-            message: 'bug',
-            previous: false,
-        ));
-
-        self::assertSame('critical', $report->severity);
-        self::assertSame(LOG_LEVEL['critical'], $report->code);
-    }
-
-    public function testPreviousReportIncludesExceptionContext(): void
-    {
-        $previous = new RuntimeException(
-            message: 'root cause',
-            context: ['token' => 'expired'],
-            previous: false,
-        );
-        $exception = new RuntimeException(
-            message: 'wrapper',
-            previous: $previous,
-        );
-
-        $report = ErrorReport::from($exception);
-
-        self::assertCount(1, $report->previous);
-        self::assertSame('root cause', $report->previous[0]->message);
-        self::assertSame('expired', $report->previous[0]->context['token']);
-        self::assertArrayNotHasKey('sapi', $report->previous[0]->context);
-    }
-
-    public function testFromResolvesPhpErrorsFromSnapshottedBufferContext(): void
-    {
-        $this->buffer->recordFrom(E_USER_NOTICE, 'first', '/tmp/a.php', 1);
-        $this->buffer->recordFrom(E_USER_WARNING, 'second', '/tmp/b.php', 2);
-
-        $exception = new RuntimeException(message: 'wrapped');
-        $report    = ErrorReport::from($exception);
-
-        self::assertCount(2, $report->phpErrors);
-        self::assertSame('first', $report->phpErrors[0]['message']);
-        self::assertSame('second', $report->phpErrors[1]['message']);
-        self::assertSame($report->phpErrors[0], $report->phpError);
-    }
-
-    public function testFromFallsBackToLiveBufferWhenExceptionHasNoSnapshot(): void
-    {
-        $this->buffer->recordFrom(E_USER_NOTICE, 'buffered', '/tmp/buffer.php', 4);
-
-        $exception = new \Exception('plain exception');
-
-        $report = ErrorReport::from($exception, buffer: $this->buffer);
-
-        self::assertSame([[
-            'type'    => E_USER_NOTICE,
-            'message' => 'buffered',
-            'file'    => '/tmp/buffer.php',
-            'line'    => 4,
-        ]], $report->phpErrors);
-    }
-
-    public function testFromResolvesRuntimeErrorInLegacyPhpErrorContext(): void
-    {
-        $runtimeError = RuntimeError::from([
-            'type'    => E_USER_NOTICE,
-            'message' => 'runtime error dto',
-            'file'    => '/tmp/runtime.php',
-            'line'    => 5,
+        $phpError = RuntimeError::from([
+            'type'    => E_USER_WARNING,
+            'message' => 'report me',
+            'file'    => '/tmp/warning.php',
+            'line'    => 2,
         ]);
 
-        $exception = new RuntimeException(
-            message: 'wrapped',
-            context: ['phpError' => $runtimeError],
-            previous: false,
+        $report = new ErrorReport(
+            reference   : 'error-abc123',
+            timestamp   : 1_700_000_000.5,
+            severity    : 'error',
+            error       : $error,
+            stackFrames : [ StackFrame::from( [ 'file' => '/tmp/example.php', 'line' => 10, 'function' => 'main'])],
+            context     : ['requestId' => 'abc-123'],
+            phpError    : $phpError,
+            phpErrors   : [$phpError],
         );
 
-        $report = ErrorReport::from($exception);
-
-        self::assertSame($runtimeError->toArray(), $report->phpError);
-        self::assertSame([$runtimeError->toArray()], $report->phpErrors);
+        self::assertSame('error-abc123', $report->reference);
+        self::assertSame('failure', $report->error->message);
+        self::assertSame(['url' => 'https://example.test'], $report->error->meta);
+        self::assertSame('/tmp/example.php', $report->error->stackFrame->file);
+        self::assertSame(10, $report->error->stackFrame->line);
+        self::assertSame(E_USER_WARNING, $report->phpError->type);
+        self::assertSame('report me', $report->phpErrors[0]->message);
+        self::assertSame('abc-123', $report->context['requestId']);
     }
 
-    public function testJsonSerializeIncludesPhpErrors(): void
+    public function testNestedPreviousReportsExposeErrorSnapshot(): void
     {
-        @\trigger_error('json me', E_USER_NOTICE);
+        $previous = new ErrorReport(
+            reference   : 'error-previous',
+            timestamp   : 1_700_000_000.0,
+            severity    : 'critical',
+            error       : ErrorSnapshot::from(
+                class: \RuntimeException::class,
+                message: 'root cause',
+                code: 0,
+                file: '/tmp/root.php',
+                line: 1,
+            ),
+            stackFrames : [],
+            context     : ['token' => 'expired'],
+        );
 
-        $report = ErrorReport::from(new ErrorException());
+        $report = new ErrorReport(
+            reference   : 'error-wrapper',
+            timestamp   : 1_700_000_001.0,
+            severity    : 'critical',
+            error       : ErrorSnapshot::from(
+                class: \RuntimeException::class,
+                message: 'wrapper',
+                code: 0,
+                file: '/tmp/wrapper.php',
+                line: 5,
+            ),
+            stackFrames : [],
+            previous    : [$previous],
+        );
 
-        self::assertArrayHasKey('phpErrors', $report->jsonSerialize());
-        self::assertNotSame([], $report->jsonSerialize()['phpErrors']);
+        self::assertCount(1, $report->previous);
+        self::assertSame('root cause', $report->previous[0]->error->message);
+        self::assertSame('expired', $report->previous[0]->context['token']);
+    }
+
+    public function testJsonSerializeUsesErrorKeyAndPhpErrors(): void
+    {
+        $phpError = RuntimeError::from([
+            'type'    => E_USER_NOTICE,
+            'message' => 'json me',
+            'file'    => '/tmp/notice.php',
+            'line'    => 3,
+        ]);
+
+        $report = new ErrorReport(
+            reference   : 'error-json',
+            timestamp   : 1_700_000_002.0,
+            severity    : 'warning',
+            error       : ErrorSnapshot::from(
+                class: \ErrorException::class,
+                message: 'notice',
+                code: 0,
+                file: '/tmp/notice.php',
+                line: 3,
+            ),
+            stackFrames : [],
+            phpError    : $phpError,
+            phpErrors   : [$phpError],
+        );
+
+        $serialized = $report->jsonSerialize();
+
+        self::assertArrayHasKey('error', $serialized);
+        self::assertArrayNotHasKey('throwable', $serialized);
+        self::assertInstanceOf(ErrorSnapshot::class, $serialized['error']);
+        self::assertSame('notice', $serialized['error']->message);
+        self::assertArrayHasKey('phpErrors', $serialized);
+        self::assertCount(1, $serialized['phpErrors']);
+        self::assertInstanceOf(RuntimeError::class, $serialized['phpErrors'][0]);
+        self::assertSame('json me', $serialized['phpErrors'][0]->message);
+    }
+
+    public function testJsonStringRoundTripsThroughDataObject(): void
+    {
+        $report = new ErrorReport(
+            reference   : 'error-string',
+            timestamp   : 1_700_000_003.0,
+            severity    : 'error',
+            error       : ErrorSnapshot::from(
+                class: \RuntimeException::class,
+                message: 'encoded',
+                code: 0,
+                file: '/tmp/encoded.php',
+                line: 7,
+            ),
+            stackFrames : [],
+        );
+
+        $json = $report->jsonString();
+        $decoded = \json_decode($json, true);
+
+        self::assertIsArray($decoded);
+        self::assertSame('error-string', $decoded['reference']);
+        self::assertSame('encoded', $decoded['error']['message']);
+        self::assertSame($json, (string) $report);
     }
 }

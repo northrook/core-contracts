@@ -16,14 +16,16 @@ use const Northrook\Logger\LOG_LEVEL;
  * Throw this directly only for internal invariant violations that indicate a bug.
  *
  * Subclasses may represent recoverable or operational failures worth catching at a boundary.
+ *
+ * @phpstan-type ContextArray array<string, ContextSnapshot|bool|float|int|null|string>
  */
 class RuntimeException extends \RuntimeException
 {
-    /** @var array<string, ContextSnapshot|bool|float|int|null|string> */
+    /** @var ContextArray */
     public readonly array $context;
 
     /**
-     * @param null|array<string, mixed> $context
+     * @param null|array<array-key, mixed> $context
      */
     public function __construct(
         null|string $message = null,
@@ -42,6 +44,24 @@ class RuntimeException extends \RuntimeException
             message: $message,
             code: $code,
             previous: $previousThrowable,
+        );
+    }
+
+    /**
+     * @param \Throwable $throwable
+     * @param null|array<string, mixed> $context $context
+     *
+     * @return self
+     */
+    public static function from(
+        throwable $throwable,
+        null|array $context = null,
+    ): self {
+        return new self(
+            message: $throwable->getMessage(),
+            context: $context,
+            previous: $throwable->getPrevious(),
+            code: $throwable->getCode(),
         );
     }
 
@@ -69,7 +89,7 @@ class RuntimeException extends \RuntimeException
             return $context;
         }
 
-        return ['phpErrors' => $errors, ...($context ?? [])];
+        return ['phpErrors' => $errors, ...( $context ?? [] )];
     }
 
     /**
@@ -84,13 +104,12 @@ class RuntimeException extends \RuntimeException
             return [];
         }
 
-        $snapshots = [];
-
-        foreach ($context as $key => $value) {
-            $snapshots[$key] = self::snapshotContextValue($value);
-        }
-
-        return $snapshots;
+        return array_map(
+            static function($value) {
+                return self::snapshotContextValue($value);
+            },
+            $context,
+        );
     }
 
     private static function snapshotContextValue(
@@ -108,7 +127,7 @@ class RuntimeException extends \RuntimeException
         ) {
             try {
                 return ContextSnapshot::from($value);
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 return self::unsnapshotable($value);
             }
         }

@@ -49,6 +49,6 @@ abstract class ContractSingleton
      */
     final protected static function getInstance(): static
     {
-        return self::$instance ??= self::register();
+        return static::$instance ??= static::register();
     }
 }
