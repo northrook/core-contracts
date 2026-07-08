@@ -87,6 +87,10 @@ abstract readonly class DataObject implements \JsonSerializable, \Stringable
                     $properties[$property] = $timestamp;
                 }
 
+                if ($value instanceof \BackedEnum) {
+                    $properties[$property] = $value->value;
+                }
+
                 // More custom casts likely needed in time
             }
         } catch (\ReflectionException $exception) {

@@ -9,12 +9,12 @@ use Northrook\Contracts\ErrorHandler\RuntimeError;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
-interface ErrorHandlerInterface
+interface ErrorHandlerInterface extends ResetInterface
 {
     public static function register(
         null|LoggerInterface $logger = null,
         null|ErrorRendererInterface $renderer = null,
-        int $throwAt = E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED,
+        null|int $throwAt = null,
         bool $install = true,
     ): static;
 

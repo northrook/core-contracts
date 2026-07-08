@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\ErrorHandler;
 
+use Northrook\AppEnv;
+use Northrook\AppEnvironment;
 use Northrook\Contracts\DataObject;
 
 final readonly class ErrorReport extends DataObject
 {
+    public AppEnvironment $environment;
+
     /**
      * @param StackFrame[]          $stackFrames
      * @param ErrorReport[]         $previous
@@ -27,6 +31,8 @@ final readonly class ErrorReport extends DataObject
         public null|RuntimeError $phpError = null,
         public array $phpErrors = [],
     ) {
+        $this->environment = AppEnv::getEnvironment();
+
         parent::__construct();
     }
 }

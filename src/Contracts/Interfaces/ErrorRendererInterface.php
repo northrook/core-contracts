@@ -11,8 +11,4 @@ interface ErrorRendererInterface
     public function render(
         ErrorReport $report,
     ): string;
-
-    public function supports(
-        ErrorReport $report,
-    ): bool;
 }

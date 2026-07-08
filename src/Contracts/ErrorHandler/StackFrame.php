@@ -35,9 +35,13 @@ final readonly class StackFrame extends DataObject
      * } $trace
      */
     public static function from(
-        array $trace,
+        \Throwable|array $trace,
         int $codeRadius = 3,
     ): self {
+        if ($trace instanceof \Throwable) {
+            $trace = $trace->getTrace()[0];
+        }
+
         $file     = $trace['file'] ?? null;
         $line     = $trace['line'] ?? null;
         $function = $trace['function'] ?? null;
