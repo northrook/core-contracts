@@ -87,7 +87,7 @@ final class AppEnv
     private function resolveEnv(
         null|string $env,
     ): AppEnvironment {
-        $env ??= \defined('PHPUNIT_COMPOSER_INSTALL') || \defined('__PHPUNIT_PHAR__')
+        $env ??= \is_phpunit()
             ? AppEnvironment::Testing->value
             : null;
 

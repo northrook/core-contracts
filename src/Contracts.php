@@ -4,22 +4,23 @@ declare(strict_types=1);
 
 namespace Northrook;
 
-use Northrook\Contracts\ContractSingleton;
+use Northrook\Contracts\Singleton;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
 /**
  * May in time hold some configuration
  */
-final class Contracts extends ContractSingleton
+final class Contracts extends Singleton
 {
     public const string VERSION = '0.1.0';
 
     private function __construct(
         private readonly LoggerInterface $logger,
         private readonly \DateTimeZone $timezone = new \DateTimeZone('UTC'),
+        bool $__selfInstantiated = false,
     ) {
-        parent::__construct();
+        parent::__construct($__selfInstantiated);
     }
 
     public static function timezone(): \DateTimeZone
@@ -36,5 +37,10 @@ final class Contracts extends ContractSingleton
         null|LoggerInterface $logger = null,
     ): static {
         return new self($logger ?? new NullLogger());
+    }
+
+    protected static function create(): static
+    {
+        return static::register();
     }
 }

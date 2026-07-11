@@ -12,15 +12,25 @@ use Northrook\Contracts\Exceptions\RuntimeException;
  *
  * - `$number` is an integer millisecond count, matching JavaScript `Date.now()`
  * - `$string` is `$number` formatted as a zero-padded 13-digit numeric string
+ * - `$precision` is a monotonic nanosecond offset from {@see \hrtime()}, set only for "now"
  *
  * Input values with sub-millisecond precision are truncated toward zero when converted to milliseconds.
  *
  * @uses \microtime()
+ * @uses \hrtime()
  *
  * @link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/now JavaScript Date.now()
  */
 final readonly class Timestamp implements \Stringable
 {
+    /**
+     * Monotonic nanoseconds from {@see \hrtime(true)}.
+     *
+     * Set when constructing "now" (`$timestamp === null`); otherwise `null`.
+     * Meaningful only for relative ordering within the same process.
+     */
+    public null|int $precision;
+
     /**
      * Milliseconds since the Unix epoch.
      */
@@ -36,7 +46,7 @@ final readonly class Timestamp implements \Stringable
     /**
      * @param null|string|int|float $timestamp Accepted representations:
      *
-     * - `null` current time via {@see \microtime()}
+     * - `null` current time via {@see \microtime()}, also captures {@see $precision}
      * - `float` seconds with an optional fractional part ({@see \microtime()})
      * - `int` milliseconds since epoch ({@see $number})
      * - `string` either a millisecond string or a decimal second string
@@ -46,6 +56,8 @@ final readonly class Timestamp implements \Stringable
     public function __construct(
         null|string|int|float $timestamp = null,
     ) {
+        $this->precision = $timestamp === null ? \hrtime( true) : null;
+
         $timestamp ??= \microtime(true);
 
         $number = match (true) {
@@ -68,7 +80,19 @@ final readonly class Timestamp implements \Stringable
     }
 
     /**
-     * The current instant.
+     * Returns the current instant as a millisecond count.
+     *
+     * @param null|string|int|float $from
+     * @return int
+     */
+    public static function number(
+        null|string|int|float $from = null,
+    ): int {
+        return new self($from)->number;
+    }
+
+    /**
+     * The current instant, including {@see $precision}.
      */
     public static function now(): self
     {

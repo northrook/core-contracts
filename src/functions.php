@@ -1,6 +1,392 @@
-<?php
+<?php /** @noinspection ALL */
 
 declare(strict_types=1);
+
+namespace {
+    /**
+     * Whether the current SAPI is CLI or phpdbg.
+     */
+    function is_cli(): bool
+    {
+        return \PHP_SAPI === 'cli' || \PHP_SAPI === 'phpdbg';
+    }
+
+    /**
+     * Whether the current SAPI is PHP's built-in development server.
+     */
+    function is_cli_server(): bool
+    {
+        return \PHP_SAPI === 'cli-server';
+    }
+
+    /**
+     * Whether the current SAPI is CGI or CGI-FastCGI.
+     */
+    function is_cgi(): bool
+    {
+        return \PHP_SAPI === 'cgi' || \PHP_SAPI === 'cgi-fcgi';
+    }
+
+    /**
+     * Whether the current SAPI is PHP-FPM.
+     */
+    function is_fpm(): bool
+    {
+        return \PHP_SAPI === 'fpm-fcgi';
+    }
+
+    /**
+     * Whether the current SAPI is HTTP-facing (not CLI/phpdbg).
+     */
+    function is_web(): bool
+    {
+        return ! is_cli();
+    }
+
+    /**
+     * Whether the current SAPI matches `$sapi` exactly.
+     */
+    function is_sapi(string $sapi): bool
+    {
+        return \PHP_SAPI === $sapi;
+    }
+
+    /**
+     * Whether PHPUnit is the active test runner (composer install or phar).
+     */
+    function is_phpunit(): bool
+    {
+        return \defined('PHPUNIT_COMPOSER_INSTALL') || \defined('__PHPUNIT_PHAR__');
+    }
+
+    /**
+     * Whether Pest is present in the process.
+     */
+    function is_pest(): bool
+    {
+        return \defined('PEST')
+            || \class_exists(\Pest\Tester::class, false)
+            || \class_exists(\Pest\TestSuite::class, false);
+    }
+
+    /**
+     * Whether Codeception is present in the process.
+     */
+    function is_codeception(): bool
+    {
+        return \defined('CODECEPTION_VERSION')
+            || \class_exists(\Codeception\Codecept::class, false);
+    }
+
+    /**
+     * Whether any known test runner is active or present.
+     */
+    function is_test_runner(): bool
+    {
+        return is_phpunit() || is_pest() || is_codeception();
+    }
+
+    /**
+     * Whether the Zend OPcache extension is loaded.
+     */
+    function is_opcache_loaded(): bool
+    {
+        return \extension_loaded('Zend OPcache') || \extension_loaded('opcache');
+    }
+
+    /**
+     * Whether OPcache is enabled for the current SAPI.
+     */
+    function is_opcache_enabled(): bool
+    {
+        if (! is_opcache_loaded()) {
+            return false;
+        }
+
+        if (\function_exists('opcache_get_status')) {
+            $status = @\opcache_get_status(false);
+
+            if (\is_array($status) && \array_key_exists('opcache_enabled', $status)) {
+                return (bool) $status['opcache_enabled'];
+            }
+        }
+
+        $ini = is_cli() ? 'opcache.enable_cli' : 'opcache.enable';
+
+        return \filter_var(\ini_get($ini), \FILTER_VALIDATE_BOOLEAN);
+    }
+
+    /**
+     * Whether OPcache JIT is active for the current process.
+     */
+    function is_opcache_jit_enabled(): bool
+    {
+        if (! is_opcache_enabled()) {
+            return false;
+        }
+
+        if (\function_exists('opcache_get_status')) {
+            $status = @\opcache_get_status(false);
+
+            if (\is_array($status) && isset($status['jit']) && \is_array($status['jit'])) {
+                if (\array_key_exists('enabled', $status['jit'])) {
+                    return (bool) $status['jit']['enabled'];
+                }
+
+                if (\array_key_exists('on', $status['jit'])) {
+                    return (bool) $status['jit']['on'];
+                }
+            }
+        }
+
+        $jit = (string) \ini_get('opcache.jit');
+
+        if ($jit === '' || $jit === '0' || \strtolower($jit) === 'disable') {
+            return false;
+        }
+
+        $buffer = (string) \ini_get('opcache.jit_buffer_size');
+
+        return $buffer !== '' && $buffer !== '0';
+    }
+
+    /**
+     * Whether the Xdebug extension is loaded.
+     */
+    function is_xdebug_loaded(): bool
+    {
+        return \extension_loaded('xdebug');
+    }
+
+    /**
+     * Whether Xdebug is loaded and not effectively off.
+     */
+    function is_xdebug_enabled(): bool
+    {
+        if (! is_xdebug_loaded()) {
+            return false;
+        }
+
+        if (\function_exists('xdebug_is_debugger_active') && \xdebug_is_debugger_active()) {
+            return true;
+        }
+
+        if (\function_exists('xdebug_info')) {
+            /** @var mixed $modes */
+            $modes = @\xdebug_info('mode');
+
+            if (\is_array($modes)) {
+                return $modes !== [] && ! (\count($modes) === 1 && ($modes[0] ?? null) === 'off');
+            }
+        }
+
+        $mode = (string) \ini_get('xdebug.mode');
+
+        if ($mode === '' || \strtolower($mode) === 'off') {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Whether the PCOV coverage extension is loaded.
+     */
+    function is_pcov_loaded(): bool
+    {
+        return \extension_loaded('pcov');
+    }
+
+    /**
+     * Whether Tracy Debugger is available.
+     */
+    function is_tracy_loaded(): bool
+    {
+        return \class_exists(\Tracy\Debugger::class, false);
+    }
+
+    /**
+     * Whether coverage/debug tooling is active (Xdebug enabled or PCOV loaded).
+     */
+    function is_debug_probe_active(): bool
+    {
+        return is_xdebug_enabled() || is_pcov_loaded();
+    }
+
+    /**
+     * Whether the host OS family is Windows.
+     */
+    function is_windows(): bool
+    {
+        return \PHP_OS_FAMILY === 'Windows';
+    }
+
+    /**
+     * Whether the host OS family is Linux.
+     */
+    function is_linux(): bool
+    {
+        return \PHP_OS_FAMILY === 'Linux';
+    }
+
+    /**
+     * Whether the host OS family is Darwin (macOS).
+     */
+    function is_macos(): bool
+    {
+        return \PHP_OS_FAMILY === 'Darwin';
+    }
+
+    /**
+     * Whether the host OS family is BSD.
+     */
+    function is_bsd(): bool
+    {
+        return \PHP_OS_FAMILY === 'BSD';
+    }
+
+    /**
+     * Whether the host OS family is Solaris.
+     */
+    function is_solaris(): bool
+    {
+        return \PHP_OS_FAMILY === 'Solaris';
+    }
+
+    /**
+     * Whether the host OS is a Unix-like family (not Windows).
+     */
+    function is_unix(): bool
+    {
+        return ! is_windows();
+    }
+
+    /**
+     * Whether the process appears to be running under WSL.
+     */
+    function is_wsl(): bool
+    {
+        if (! is_linux()) {
+            return false;
+        }
+
+        $path = '/proc/version';
+
+        if (! \is_readable($path)) {
+            return false;
+        }
+
+        $version = @\file_get_contents($path);
+
+        if ($version === false) {
+            return false;
+        }
+
+        return \str_contains(\strtolower($version), 'microsoft')
+            || \str_contains(\strtolower($version), 'wsl');
+    }
+
+    /**
+     * Whether this PHP build uses 64-bit integers.
+     */
+    function is_64bit(): bool
+    {
+        return \PHP_INT_SIZE === 8;
+    }
+
+    /**
+     * Whether this PHP build uses 32-bit integers.
+     */
+    function is_32bit(): bool
+    {
+        return \PHP_INT_SIZE === 4;
+    }
+
+    /**
+     * Whether this PHP build is Zend thread-safe (ZTS).
+     */
+    function is_thread_safe(): bool
+    {
+        return \defined('ZEND_THREAD_SAFE') && \ZEND_THREAD_SAFE;
+    }
+
+    /**
+     * Whether this PHP binary was compiled as a debug build.
+     */
+    function is_php_debug_build(): bool
+    {
+        return \defined('PHP_DEBUG') && (bool) \PHP_DEBUG;
+    }
+
+    /**
+     * Whether the current script is running inside a Phar archive.
+     */
+    function is_phar(): bool
+    {
+        return \class_exists(\Phar::class, false) && \Phar::running() !== '';
+    }
+
+    /**
+     * Whether the STDIN constant is defined.
+     */
+    function has_stdin(): bool
+    {
+        return \defined('STDIN');
+    }
+
+    /**
+     * Whether STDIN exists and is an interactive TTY.
+     */
+    function is_interactive(): bool
+    {
+        if (! has_stdin()) {
+            return false;
+        }
+
+        /** @var resource $stdin */
+        $stdin = \STDIN;
+
+        if (\function_exists('stream_isatty')) {
+            return \stream_isatty($stdin);
+        }
+
+        if (\function_exists('posix_isatty')) {
+            return \posix_isatty($stdin);
+        }
+
+        return false;
+    }
+
+    /**
+     * Whether the process effective user is root (posix only).
+     */
+    function is_root(): bool
+    {
+        if (! \function_exists('posix_geteuid')) {
+            return false;
+        }
+
+        return \posix_geteuid() === 0;
+    }
+
+    /**
+     * Whether Composer reports a development install (`COMPOSER_DEV_MODE`).
+     */
+    function is_composer_dev(): bool
+    {
+        if (\defined('COMPOSER_DEV_MODE')) {
+            return \filter_var(\COMPOSER_DEV_MODE, \FILTER_VALIDATE_BOOLEAN);
+        }
+
+        $env = $_ENV['COMPOSER_DEV_MODE'] ?? \getenv('COMPOSER_DEV_MODE');
+
+        if ($env === false || $env === '') {
+            return false;
+        }
+
+        return \filter_var($env, \FILTER_VALIDATE_BOOLEAN);
+    }
+}
 
 namespace Northrook\Contracts\Internal {
     use Northrook\Contracts\Exceptions\RuntimeException;
