@@ -19,11 +19,9 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use RuntimeException as PhpRuntimeException;
 
-use const Northrook\Logger\LOG_LEVEL,
-    PREG_INTERNAL_ERROR
-;
-
 use function Northrook\Contracts\is_valid_path_length;
+
+use const Northrook\Logger\LOG_LEVEL, PREG_INTERNAL_ERROR;
 
 final class ExceptionsTest extends TestCase
 {
@@ -89,7 +87,10 @@ final class ExceptionsTest extends TestCase
 
     public function testRegexpExceptionCheckThrowsOnPregFailure(): void
     {
-        @\preg_match('/(?P<unclosed/', 'subject');
+        @\preg_match( /** @lang mock-to-silence-unclosed-error */
+            '/(?P<unclosed/',
+            'subject',
+        );
 
         $this->expectException(RegexpException::class);
 
@@ -277,8 +278,8 @@ final class ExceptionsTest extends TestCase
         string $class,
     ): array {
         return match ($class) {
-            CurlException::class => ['https://example.test'],
-            RegexpException::class => ['pattern failed'],
+            CurlException::class            => ['https://example.test'],
+            RegexpException::class          => ['pattern failed'],
             ErrorException::class => [
                 null,
                 RuntimeError::from([
@@ -288,11 +289,11 @@ final class ExceptionsTest extends TestCase
                     'line'    => 1,
                 ]),
             ],
-            FilesystemException::class => ['filesystem failure'],
-            FileNotFoundException::class => [],
+            FilesystemException::class      => ['filesystem failure'],
+            FileNotFoundException::class    => [],
             ServiceNotFoundException::class => ['App\\Service'],
-            RecursionException::class => [],
-            default => [],
+            RecursionException::class       => [],
+            default                         => [],
         };
     }
 }

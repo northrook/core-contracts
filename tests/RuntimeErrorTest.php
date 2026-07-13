@@ -49,7 +49,7 @@ final class RuntimeErrorTest extends TestCase
     {
         $error = RuntimeError::from([
             ...self::sampleArray(),
-            'trace' => ['ignored'],
+            'trace'    => ['ignored'],
             'severity' => 'warning',
         ]);
 

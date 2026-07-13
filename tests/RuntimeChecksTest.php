@@ -90,8 +90,9 @@ final class RuntimeChecksTest extends TestCase
     }
 
     #[DataProvider('provideSmokeChecks')]
-    public function testSmokeChecksReturnBool(callable $check): void
-    {
+    public function testSmokeChecksReturnBool(
+        callable $check,
+    ): void {
         self::assertIsBool($check());
     }
 }

@@ -17,9 +17,10 @@ class FileNotFoundException extends FilesystemException
         null|false|Throwable $previous = null,
         int $code = LOG_LEVEL['error'],
     ) {
-        $message ??= $path === null || $path === ''
-            ? 'File could not be found.'
-            : "File '{$path}' could not be found.";
+        $message ??=
+            $path === null || $path === ''
+                ? 'File could not be found.'
+                : "File '{$path}' could not be found.";
 
         parent::__construct(
             message: $message,

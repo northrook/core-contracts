@@ -41,10 +41,10 @@ class ServiceNotFoundException extends RuntimeException implements NotFoundExcep
         parent::__construct(
             message: $message,
             context: [
-                'id'            => $id,
-                'reference'     => $reference,
-                'alternatives'  => $alternatives,
-                ...($context ?? []),
+                'id'           => $id,
+                'reference'    => $reference,
+                'alternatives' => $alternatives,
+                ...( $context ?? [] ),
             ],
             previous: $previous,
             code: $code,

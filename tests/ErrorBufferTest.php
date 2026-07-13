@@ -54,7 +54,7 @@ final class ErrorBufferTest extends TestCase
             self::sampleArray('one'),
             self::sampleArray('two'),
         ], \array_map(
-            static fn (RuntimeError $error): array => $error->toArray(),
+            static fn(RuntimeError $error): array => $error->toArray(),
             $this->buffer->all(),
         ));
     }
@@ -76,13 +76,13 @@ final class ErrorBufferTest extends TestCase
     public function testMarkAndSince(): void
     {
         $this->buffer->record(RuntimeError::from(self::sampleArray('first')));
-        $mark = $this->buffer->mark();
+        $mark   = $this->buffer->mark();
         $second = RuntimeError::from(self::sampleArray('second'));
         $this->buffer->record($second);
 
         self::assertSame([$second], $this->buffer->since($mark));
         self::assertSame([$second->toArray()], \array_map(
-            static fn (RuntimeError $error): array => $error->toArray(),
+            static fn(RuntimeError $error): array => $error->toArray(),
             $this->buffer->since($mark),
         ));
     }

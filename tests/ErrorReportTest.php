@@ -30,14 +30,14 @@ final class ErrorReportTest extends TestCase
         ]);
 
         $report = new ErrorReport(
-            reference   : 'error-abc123',
-            timestamp   : 1_700_000_000.5,
-            severity    : 'error',
-            error       : $error,
-            stackFrames : [ StackFrame::from( [ 'file' => '/tmp/example.php', 'line' => 10, 'function' => 'main'])],
-            context     : ['requestId' => 'abc-123'],
-            phpError    : $phpError,
-            phpErrors   : [$phpError],
+            reference: 'error-abc123',
+            timestamp: 1_700_000_000.5,
+            severity: 'error',
+            error: $error,
+            stackFrames: [StackFrame::from(['file' => '/tmp/example.php', 'line' => 10, 'function' => 'main'])],
+            context: ['requestId' => 'abc-123'],
+            phpError: $phpError,
+            phpErrors: [$phpError],
         );
 
         self::assertSame('error-abc123', $report->reference);
@@ -53,33 +53,33 @@ final class ErrorReportTest extends TestCase
     public function testNestedPreviousReportsExposeErrorSnapshot(): void
     {
         $previous = new ErrorReport(
-            reference   : 'error-previous',
-            timestamp   : 1_700_000_000.0,
-            severity    : 'critical',
-            error       : ErrorSnapshot::from(
+            reference: 'error-previous',
+            timestamp: 1_700_000_000.0,
+            severity: 'critical',
+            error: ErrorSnapshot::from(
                 class: \RuntimeException::class,
                 message: 'root cause',
                 code: 0,
                 file: '/tmp/root.php',
                 line: 1,
             ),
-            stackFrames : [],
-            context     : ['token' => 'expired'],
+            stackFrames: [],
+            context: ['token' => 'expired'],
         );
 
         $report = new ErrorReport(
-            reference   : 'error-wrapper',
-            timestamp   : 1_700_000_001.0,
-            severity    : 'critical',
-            error       : ErrorSnapshot::from(
+            reference: 'error-wrapper',
+            timestamp: 1_700_000_001.0,
+            severity: 'critical',
+            error: ErrorSnapshot::from(
                 class: \RuntimeException::class,
                 message: 'wrapper',
                 code: 0,
                 file: '/tmp/wrapper.php',
                 line: 5,
             ),
-            stackFrames : [],
-            previous    : [$previous],
+            stackFrames: [],
+            previous: [$previous],
         );
 
         self::assertCount(1, $report->previous);
@@ -97,19 +97,19 @@ final class ErrorReportTest extends TestCase
         ]);
 
         $report = new ErrorReport(
-            reference   : 'error-json',
-            timestamp   : 1_700_000_002.0,
-            severity    : 'warning',
-            error       : ErrorSnapshot::from(
+            reference: 'error-json',
+            timestamp: 1_700_000_002.0,
+            severity: 'warning',
+            error: ErrorSnapshot::from(
                 class: \ErrorException::class,
                 message: 'notice',
                 code: 0,
                 file: '/tmp/notice.php',
                 line: 3,
             ),
-            stackFrames : [],
-            phpError    : $phpError,
-            phpErrors   : [$phpError],
+            stackFrames: [],
+            phpError: $phpError,
+            phpErrors: [$phpError],
         );
 
         $serialized = $report->jsonSerialize();
@@ -127,20 +127,20 @@ final class ErrorReportTest extends TestCase
     public function testJsonStringRoundTripsThroughDataObject(): void
     {
         $report = new ErrorReport(
-            reference   : 'error-string',
-            timestamp   : 1_700_000_003.0,
-            severity    : 'error',
-            error       : ErrorSnapshot::from(
+            reference: 'error-string',
+            timestamp: 1_700_000_003.0,
+            severity: 'error',
+            error: ErrorSnapshot::from(
                 class: \RuntimeException::class,
                 message: 'encoded',
                 code: 0,
                 file: '/tmp/encoded.php',
                 line: 7,
             ),
-            stackFrames : [],
+            stackFrames: [],
         );
 
-        $json = $report->jsonString();
+        $json    = $report->jsonString();
         $decoded = \json_decode($json, true);
 
         self::assertIsArray($decoded);

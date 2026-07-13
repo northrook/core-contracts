@@ -10,8 +10,10 @@ use PHPUnit\Framework\Attributes\DataProvider;
 final class StrIsTest extends ValidationTestCase
 {
     #[DataProvider('provideAsciiCases')]
-    public function testStrIsAscii(string $string, bool $expected): void
-    {
+    public function testStrIsAscii(
+        string $string,
+        bool $expected,
+    ): void {
         self::assertSame($expected, self::isAscii($string));
     }
 
@@ -27,8 +29,10 @@ final class StrIsTest extends ValidationTestCase
     }
 
     #[DataProvider('provideAlphaCases')]
-    public function testStrIsAlpha(string $string, bool $expected): void
-    {
+    public function testStrIsAlpha(
+        string $string,
+        bool $expected,
+    ): void {
         self::assertSame($expected, self::isAlpha($string));
     }
 
@@ -44,8 +48,10 @@ final class StrIsTest extends ValidationTestCase
     }
 
     #[DataProvider('provideAlnumCases')]
-    public function testStrIsAlnum(string $string, bool $expected): void
-    {
+    public function testStrIsAlnum(
+        string $string,
+        bool $expected,
+    ): void {
         self::assertSame($expected, self::isAlnum($string));
     }
 
@@ -60,8 +66,10 @@ final class StrIsTest extends ValidationTestCase
     }
 
     #[DataProvider('provideDigitCases')]
-    public function testStrIsDigit(string $string, bool $expected): void
-    {
+    public function testStrIsDigit(
+        string $string,
+        bool $expected,
+    ): void {
         self::assertSame($expected, self::isDigit($string));
     }
 

@@ -115,14 +115,20 @@ final class AppEnvTest extends TestCase
 
     public function testExplicitDebugFlag(): void
     {
-        new AppEnv(environment: AppEnvironment::Development, debug: true);
+        new AppEnv(
+            environment: AppEnvironment::Development,
+            debug: true,
+        );
 
         self::assertTrue(AppEnv::isDebug());
     }
 
     public function testFailsafeForcesDebugOff(): void
     {
-        new AppEnv(environment: AppEnvironment::Failsafe, debug: true);
+        new AppEnv(
+            environment: AppEnvironment::Failsafe,
+            debug: true,
+        );
 
         self::assertFalse(AppEnv::isDebug());
     }
@@ -157,17 +163,17 @@ final class AppEnvTest extends TestCase
         new AppEnv(environment: AppEnvironment::Production);
 
         $report = new ErrorReport(
-            reference   : 'error-env',
-            timestamp   : 1_700_000_000.0,
-            severity    : 'error',
-            error       : ErrorSnapshot::from(
+            reference: 'error-env',
+            timestamp: 1_700_000_000.0,
+            severity: 'error',
+            error: ErrorSnapshot::from(
                 class: \RuntimeException::class,
                 message: 'failure',
                 code: 0,
                 file: '/tmp/example.php',
                 line: 1,
             ),
-            stackFrames : [],
+            stackFrames: [],
         );
 
         self::assertSame(AppEnvironment::Production, $report->environment);

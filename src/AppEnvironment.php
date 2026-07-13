@@ -16,8 +16,9 @@ enum AppEnvironment: string
 
     case Failsafe = 'failsafe';
 
-    public static function parse(string $value): self
-    {
+    public static function parse(
+        string $value,
+    ): self {
         return match (\strtolower($value)) {
             'prod', 'production' => self::Production,
             'dev', 'development' => self::Development,

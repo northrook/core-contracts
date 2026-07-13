@@ -105,7 +105,9 @@ class RuntimeException extends \RuntimeException
         }
 
         return array_map(
-            static function($value) {
+            static function(
+                $value,
+            ) {
                 return self::snapshotContextValue($value);
             },
             $context,

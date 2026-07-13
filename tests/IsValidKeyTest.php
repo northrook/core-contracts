@@ -12,8 +12,10 @@ use PHPUnit\Framework\Attributes\DataProvider;
 final class IsValidKeyTest extends ValidationTestCase
 {
     #[DataProvider('providePathStyleCases')]
-    public function testPathStyleKey(string $key, bool $expected): void
-    {
+    public function testPathStyleKey(
+        string $key,
+        bool $expected,
+    ): void {
         self::assertSame($expected, self::validKey(
             $key,
             separator: '.',
@@ -47,8 +49,10 @@ final class IsValidKeyTest extends ValidationTestCase
     }
 
     #[DataProvider('provideAutodiscoverCases')]
-    public function testAutodiscoverKey(string $key, bool $expected): void
-    {
+    public function testAutodiscoverKey(
+        string $key,
+        bool $expected,
+    ): void {
         self::assertSame($expected, self::validKey(
             $key,
             min: 1,
@@ -95,8 +99,13 @@ final class IsValidKeyTest extends ValidationTestCase
     }
 
     #[DataProvider('provideAcceptedKeyCases')]
-    public function testAcceptsValidKeys(int|string $key, int $min, int $max, string $separator, string $charset): void
-    {
+    public function testAcceptsValidKeys(
+        int|string $key,
+        int $min,
+        int $max,
+        string $separator,
+        string $charset,
+    ): void {
         self::assertTrue(self::validKey($key, $min, $max, $separator, $charset));
     }
 
@@ -109,8 +118,11 @@ final class IsValidKeyTest extends ValidationTestCase
     }
 
     #[DataProvider('provideInvalidLengthConfigCases')]
-    public function testThrowsWhenLengthConfigIsInvalid(int $min, int $max, string $message): void
-    {
+    public function testThrowsWhenLengthConfigIsInvalid(
+        int $min,
+        int $max,
+        string $message,
+    ): void {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage($message);
 
@@ -122,12 +134,24 @@ final class IsValidKeyTest extends ValidationTestCase
      */
     public static function provideInvalidLengthConfigCases(): iterable
     {
-        yield 'min greater than max' => [5, 2, 'Invalid property key length: 5 to 2. Must be between 1 and ' . MAX_PATH_LENGTH . '.'];
-        yield 'min below one' => [0, 10, 'Invalid property key length: 0 to 10. Must be between 1 and ' . MAX_PATH_LENGTH . '.'];
+        yield 'min greater than max' => [
+            5,
+            2,
+            'Invalid property key length: 5 to 2. Must be between 1 and ' . MAX_PATH_LENGTH . '.',
+        ];
+        yield 'min below one' => [
+            0,
+            10,
+            'Invalid property key length: 0 to 10. Must be between 1 and ' . MAX_PATH_LENGTH . '.',
+        ];
         yield 'max above limit' => [
             1,
             MAX_PATH_LENGTH + 1,
-            'Invalid property key length: 1 to ' . ( MAX_PATH_LENGTH + 1 ) . '. Must be between 1 and ' . MAX_PATH_LENGTH . '.',
+            'Invalid property key length: 1 to '
+                . ( MAX_PATH_LENGTH + 1 )
+                . '. Must be between 1 and '
+                . MAX_PATH_LENGTH
+                . '.',
         ];
     }
 

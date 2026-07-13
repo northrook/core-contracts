@@ -10,8 +10,10 @@ use PHPUnit\Framework\Attributes\DataProvider;
 final class IsCacheKeyTest extends ValidationTestCase
 {
     #[DataProvider('provideCacheKeyCases')]
-    public function testIsCacheKey(string $key, bool $expected): void
-    {
+    public function testIsCacheKey(
+        string $key,
+        bool $expected,
+    ): void {
         self::assertSame($expected, self::cacheKey($key));
     }
 

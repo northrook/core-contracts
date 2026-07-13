@@ -32,8 +32,9 @@ final class StrIsCtypeParityTest extends ValidationTestCase
     }
 
     #[DataProvider('provideCtypeParityCases')]
-    public function testAlphaMatchesCtypeAlpha(string $string): void
-    {
+    public function testAlphaMatchesCtypeAlpha(
+        string $string,
+    ): void {
         self::assertSame(
             \ctype_alpha($string),
             self::isAlpha($string),
@@ -42,8 +43,9 @@ final class StrIsCtypeParityTest extends ValidationTestCase
     }
 
     #[DataProvider('provideCtypeParityCases')]
-    public function testAlnumMatchesCtypeAlnum(string $string): void
-    {
+    public function testAlnumMatchesCtypeAlnum(
+        string $string,
+    ): void {
         self::assertSame(
             \ctype_alnum($string),
             self::isAlnum($string),
@@ -52,8 +54,9 @@ final class StrIsCtypeParityTest extends ValidationTestCase
     }
 
     #[DataProvider('provideCtypeParityCases')]
-    public function testDigitMatchesCtypeDigit(string $string): void
-    {
+    public function testDigitMatchesCtypeDigit(
+        string $string,
+    ): void {
         self::assertSame(
             \ctype_digit($string),
             self::isDigit($string),
@@ -62,8 +65,9 @@ final class StrIsCtypeParityTest extends ValidationTestCase
     }
 
     #[DataProvider('provideCtypeParityCases')]
-    public function testAsciiMatchesCtypeSevenBitClassification(string $string): void
-    {
+    public function testAsciiMatchesCtypeSevenBitClassification(
+        string $string,
+    ): void {
         self::assertSame(
             self::ctypeIsAscii($string),
             self::isAscii($string),
@@ -98,8 +102,9 @@ final class StrIsCtypeParityTest extends ValidationTestCase
     /**
      * C-locale `ctype_*` classifies every 7-bit code unit; high-bit bytes classify as none.
      */
-    private static function ctypeIsAscii(string $string): bool
-    {
+    private static function ctypeIsAscii(
+        string $string,
+    ): bool {
         if ($string === '') {
             return true;
         }

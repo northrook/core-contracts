@@ -21,7 +21,7 @@ class FilesystemException extends RuntimeException
         parent::__construct(
             message: $message,
             context: $path !== null || $context !== null
-                ? ['path' => $path, ...($context ?? [])]
+                ? ['path' => $path, ...( $context ?? [] )]
                 : null,
             previous: $previous,
             code: $code,

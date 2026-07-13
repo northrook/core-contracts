@@ -19,8 +19,10 @@ use function Northrook\Contracts\str_is_digit;
  */
 abstract class ValidationTestCase extends TestCase
 {
-    protected static function matchCharset(string $string, string $characters): bool
-    {
+    protected static function matchCharset(
+        string $string,
+        string $characters,
+    ): bool {
         return _match_charset($string, $characters);
     }
 
@@ -34,28 +36,33 @@ abstract class ValidationTestCase extends TestCase
         return is_valid_key($key, $min, $max, $separator, $charset);
     }
 
-    protected static function cacheKey(string $key): bool
-    {
+    protected static function cacheKey(
+        string $key,
+    ): bool {
         return is_cache_key($key);
     }
 
-    protected static function isAscii(string $string): bool
-    {
+    protected static function isAscii(
+        string $string,
+    ): bool {
         return str_is_ascii($string);
     }
 
-    protected static function isAlpha(string $string): bool
-    {
+    protected static function isAlpha(
+        string $string,
+    ): bool {
         return str_is_alpha($string);
     }
 
-    protected static function isAlnum(string $string): bool
-    {
+    protected static function isAlnum(
+        string $string,
+    ): bool {
         return str_is_alnum($string);
     }
 
-    protected static function isDigit(string $string): bool
-    {
+    protected static function isDigit(
+        string $string,
+    ): bool {
         return str_is_digit($string);
     }
 }

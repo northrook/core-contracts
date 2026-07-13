@@ -64,5 +64,4 @@ final class TimestampTest extends TestCase
 
         self::assertSame('1970-01-01 00:00:00.000', $dateTime->format('Y-m-d H:i:s.v'));
     }
-
 }

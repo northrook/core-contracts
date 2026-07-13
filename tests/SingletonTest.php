@@ -34,13 +34,13 @@ final class SingletonTest extends TestCase
         self::assertTrue(SingletonTestClock::isRegistered());
         self::assertSame($first, $second);
         self::assertTrue(
-            (new \ReflectionProperty(Singleton::class, '__selfInstantiated'))->getValue($first),
+            new \ReflectionProperty(Singleton::class, '__selfInstantiated')->getValue($first),
         );
     }
 
     public function testContractsRegisterThenGet(): void
     {
-        $logger = new NullLogger();
+        $logger     = new NullLogger();
         $registered = Contracts::register($logger);
 
         self::assertTrue(Contracts::isRegistered());
@@ -83,9 +83,10 @@ final class SingletonTest extends TestCase
     /**
      * @param class-string<Singleton> $class
      */
-    private function resetSingleton(string $class): void
-    {
-        $property = new \ReflectionProperty(Singleton::class, '__instance');
+    private function resetSingleton(
+        string $class,
+    ): void {
+        $property  = new \ReflectionProperty(Singleton::class, '__instance');
         $instances = $property->getValue();
         unset($instances[$class]);
         $property->setValue(null, $instances);
@@ -95,6 +96,4 @@ final class SingletonTest extends TestCase
 /**
  * @internal
  */
-final class SingletonTestClock extends Singleton
-{
-}
+final class SingletonTestClock extends Singleton {}

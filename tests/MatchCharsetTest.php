@@ -12,8 +12,10 @@ use PHPUnit\Framework\Attributes\DataProvider;
 final class MatchCharsetTest extends ValidationTestCase
 {
     #[DataProvider('provideEmptyStringCases')]
-    public function testRejectsEmptyString(string $string, string $charset): void
-    {
+    public function testRejectsEmptyString(
+        string $string,
+        string $charset,
+    ): void {
         self::assertFalse(self::matchCharset($string, $charset));
     }
 
@@ -26,8 +28,10 @@ final class MatchCharsetTest extends ValidationTestCase
     }
 
     #[DataProvider('provideAcceptanceCases')]
-    public function testAcceptsNonEmptyStringInCharset(string $string, string $charset): void
-    {
+    public function testAcceptsNonEmptyStringInCharset(
+        string $string,
+        string $charset,
+    ): void {
         self::assertTrue(self::matchCharset($string, $charset));
     }
 
@@ -40,8 +44,10 @@ final class MatchCharsetTest extends ValidationTestCase
     }
 
     #[DataProvider('provideRejectionCases')]
-    public function testRejectsDisallowedByte(string $string, string $charset): void
-    {
+    public function testRejectsDisallowedByte(
+        string $string,
+        string $charset,
+    ): void {
         self::assertFalse(self::matchCharset($string, $charset));
     }
 
@@ -62,8 +68,11 @@ final class MatchCharsetTest extends ValidationTestCase
     }
 
     #[DataProvider('provideMatchCases')]
-    public function testMatchCharset(string $string, string $charset, bool $expected): void
-    {
+    public function testMatchCharset(
+        string $string,
+        string $charset,
+        bool $expected,
+    ): void {
         self::assertSame($expected, self::matchCharset($string, $charset));
     }
 

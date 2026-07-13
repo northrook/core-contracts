@@ -32,7 +32,7 @@ final class RegexpException extends RuntimeException
         null|false|Throwable $previous = null,
     ) {
         if (\is_int($message)) {
-            $code ??= $message;
+            $code    ??= $message;
             $message = RegexpException::MESSAGES[$message] ?? null;
         }
 

@@ -19,7 +19,7 @@ final class CurlException extends RuntimeException
     ) {
         parent::__construct(
             message: $message ?? "HTTP request to '{$url}' failed",
-            context: ['url' => $url, ...($context ?? [])],
+            context: ['url' => $url, ...( $context ?? [] )],
             previous: $previous,
             code: $code,
         );

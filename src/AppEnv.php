@@ -21,7 +21,7 @@ final class AppEnv
     ) {
         $this->environment = match (true) {
             $environment instanceof AppEnvironment => $environment,
-            default                                => $this->resolveEnv($environment),
+            default => $this->resolveEnv($environment),
         };
         $this->debug = $this->resolveDebug($debug);
 

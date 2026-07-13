@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpIllegalPsrClassPathInspection */
 
 declare(strict_types=1);
 
@@ -56,32 +56,46 @@ final class TraitsForAnalysisPathfinder implements PathfinderInterface
  */
 final class TraitsForAnalysisProfiler implements ProfilerInterface
 {
-    public function __invoke(string $name, null|string $category = null): null|ProfilerEvent
-    {
+    public function __invoke(
+        string $name,
+        null|string $category = null,
+    ): null|ProfilerEvent {
         return null;
     }
 
-    public function setCategory(null|string $category): static
-    {
+    public function setCategory(
+        null|string $category,
+    ): static {
         return $this;
     }
 
-    public function event(string $name, null|string $category = null): null|ProfilerEvent
-    {
+    public function event(
+        string $name,
+        null|string $category = null,
+    ): null|ProfilerEvent {
         return null;
     }
 
-    public function start(string $name, null|string $category = null, null|string $note = null): null|ProfilerEvent
-    {
+    public function start(
+        string $name,
+        null|string $category = null,
+        null|string $note = null,
+    ): null|ProfilerEvent {
         return null;
     }
 
-    public function snapshot(string $name, null|string $category = null, null|string $note = null): static
-    {
+    public function snapshot(
+        string $name,
+        null|string $category = null,
+        null|string $note = null,
+    ): static {
         return $this;
     }
 
-    public function stop(null|string $name = null, null|string $category = null): void {}
+    public function stop(
+        null|string $name = null,
+        null|string $category = null,
+    ): void {}
 
     public function close(): void {}
 }
@@ -91,13 +105,15 @@ final class TraitsForAnalysisProfiler implements ProfilerInterface
  */
 final class TraitsForAnalysisSettings implements SettingsInterface
 {
-    public function has(string $parameter): bool
-    {
+    public function has(
+        string $parameter,
+    ): bool {
         return false;
     }
 
-    public function get(string $parameter): Parameter
-    {
+    public function get(
+        string $parameter,
+    ): Parameter {
         return Parameter::from($parameter);
     }
 

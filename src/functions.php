@@ -46,8 +46,9 @@ namespace {
     /**
      * Whether the current SAPI matches `$sapi` exactly.
      */
-    function is_sapi(string $sapi): bool
-    {
+    function is_sapi(
+        string $sapi,
+    ): bool {
         return \PHP_SAPI === $sapi;
     }
 
@@ -64,9 +65,11 @@ namespace {
      */
     function is_pest(): bool
     {
-        return \defined('PEST')
+        return (
+            \defined('PEST')
             || \class_exists(\Pest\Tester::class, false)
-            || \class_exists(\Pest\TestSuite::class, false);
+            || \class_exists(\Pest\TestSuite::class, false)
+        );
     }
 
     /**
@@ -74,8 +77,7 @@ namespace {
      */
     function is_codeception(): bool
     {
-        return \defined('CODECEPTION_VERSION')
-            || \class_exists(\Codeception\Codecept::class, false);
+        return \defined('CODECEPTION_VERSION') || \class_exists(\Codeception\Codecept::class, false);
     }
 
     /**
@@ -176,7 +178,7 @@ namespace {
             $modes = @\xdebug_info('mode');
 
             if (\is_array($modes)) {
-                return $modes !== [] && ! (\count($modes) === 1 && ($modes[0] ?? null) === 'off');
+                return $modes !== [] && ! ( \count($modes) === 1 && ( $modes[0] ?? null ) === 'off' );
             }
         }
 
@@ -282,8 +284,7 @@ namespace {
             return false;
         }
 
-        return \str_contains(\strtolower($version), 'microsoft')
-            || \str_contains(\strtolower($version), 'wsl');
+        return \str_contains(\strtolower($version), 'microsoft') || \str_contains(\strtolower($version), 'wsl');
     }
 
     /**
@@ -669,8 +670,9 @@ namespace Northrook\Contracts {
      *
      * @phpstan-assert-if-true non-empty-string $string
      */
-    function str_is_digit(string $string): bool
-    {
+    function str_is_digit(
+        string $string,
+    ): bool {
         return _match_charset(
             $string,
             \CHARSET_DIGIT,

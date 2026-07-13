@@ -9,8 +9,5 @@
 /.*.php
 !/.*.dist.php
 /*.cache
-/*.lock
 /.env
 /index.php
-/console
-package-lock.json
