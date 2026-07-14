@@ -32,7 +32,7 @@ final class AssetCollectionTest extends TestCase
         $style  = new AssetCollectionStubAsset(id: 'pkg.style');
         $script = new AssetCollectionStubAsset(id: 'pkg.script');
 
-        $collection = new AssetCollection([$style, $script]);
+        $collection = new AssetCollection($style, $script);
 
         self::assertSame(
             [
@@ -52,7 +52,7 @@ final class AssetCollectionTest extends TestCase
         );
 
         try {
-            new AssetCollection([$first, $second]);
+            new AssetCollection($first, $second);
             self::fail('Expected RuntimeException for duplicate asset ID.');
         } catch (RuntimeException $exception) {
             self::assertSame('Duplicate asset ID: pkg.style', $exception->getMessage());
@@ -67,12 +67,12 @@ final class AssetCollectionTest extends TestCase
         $style = new AssetCollectionStubAsset(id: 'pkg.style');
         $other = new AssetCollectionOtherStubAsset(id: 'pkg.other');
 
-        $collection = new AssetCollection([$style, $other]);
+        $collection = new AssetCollection($style, $other);
 
         self::assertSame([$style], $collection->get(AssetCollectionStubAsset::class));
         self::assertSame([$other], $collection->get(AssetCollectionOtherStubAsset::class));
         self::assertSame([$style, $other], $collection->get(AssetInterface::class));
-        self::assertSame([], new AssetCollection([$other])->get(AssetCollectionStubAsset::class));
+        self::assertSame([], new AssetCollection($other)->get(AssetCollectionStubAsset::class));
     }
 
     public function testCountAndIterationMatchAssets(): void
@@ -80,7 +80,7 @@ final class AssetCollectionTest extends TestCase
         $style  = new AssetCollectionStubAsset(id: 'pkg.style');
         $script = new AssetCollectionStubAsset(id: 'pkg.script');
 
-        $collection = new AssetCollection([$style, $script]);
+        $collection = new AssetCollection($style, $script);
 
         self::assertCount(2, $collection);
         self::assertSame(
@@ -94,7 +94,7 @@ final class AssetCollectionTest extends TestCase
 
     public function testEmptyCollection(): void
     {
-        $collection = new AssetCollection([]);
+        $collection = new AssetCollection();
 
         self::assertSame([], $collection->assets);
         self::assertCount(0, $collection);

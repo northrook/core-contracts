@@ -18,11 +18,8 @@ final readonly class AssetCollection extends DataObject implements \Countable, \
      */
     public array $assets;
 
-    /**
-     * @param AssetInterface[] $assets
-     */
     public function __construct(
-        array $assets,
+        AssetInterface ...$assets,
     ) {
         $this->assets = $this->resolve($assets);
         parent::__construct();
