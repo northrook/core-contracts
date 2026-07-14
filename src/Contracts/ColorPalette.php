@@ -173,6 +173,53 @@ final readonly class ColorPalette extends DataObject
         return \implode('; ', $parts);
     }
 
+    /**
+     * Default color palette, in light or dark mode.
+     *
+     * @param ColorScheme $scheme
+     * @return self
+     */
+    public static function default(
+        ColorScheme $scheme = ColorScheme::Light,
+    ): self {
+        return match ($scheme) {
+            ColorScheme::Light => new ColorPalette(
+                'default',
+                ColorScheme::Light,
+                background: '#f6f4fa',
+                surface: '#ffffff',
+                overlay: '#eeebf5',
+                outline: '#d5d0e4',
+                muted: '#7c7894',
+                text: '#1f1d2e',
+                primary: '#8f4dff',
+                accent: '#0088a3',
+                notice: '#8f4dff',
+                info: '#0088a3',
+                success: '#008f73',
+                warning: '#b87a00',
+                danger: '#e05558',
+            ),
+            ColorScheme::Dark => new ColorPalette(
+                'default',
+                ColorScheme::Dark,
+                background: '#0c0b10',
+                surface: '#121118',
+                overlay: '#1c1a28',
+                outline: '#3a3654',
+                muted: '#a29db8',
+                text: '#f0eef8',
+                primary: '#c794ff',
+                accent: '#1abee0',
+                notice: '#c794ff',
+                info: '#1abee0',
+                success: '#1ac4a0',
+                warning: '#eba012',
+                danger: '#ff8587',
+            ),
+        };
+    }
+
     private function variableName(
         string $name,
         null|string $prefix = null,
