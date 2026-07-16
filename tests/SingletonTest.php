@@ -76,8 +76,8 @@ final class SingletonTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('cannot be cloned');
 
-        /** @noinspection PhpExpressionResultUnusedInspection */
-        clone $clock;
+        $unused = clone $clock;
+        unset($unused);
     }
 
     /**
@@ -88,6 +88,9 @@ final class SingletonTest extends TestCase
     ): void {
         $property  = new \ReflectionProperty(Singleton::class, '__instance');
         $instances = $property->getValue();
+        if (! \is_array($instances)) {
+            self::fail('Expected singleton registry array.');
+        }
         unset($instances[$class]);
         $property->setValue(null, $instances);
     }

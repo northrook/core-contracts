@@ -56,7 +56,12 @@ final readonly class Timestamp implements \Stringable
     public function __construct(
         null|string|int|float $timestamp = null,
     ) {
-        $this->precision = $timestamp === null ? \hrtime(true) : null;
+        if ($timestamp === null) {
+            $precision       = \hrtime(true);
+            $this->precision = \is_int($precision) ? $precision : (int) $precision;
+        } else {
+            $this->precision = null;
+        }
 
         $timestamp ??= \microtime(true);
 

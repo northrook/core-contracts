@@ -42,7 +42,7 @@ final readonly class RuntimeError implements Stringable, JsonSerializable
     }
 
     /**
-     * @param ErrorArray $array
+     * @param array<string, mixed> $array
      */
     public static function from(
         array $array,

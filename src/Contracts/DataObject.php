@@ -36,6 +36,9 @@ abstract readonly class DataObject implements \JsonSerializable, \Stringable
         );
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     final public function jsonSerialize(): array
     {
         $className  = $this::class;

@@ -7,7 +7,6 @@ namespace Northrook\Contracts\Tests;
 use Northrook\Contracts\Assets\AssetCollection;
 use Northrook\Contracts\Assets\AssetOrigin;
 use Northrook\Contracts\Assets\AssetType;
-use Northrook\Contracts\ContextSnapshot;
 use Northrook\Contracts\ErrorHandler\ErrorBuffer;
 use Northrook\Contracts\Exceptions\RuntimeException;
 use Northrook\Contracts\Interfaces\AssetInterface;
@@ -56,9 +55,23 @@ final class AssetCollectionTest extends TestCase
             self::fail('Expected RuntimeException for duplicate asset ID.');
         } catch (RuntimeException $exception) {
             self::assertSame('Duplicate asset ID: pkg.style', $exception->getMessage());
-            self::assertInstanceOf(ContextSnapshot::class, $exception->context['assets']);
-            self::assertInstanceOf(ContextSnapshot::class, $exception->context['resolving']);
-            self::assertInstanceOf(ContextSnapshot::class, $exception->context['duplicate']);
+
+            self::assertIsArray($exception->context['assets']);
+            self::assertCount(2, $exception->context['assets']);
+            self::assertInstanceOf(AssetCollectionStubAsset::class, $exception->context['assets'][0]);
+            self::assertInstanceOf(AssetCollectionStubAsset::class, $exception->context['assets'][1]);
+            self::assertNotSame($first, $exception->context['assets'][0]);
+            self::assertNotSame($second, $exception->context['assets'][1]);
+            self::assertSame('asset.css', $exception->context['assets'][0]->value);
+            self::assertSame('other.css', $exception->context['assets'][1]->value);
+
+            self::assertInstanceOf(AssetCollectionStubAsset::class, $exception->context['resolving']);
+            self::assertNotSame($second, $exception->context['resolving']);
+            self::assertSame('other.css', $exception->context['resolving']->value);
+
+            self::assertInstanceOf(AssetCollectionStubAsset::class, $exception->context['duplicate']);
+            self::assertNotSame($first, $exception->context['duplicate']);
+            self::assertSame('asset.css', $exception->context['duplicate']->value);
         }
     }
 

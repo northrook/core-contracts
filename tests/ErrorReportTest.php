@@ -45,6 +45,9 @@ final class ErrorReportTest extends TestCase
         self::assertSame(['url' => 'https://example.test'], $report->error->meta);
         self::assertSame('/tmp/example.php', $report->error->stackFrame->file);
         self::assertSame(10, $report->error->stackFrame->line);
+        if ($report->phpError === null) {
+            self::fail('Expected phpError.');
+        }
         self::assertSame(E_USER_WARNING, $report->phpError->type);
         self::assertSame('report me', $report->phpErrors[0]->message);
         self::assertSame('abc-123', $report->context['requestId']);
@@ -119,9 +122,13 @@ final class ErrorReportTest extends TestCase
         self::assertInstanceOf(ErrorSnapshot::class, $serialized['error']);
         self::assertSame('notice', $serialized['error']->message);
         self::assertArrayHasKey('phpErrors', $serialized);
-        self::assertCount(1, $serialized['phpErrors']);
-        self::assertInstanceOf(RuntimeError::class, $serialized['phpErrors'][0]);
-        self::assertSame('json me', $serialized['phpErrors'][0]->message);
+        $phpErrors = $serialized['phpErrors'];
+        if (! \is_array($phpErrors)) {
+            self::fail('Expected phpErrors to be an array.');
+        }
+        self::assertCount(1, $phpErrors);
+        self::assertInstanceOf(RuntimeError::class, $phpErrors[0]);
+        self::assertSame('json me', $phpErrors[0]->message);
     }
 
     public function testJsonStringRoundTripsThroughDataObject(): void
@@ -143,8 +150,13 @@ final class ErrorReportTest extends TestCase
         $json    = $report->jsonString();
         $decoded = \json_decode($json, true);
 
-        self::assertIsArray($decoded);
+        if (! \is_array($decoded)) {
+            self::fail('Expected JSON object.');
+        }
         self::assertSame('error-string', $decoded['reference']);
+        if (! \is_array($decoded['error'])) {
+            self::fail('Expected error object in JSON.');
+        }
         self::assertSame('encoded', $decoded['error']['message']);
         self::assertSame($json, (string) $report);
     }

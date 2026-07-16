@@ -15,6 +15,7 @@ use Northrook\Contracts\Exceptions\RuntimeException;
 final class JSON
 {
     /**
+     * @param int<1, max>                   $depth
      * @param null|callable(string): string $formatter
      *
      * @return ($throwOnError is true ? string : string|false)
@@ -53,6 +54,8 @@ final class JSON
     }
 
     /**
+     * @param int<1, max> $depth
+     *
      * @return ($throwOnError is true ? mixed : mixed|null)
      */
     public static function decode(

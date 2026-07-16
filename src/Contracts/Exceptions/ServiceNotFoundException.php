@@ -16,7 +16,7 @@ class ServiceNotFoundException extends RuntimeException implements NotFoundExcep
     }
 
     /**
-     * @param class-string $id
+     * @param string       $id service type or binding id
      * @param list<string> $alternatives
      */
     public function __construct(

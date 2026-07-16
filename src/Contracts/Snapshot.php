@@ -14,10 +14,15 @@ use UnitEnum;
  * Records the source {@see gettype()} and, where possible, a detached copy of the value.
  * Values that cannot be copied are replaced with a descriptive string.
  *
+ * Array reference cycles are broken by comparing each nested array against an ancestor
+ * stack with {@see ===}. Object cycles use {@see \WeakMap}.
+ *
  * @phpstan-type PhpType 'array'|'boolean'|'double'|'integer'|'NULL'|'object'|'resource'|'string'
  */
-final readonly class ContextSnapshot implements JsonSerializable, Stringable
+final readonly class Snapshot implements JsonSerializable, Stringable
 {
+    private const string ARRAY_RECURSION = '[Recursion]';
+
     /**
      * @param PhpType  $type
      * @param mixed    $value
@@ -26,6 +31,12 @@ final readonly class ContextSnapshot implements JsonSerializable, Stringable
         public string $type,
         public mixed $value,
     ) {}
+
+    public static function value(
+        mixed $value,
+    ): mixed {
+        return self::snapshotValue($value);
+    }
 
     public static function from(
         mixed $value,
@@ -66,7 +77,7 @@ final readonly class ContextSnapshot implements JsonSerializable, Stringable
 
         return \is_string($encoded)
             ? $encoded
-            : '[Unserializable ContextSnapshot]';
+            : '[Unserializable Snapshot]';
     }
 
     /**
@@ -82,13 +93,15 @@ final readonly class ContextSnapshot implements JsonSerializable, Stringable
 
     /**
      * @param \WeakMap<object, mixed> $seen
+     * @param list<array<mixed>>      $arrayStack
      */
     private static function snapshotValue(
         mixed $value,
         \WeakMap $seen = new \WeakMap(),
+        array &$arrayStack = [],
     ): mixed {
         if (\is_array($value)) {
-            return self::snapshotArray($value, $seen);
+            return self::snapshotArray($value, $seen, $arrayStack);
         }
 
         if (\is_object($value)) {
@@ -104,6 +117,27 @@ final readonly class ContextSnapshot implements JsonSerializable, Stringable
         }
 
         return $value;
+    }
+
+    public static function freeze(
+        mixed $value,
+    ): mixed {
+        return self::from($value)->value;
+    }
+
+    /**
+     * @param null|array<array-key, mixed> $context
+     *
+     * @return array<array-key, mixed>
+     */
+    public static function context(
+        null|array $context,
+    ): array {
+        if ($context === null || $context === []) {
+            return [];
+        }
+
+        return array_map(self::freeze(...), $context);
     }
 
     /**
@@ -127,22 +161,62 @@ final readonly class ContextSnapshot implements JsonSerializable, Stringable
     }
 
     /**
-     * @param array<mixed> $array
+     * @param array<mixed>            $array
      * @param \WeakMap<object, mixed> $seen
+     * @param list<array<mixed>>      $arrayStack
      *
-     * @return array<mixed>
+     * @return array<mixed>|string
      */
     private static function snapshotArray(
-        array $array,
+        array &$array,
         \WeakMap $seen,
-    ): array {
-        $copy = [];
-
-        foreach ($array as $key => $item) {
-            $copy[$key] = self::snapshotValue($item, $seen);
+        array &$arrayStack = [],
+    ): array|string {
+        foreach ($arrayStack as &$frame) {
+            if ($frame === $array) {
+                return self::ARRAY_RECURSION;
+            }
         }
+        unset($frame);
 
-        return $copy;
+        $arrayStack[] = &$array;
+
+        try {
+            $copy = [];
+
+            foreach ($array as $key => &$item) {
+                if (\is_array($item)) {
+                    $copy[$key] = self::isArrayOnStack($item, $arrayStack)
+                        ? self::ARRAY_RECURSION
+                        : self::snapshotArray($item, $seen, $arrayStack);
+                } else {
+                    $copy[$key] = self::snapshotValue($item, $seen, $arrayStack);
+                }
+            }
+            unset($item);
+
+            return $copy;
+        } finally {
+            \array_pop($arrayStack);
+        }
+    }
+
+    /**
+     * @param array<mixed>       $array
+     * @param list<array<mixed>> $arrayStack
+     */
+    private static function isArrayOnStack(
+        array &$array,
+        array &$arrayStack,
+    ): bool {
+        foreach ($arrayStack as &$frame) {
+            if ($frame === $array) {
+                return true;
+            }
+        }
+        unset($frame);
+
+        return false;
     }
 
     /**
@@ -183,7 +257,6 @@ final readonly class ContextSnapshot implements JsonSerializable, Stringable
 
             return $copy;
         }
-
         $copy = self::tryCopyObject($value);
 
         if (\is_string($copy)) {
@@ -196,16 +269,16 @@ final readonly class ContextSnapshot implements JsonSerializable, Stringable
     }
 
     /**
+     * @param object  $value
+     *
      * @return object|string
      */
     private static function tryCopyObject(
         object $value,
     ): object|string {
-        $serialized = \serialize($value);
-
         try {
             $copy = \unserialize(
-                $serialized,
+                \serialize($value),
                 ['allowed_classes' => true],
             );
         } catch (\Throwable) {

@@ -39,10 +39,14 @@ final class ErrorBufferTest extends TestCase
         $this->buffer->recordFrom(E_USER_NOTICE, 'notice', '/tmp/a.php', 3);
 
         self::assertCount(1, $this->buffer->all());
-        self::assertSame(E_USER_NOTICE, $this->buffer->last()?->type);
-        self::assertSame('notice', $this->buffer->last()?->message);
-        self::assertSame('/tmp/a.php', $this->buffer->last()?->file);
-        self::assertSame(3, $this->buffer->last()?->line);
+        $last = $this->buffer->last();
+        if ($last === null) {
+            self::fail('Expected a buffered error.');
+        }
+        self::assertSame(E_USER_NOTICE, $last->type);
+        self::assertSame('notice', $last->message);
+        self::assertSame('/tmp/a.php', $last->file);
+        self::assertSame(3, $last->line);
     }
 
     public function testAllReturnsExportableRuntimeErrors(): void

@@ -4,7 +4,7 @@
     "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
     "This file is @generated automatically"
   ],
-  "content-hash": "22117584692a5cc21392d989002efe67",
+  "content-hash": "7f85e964a44bcd1fcdbd739fa9b8b4ba",
   "packages": [
     {
       "name": "psr/cache",
@@ -410,17 +410,161 @@
       "time": "2026-07-04T14:30:18+00:00"
     },
     {
+      "name": "northrook/ansi-formatter",
+      "version": "dev-main",
+      "source": {
+        "type": "git",
+        "url": "https://codeberg.org/northrook/ansi-formatter.git",
+        "reference": "495f41c8739fcc9f46fef51b284c3a179d26e447c208aff0e2416be4b50f7a9a"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://codeberg.org/api/v1/repos/northrook/ansi-formatter/archive/495f41c8739fcc9f46fef51b284c3a179d26e447c208aff0e2416be4b50f7a9a.zip",
+        "reference": "495f41c8739fcc9f46fef51b284c3a179d26e447c208aff0e2416be4b50f7a9a",
+        "shasum": ""
+      },
+      "require": {
+        "php": ">=8.4",
+        "psr/log": "^3.0"
+      },
+      "require-dev": {
+        "northrook/php-cs": "dev-main",
+        "phpstan/phpstan": "^2.2",
+        "phpunit/phpunit": "^11.0"
+      },
+      "default-branch": true,
+      "type": "library",
+      "autoload": {
+        "psr-4": {
+          "Northrook\\": "src"
+        }
+      },
+      "notification-url": "https://packagist.org/downloads/",
+      "license": [
+        "BSD-3-Clause"
+      ],
+      "authors": [
+        {
+          "name": "Martin Nielsen",
+          "email": "mn@northrook.com"
+        }
+      ],
+      "description": "Format strings with ANSI colour codes for terminal output based on embedded tags",
+      "support": {
+        "issues": "https://codeberg.org/northrook/ansi-formatter/issues",
+        "source": "https://codeberg.org/northrook/ansi-formatter/branch/main"
+      },
+      "time": "2026-07-08T08:18:11+00:00"
+    },
+    {
+      "name": "northrook/hasher",
+      "version": "dev-main",
+      "source": {
+        "type": "git",
+        "url": "https://codeberg.org/northrook/hasher.git",
+        "reference": "7cdbba4798d9a9bf2cee0e6095a891df4888f5b6cf7d4da64d8964705ccc6683"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://codeberg.org/api/v1/repos/northrook/hasher/archive/7cdbba4798d9a9bf2cee0e6095a891df4888f5b6cf7d4da64d8964705ccc6683.zip",
+        "reference": "7cdbba4798d9a9bf2cee0e6095a891df4888f5b6cf7d4da64d8964705ccc6683",
+        "shasum": ""
+      },
+      "require": {
+        "ext-hash": "*",
+        "ext-random": "*",
+        "php": ">=8.4"
+      },
+      "require-dev": {
+        "northrook/php-cs": "dev-main",
+        "phpstan/phpstan": "^2.2",
+        "phpunit/phpunit": "^11.5"
+      },
+      "default-branch": true,
+      "type": "library",
+      "autoload": {
+        "psr-4": {
+          "Northrook\\": "php"
+        }
+      },
+      "notification-url": "https://packagist.org/downloads/",
+      "license": [
+        "BSD-3-Clause"
+      ],
+      "authors": [
+        {
+          "name": "Martin Nielsen",
+          "email": "mn@northrook.com"
+        }
+      ],
+      "description": "Crockford Base32 hashing utilities for short, URL-safe identifiers, checksums, and time-sortable prefixes",
+      "support": {
+        "issues": "https://codeberg.org/northrook/hasher/issues",
+        "source": "https://codeberg.org/northrook/hasher/branch/main"
+      },
+      "time": "2026-07-10T10:33:26+00:00"
+    },
+    {
+      "name": "northrook/inline-styles",
+      "version": "dev-main",
+      "source": {
+        "type": "git",
+        "url": "https://codeberg.org/northrook/inline-styles.git",
+        "reference": "5a07ddfb232c4c31fa4a442a4b7eb9a99d6dd1aa"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://codeberg.org/api/v1/repos/northrook/inline-styles/archive/5a07ddfb232c4c31fa4a442a4b7eb9a99d6dd1aa.zip",
+        "reference": "5a07ddfb232c4c31fa4a442a4b7eb9a99d6dd1aa",
+        "shasum": ""
+      },
+      "require": {
+        "ext-dom": "*",
+        "ext-libxml": "*",
+        "php": ">=8.4"
+      },
+      "require-dev": {
+        "northrook/php-cs": "dev-main",
+        "phpstan/extension-installer": "^1.4",
+        "phpstan/phpstan": "@stable",
+        "phpunit/phpunit": "^11.5"
+      },
+      "default-branch": true,
+      "type": "library",
+      "autoload": {
+        "psr-4": {
+          "Northrook\\": "php"
+        }
+      },
+      "notification-url": "https://packagist.org/downloads/",
+      "license": [
+        "BSD-3-Clause"
+      ],
+      "authors": [
+        {
+          "name": "Martin Nielsen",
+          "email": "mn@northrook.com"
+        }
+      ],
+      "description": "Apply CSS-like selectors and merge declarations into HTML inline styles",
+      "support": {
+        "issues": "https://codeberg.org/northrook/inline-styles/issues",
+        "source": "https://codeberg.org/northrook/inline-styles/branch/main"
+      },
+      "time": "2026-07-10T19:07:34+00:00"
+    },
+    {
       "name": "northrook/php-cs",
       "version": "dev-main",
       "source": {
         "type": "git",
         "url": "https://github.com/northrook/php-cs.git",
-        "reference": "25ce4452a9d51a5721561982e1ff762bce00f0d4"
+        "reference": "5d1802d2b2fa7867d2ba28c0cfecd534dc4a3a9f"
       },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/northrook/php-cs/zipball/25ce4452a9d51a5721561982e1ff762bce00f0d4",
-        "reference": "25ce4452a9d51a5721561982e1ff762bce00f0d4",
+        "url": "https://api.github.com/repos/northrook/php-cs/zipball/5d1802d2b2fa7867d2ba28c0cfecd534dc4a3a9f",
+        "reference": "5d1802d2b2fa7867d2ba28c0cfecd534dc4a3a9f",
         "shasum": ""
       },
       "require": {
@@ -459,7 +603,58 @@
         "issues": "https://github.com/northrook/php-cs/issues",
         "source": "https://github.com/northrook/php-cs/tree/main"
       },
-      "time": "2026-07-12T16:54:49+00:00"
+      "time": "2026-07-15T21:36:30+00:00"
+    },
+    {
+      "name": "northrook/php-debug",
+      "version": "dev-main",
+      "source": {
+        "type": "git",
+        "url": "https://codeberg.org/northrook/php-debug.git",
+        "reference": "15f3f6232da6f29785567ce7e22fcbdc2b36a4a449487e09bac52a508bc29abd"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://codeberg.org/api/v1/repos/northrook/php-debug/archive/15f3f6232da6f29785567ce7e22fcbdc2b36a4a449487e09bac52a508bc29abd.zip",
+        "reference": "15f3f6232da6f29785567ce7e22fcbdc2b36a4a449487e09bac52a508bc29abd",
+        "shasum": ""
+      },
+      "require": {
+        "northrook/ansi-formatter": "@dev",
+        "northrook/core-contracts": "@dev",
+        "northrook/hasher": "@dev",
+        "northrook/inline-styles": "@dev",
+        "php": ">=8.4"
+      },
+      "require-dev": {
+        "ext-pdo": "*",
+        "northrook/php-cs": "@dev",
+        "phpstan/phpstan": "^2.2",
+        "phpunit/phpunit": "^11.0"
+      },
+      "default-branch": true,
+      "type": "library",
+      "autoload": {
+        "psr-4": {
+          "Northrook\\": "src"
+        }
+      },
+      "notification-url": "https://packagist.org/downloads/",
+      "license": [
+        "BSD-3-Clause"
+      ],
+      "authors": [
+        {
+          "name": "Martin Nielsen",
+          "email": "mn@northrook.com"
+        }
+      ],
+      "description": "Dump and debug PHP",
+      "support": {
+        "issues": "https://codeberg.org/northrook/php-debug/issues",
+        "source": "https://codeberg.org/northrook/php-debug/branch/main"
+      },
+      "time": "2026-07-16T13:10:04+00:00"
     },
     {
       "name": "phar-io/manifest",
@@ -2177,6 +2372,7 @@
   "minimum-stability": "dev",
   "stability-flags": {
     "northrook/php-cs": 20,
+    "northrook/php-debug": 20,
     "psr/cache": 0,
     "psr/container": 0,
     "psr/event-dispatcher": 0,

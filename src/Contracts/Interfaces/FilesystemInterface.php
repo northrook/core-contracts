@@ -29,7 +29,7 @@ interface FilesystemInterface
     /**
      * Returns true if the file or directory exists.
      *
-     * @param string $paths
+     * @param string $path
      */
     public function fileExists(
         string $path,

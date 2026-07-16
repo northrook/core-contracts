@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Northrook\Contracts\Tests;
 
 use JsonSerializable;
-use Northrook\Contracts\ContextSnapshot;
 use Northrook\Contracts\ErrorHandler\RuntimeError;
 use Northrook\Contracts\Exceptions\RuntimeException;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -56,6 +55,14 @@ final class RuntimeErrorTest extends TestCase
         self::assertSame(self::sampleArray(), $error->__serialize());
     }
 
+    /**
+     * @param array{
+     *     type: int,
+     *     message: string,
+     *     file: string,
+     *     line: int,
+     * } $array
+     */
     #[DataProvider('provideValidEdgeCases')]
     public function testFromAcceptsValidEdgeCases(
         array $array,
@@ -66,7 +73,12 @@ final class RuntimeErrorTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{array<string, int|string>}>
+     * @return iterable<string, array{array{
+     *     type: int,
+     *     message: string,
+     *     file: string,
+     *     line: int,
+     * }}>
      */
     public static function provideValidEdgeCases(): iterable
     {
@@ -99,6 +111,9 @@ final class RuntimeErrorTest extends TestCase
         ]];
     }
 
+    /**
+     * @param array<string, mixed> $array
+     */
     #[DataProvider('provideInvalidArrays')]
     public function testFromRejectsInvalidArray(
         array $array,
@@ -167,7 +182,7 @@ final class RuntimeErrorTest extends TestCase
             self::assertSame(LOG_LEVEL['critical'], $exception->getCode());
             self::assertNull($exception->getPrevious());
             self::assertArrayHasKey('$array', $exception->context);
-            self::assertInstanceOf(ContextSnapshot::class, $exception->context['$array']);
+            self::assertSame(['type' => 'invalid'], $exception->context['$array']);
         }
     }
 
@@ -232,6 +247,7 @@ final class RuntimeErrorTest extends TestCase
 
         $restored = \unserialize(\serialize($original));
 
+        self::assertInstanceOf(RuntimeError::class, $restored);
         self::assertNotSame($original, $restored);
         self::assertSame($original->__serialize(), $restored->__serialize());
         self::assertSame((string) $original, (string) $restored);

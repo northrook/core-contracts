@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Exceptions;
 
-use Northrook\Contracts\ContextSnapshot;
 use Throwable;
 
 use const Northrook\Logger\LOG_LEVEL;
@@ -32,14 +31,6 @@ class FilesystemException extends RuntimeException
     {
         $path = $this->context['path'] ?? null;
 
-        if (\is_string($path)) {
-            return $path;
-        }
-
-        if ($path instanceof ContextSnapshot && \is_string($path->value)) {
-            return $path->value;
-        }
-
-        return null;
+        return \is_string($path) ? $path : null;
     }
 }

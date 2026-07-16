@@ -4,3 +4,12 @@ parameters:
 	paths:
 		- src
 		- tests
+	excludePaths:
+		- tests/Support/InvalidAutodiscoverCalls.php
+		- tests/Support/InvalidValidationCalls.php
+		- tests/Support/InvalidRegexpCalls.php
+	ignoreErrors:
+		-
+			# Late static binding is intentional; subclasses with other constructors override create().
+			identifier: new.static
+			path: src/Contracts/Singleton.php

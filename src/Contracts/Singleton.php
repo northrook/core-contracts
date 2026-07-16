@@ -131,6 +131,8 @@ abstract class Singleton implements SingletonInterface
      * Default assumes a zero-arg (or defaults-only) constructor and marks the
      * instance as self-instantiated. Override to call `register()`, or to throw
      * when registration is required.
+     *
+     * Subclasses with a different constructor signature must override this method.
      */
     protected static function create(): static
     {
@@ -149,7 +151,7 @@ abstract class Singleton implements SingletonInterface
         if ($resettable) {
             unset(self::$__instance[static::class]);
         } else {
-            static::$__instance[static::class] = false;
+            self::$__instance[static::class] = false;
         }
     }
 

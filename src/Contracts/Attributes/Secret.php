@@ -12,4 +12,9 @@ use Attribute;
  * This will trigger obfuscation/omission from non-authoritative outputs.
  */
 #[Attribute]
-final class Secret {}
+final readonly class Secret
+{
+    public function __construct(
+        public mixed $value = null,
+    ) {}
+}

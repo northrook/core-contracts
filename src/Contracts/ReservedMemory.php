@@ -16,7 +16,7 @@ final class ReservedMemory
     /**
      * Configures the cushion size; does not allocate until {@see reserve()}.
      *
-     * @param positive-int $bytes Slab size in bytes `1`–`16_777_216`
+     * @param int $bytes Slab size in bytes `1`–`16_777_216`
      *
      * @throws RuntimeException when `$bytes` is outside the allowed range
      */

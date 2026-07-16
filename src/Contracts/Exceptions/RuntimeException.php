@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Exceptions;
 
-use Northrook\Contracts\ContextSnapshot;
 use Northrook\Contracts\ErrorHandler\ErrorBuffer;
+use Northrook\Contracts\Snapshot;
 use Throwable;
 
 use const Northrook\Logger\LOG_LEVEL;
@@ -16,13 +16,11 @@ use const Northrook\Logger\LOG_LEVEL;
  * Throw this directly only for internal invariant violations that indicate a bug.
  *
  * Subclasses may represent recoverable or operational failures worth catching at a boundary.
- *
- * @phpstan-type ContextArray array<string, ContextSnapshot|bool|float|int|null|string>
  */
 class RuntimeException extends \RuntimeException
 {
-    /** @var ContextArray */
-    public readonly array $context;
+    use ExceptionErrorSnapshot;
+    use ExceptionContextSnapshot;
 
     /**
      * @param null|array<array-key, mixed> $context
@@ -34,9 +32,8 @@ class RuntimeException extends \RuntimeException
         int $code = LOG_LEVEL['critical'],
     ) {
         $previousThrowable = $this->resolvePrevious($previous);
-        $this->context     = self::snapshotContext(
-            self::mergePhpErrorSnapshot($context),
-        );
+        $this->errors      = [...ErrorBuffer::shared()->all()];
+        $this->context     = Snapshot::context($context);
 
         $message ??= $previousThrowable?->getMessage() ?? 'Unspecified error';
 
@@ -48,13 +45,10 @@ class RuntimeException extends \RuntimeException
     }
 
     /**
-     * @param \Throwable $throwable
-     * @param null|array<string, mixed> $context $context
-     *
-     * @return self
+     * @param null|array<string, mixed> $context
      */
     public static function from(
-        throwable $throwable,
+        Throwable $throwable,
         null|array $context = null,
     ): self {
         return new self(
@@ -73,81 +67,5 @@ class RuntimeException extends \RuntimeException
         }
 
         return $previous;
-    }
-
-    /**
-     * @param null|array<string, mixed> $context
-     *
-     * @return null|array<string, mixed>
-     */
-    private static function mergePhpErrorSnapshot(
-        null|array $context,
-    ): null|array {
-        $errors = ErrorBuffer::shared()->all();
-
-        if ($errors === []) {
-            return $context;
-        }
-
-        return ['phpErrors' => $errors, ...( $context ?? [] )];
-    }
-
-    /**
-     * @param null|array<string, mixed> $context
-     *
-     * @return array<string, ContextSnapshot|bool|float|int|null|string>
-     */
-    private static function snapshotContext(
-        null|array $context,
-    ): array {
-        if ($context === null) {
-            return [];
-        }
-
-        return array_map(
-            static function(
-                $value,
-            ) {
-                return self::snapshotContextValue($value);
-            },
-            $context,
-        );
-    }
-
-    private static function snapshotContextValue(
-        mixed $value,
-    ): ContextSnapshot|bool|float|int|null|string {
-        if ($value instanceof ContextSnapshot) {
-            return $value;
-        }
-
-        if (
-            \is_array($value)
-            || \is_object($value)
-            || \is_resource($value)
-            || \str_starts_with(\gettype($value), 'resource')
-        ) {
-            try {
-                return ContextSnapshot::from($value);
-            } catch (Throwable) {
-                return self::unsnapshotable($value);
-            }
-        }
-
-        if (\is_bool($value) || \is_float($value) || \is_int($value) || \is_string($value) || $value === null) {
-            return $value;
-        }
-
-        return self::unsnapshotable($value);
-    }
-
-    private static function unsnapshotable(
-        mixed $value,
-    ): string {
-        if (\is_object($value)) {
-            return '[Unsnapshotable: ' . $value::class . ']';
-        }
-
-        return '[Unsnapshotable: ' . \gettype($value) . ']';
     }
 }

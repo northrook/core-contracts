@@ -62,7 +62,7 @@ interface ContainerInterface extends \Psr\Container\ContainerInterface
      * @param  class-string<T> $id
      * @param  null|string     $reference binding key, or `null` for `primary`
      *
-     * @phpstan-assert-if-true T $this->get($id, $reference)
+     * @phpstan-assert-if-true T $this->get()
      */
     public function initialized(
         string $id,

@@ -9,8 +9,8 @@ use Northrook\Contracts\DataObject;
 final readonly class StackFrame extends DataObject
 {
     /**
-     * @param array<int, string>   $code
-     * @param array<string, mixed> $args
+     * @param array<int, string>       $code
+     * @param array<int|string, mixed> $args
      */
     public function __construct(
         public null|string $file,
@@ -31,7 +31,7 @@ final readonly class StackFrame extends DataObject
      *     function?: string,
      *     class?: class-string,
      *     type?: string,
-     *     args?: array<string, mixed>,
+     *     args?: array<int|string, mixed>,
      * } $trace
      */
     public static function from(

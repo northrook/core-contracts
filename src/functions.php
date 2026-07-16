@@ -403,8 +403,8 @@ namespace Northrook\Contracts\Internal {
      *
      * @internal
      *
-     * @param string           $string     Candidate value to inspect
-     * @param non-empty-string $characters Allowed code units
+     * @param string $string     Candidate value to inspect
+     * @param string $characters Allowed code units (must be non-empty)
      *
      * @return bool `true` when `$string` is a non-empty sequence of valid bytes, otherwise `false`
      *
@@ -453,12 +453,12 @@ namespace Northrook\Contracts {
      * - Path-style keys: `CHARSET_ALPHA` with `-_/` and `.`
      * - Container keys: `CHARSET_ALNUM` with `-_\/` and `.`
      *
-     * @param int|string    $key       Candidate key
-     * @param positive-int  $min       Minimum inclusive byte length (default `1`).
-     * @param positive-int  $max       Maximum inclusive byte length (default `MAX_PATH_LENGTH`).
-     * @param string        $separator Single-character segment delimiter. An empty string
+     * @param int|string $key       Candidate key
+     * @param int        $min       Minimum inclusive byte length (default `1`).
+     * @param int        $max       Maximum inclusive byte length (default `MAX_PATH_LENGTH`).
+     * @param string     $separator Single-character segment delimiter. An empty string
      *                                    disables segment rules and treats the key as a single token.
-     * @param string        $charset   Allowed bytes for segment bodies (and the whole key when
+     * @param string     $charset   Allowed bytes for segment bodies (and the whole key when
      *                                    no separator is configured).
      *
      * @return bool `true` when `$key` satisfies every rule above; `false` otherwise.

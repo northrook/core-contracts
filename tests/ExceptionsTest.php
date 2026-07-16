@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts\ContextSnapshot;
 use Northrook\Contracts\ErrorHandler\ErrorBuffer;
 use Northrook\Contracts\ErrorHandler\RuntimeError;
 use Northrook\Contracts\Exceptions\CurlException;
@@ -15,6 +14,7 @@ use Northrook\Contracts\Exceptions\RecursionException;
 use Northrook\Contracts\Exceptions\RegexpException;
 use Northrook\Contracts\Exceptions\RuntimeException;
 use Northrook\Contracts\Exceptions\ServiceNotFoundException;
+use Northrook\Contracts\Tests\Support\InvalidRegexpCalls;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use RuntimeException as PhpRuntimeException;
@@ -37,12 +37,34 @@ final class ExceptionsTest extends TestCase
         ErrorBuffer::shared()->reset();
     }
 
+    /**
+     * @param class-string $class
+     */
     #[DataProvider('provideSubclassExtendsContractsRuntimeException')]
     public function testSubclassExtendsContractsRuntimeException(
         string $class,
     ): void {
         self::assertTrue(\is_subclass_of($class, RuntimeException::class));
-        self::assertInstanceOf(RuntimeException::class, new $class(...self::subclassConstructorArgs($class)));
+
+        $exception = match ($class) {
+            CurlException::class            => new CurlException('https://example.test'),
+            RegexpException::class          => new RegexpException('pattern failed'),
+            ErrorException::class => new ErrorException(
+                error: RuntimeError::from([
+                    'type'    => E_USER_NOTICE,
+                    'message' => 'fixture',
+                    'file'    => '/tmp/fixture.php',
+                    'line'    => 1,
+                ]),
+            ),
+            FilesystemException::class      => new FilesystemException('filesystem failure'),
+            FileNotFoundException::class    => new FileNotFoundException(),
+            ServiceNotFoundException::class => new ServiceNotFoundException('App\\Service'),
+            RecursionException::class       => new RecursionException(),
+            default                         => self::fail("Unhandled exception class: {$class}"),
+        };
+
+        self::assertInstanceOf(RuntimeException::class, $exception);
     }
 
     /**
@@ -87,10 +109,7 @@ final class ExceptionsTest extends TestCase
 
     public function testRegexpExceptionCheckThrowsOnPregFailure(): void
     {
-        @\preg_match( /** @lang mock-to-silence-unclosed-error */
-            '/(?P<unclosed/',
-            'subject',
-        );
+        InvalidRegexpCalls::unclosedNamedGroup();
 
         $this->expectException(RegexpException::class);
 
@@ -137,8 +156,7 @@ final class ExceptionsTest extends TestCase
         self::assertStringContainsString('Did you mean one of these:', $exception->getMessage());
         self::assertSame('App\\Service', $exception->context['id']);
         self::assertSame('default', $exception->context['reference']);
-        self::assertInstanceOf(ContextSnapshot::class, $exception->context['alternatives']);
-        self::assertSame(['App\\Other', 'App\\Backup'], $exception->context['alternatives']->value);
+        self::assertSame(['App\\Other', 'App\\Backup'], $exception->context['alternatives']);
     }
 
     public function testRecursionExceptionUsesDefaultMessageAndCriticalSeverity(): void
@@ -149,7 +167,7 @@ final class ExceptionsTest extends TestCase
         self::assertSame(LOG_LEVEL['critical'], $exception->getCode());
     }
 
-    public function testRuntimeExceptionSnapshotsContextValues(): void
+    public function testRuntimeExceptionFreezesContextValues(): void
     {
         $exception = new RuntimeException(
             message: 'Invalid payload.',
@@ -157,11 +175,33 @@ final class ExceptionsTest extends TestCase
             previous: false,
         );
 
-        self::assertInstanceOf(ContextSnapshot::class, $exception->context['payload']);
-        self::assertSame(['id' => 1], $exception->context['payload']->value);
+        self::assertSame(['id' => 1], $exception->context['payload']);
     }
 
-    public function testRuntimeExceptionSnapshotsBufferIntoContext(): void
+    public function testRuntimeExceptionConstructsWhenContextCannotBeSerialized(): void
+    {
+        $cloneable  = new SnapshotUnserializableCloneable();
+        $uncopyable = new SnapshotUncopyable();
+
+        $exception = new RuntimeException(
+            message: 'wrapper',
+            context: [
+                'cloneable'  => $cloneable,
+                'uncopyable' => $uncopyable,
+            ],
+            previous: false,
+        );
+
+        self::assertSame('wrapper', $exception->getMessage());
+        self::assertInstanceOf(SnapshotUnserializableCloneable::class, $exception->context['cloneable']);
+        self::assertNotSame($cloneable, $exception->context['cloneable']);
+        self::assertSame(
+            '[Uncloneable: ' . SnapshotUncopyable::class . ']',
+            $exception->context['uncopyable'],
+        );
+    }
+
+    public function testRuntimeExceptionFreezesBufferOntoErrorsProperty(): void
     {
         ErrorBuffer::shared()->recordFrom(E_USER_NOTICE, 'first notice', '/tmp/a.php', 1);
         ErrorBuffer::shared()->recordFrom(E_USER_WARNING, 'second warning', '/tmp/b.php', 2);
@@ -169,19 +209,17 @@ final class ExceptionsTest extends TestCase
         $exception = new RuntimeException(message: 'wrapper');
 
         self::assertNull($exception->getPrevious());
-        self::assertArrayHasKey('phpErrors', $exception->context);
-        self::assertInstanceOf(ContextSnapshot::class, $exception->context['phpErrors']);
-
-        $errors = $exception->context['phpErrors']->value;
-        self::assertCount(2, $errors);
-        self::assertSame('first notice', $errors[0]->message);
-        self::assertSame('second warning', $errors[1]->message);
+        self::assertArrayNotHasKey('phpErrors', $exception->context);
+        self::assertCount(2, $exception->errors);
+        self::assertSame('first notice', $exception->errors[0]->message);
+        self::assertSame('second warning', $exception->errors[1]->message);
     }
 
-    public function testRuntimeExceptionDoesNotSnapshotEmptyBuffer(): void
+    public function testRuntimeExceptionErrorsIsEmptyWhenBufferIsEmpty(): void
     {
         $exception = new RuntimeException(message: 'wrapper');
 
+        self::assertSame([], $exception->errors);
         self::assertArrayNotHasKey('phpErrors', $exception->context);
     }
 
@@ -267,33 +305,5 @@ final class ExceptionsTest extends TestCase
             self::assertStringContainsString((string) MAX_PATH_LENGTH, $exception->getMessage());
             self::assertSame(LOG_LEVEL['error'], $exception->getCode());
         }
-    }
-
-    /**
-     * @param class-string $class
-     *
-     * @return list<mixed>
-     */
-    private static function subclassConstructorArgs(
-        string $class,
-    ): array {
-        return match ($class) {
-            CurlException::class            => ['https://example.test'],
-            RegexpException::class          => ['pattern failed'],
-            ErrorException::class => [
-                null,
-                RuntimeError::from([
-                    'type'    => E_USER_NOTICE,
-                    'message' => 'fixture',
-                    'file'    => '/tmp/fixture.php',
-                    'line'    => 1,
-                ]),
-            ],
-            FilesystemException::class      => ['filesystem failure'],
-            FileNotFoundException::class    => [],
-            ServiceNotFoundException::class => ['App\\Service'],
-            RecursionException::class       => [],
-            default                         => [],
-        };
     }
 }
