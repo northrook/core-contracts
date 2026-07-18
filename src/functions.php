@@ -482,45 +482,39 @@ namespace Northrook\Contracts {
      * Does not create directories or files; returns a path string only.
      *
      * - Root is always {@see \sys_get_temp_dir()}
-     * - `$subDirectory` is optional and may contain nested segments
-     * - `$filename` defaults to `tmp` when `null` or empty; trailing `!` characters are stripped
-     * - `$filename` is appended with `!hash` using {@see get_hash()}
+     * - `$relativePath` defaults to `tmp` when `null` or empty; trailing `!` characters are stripped
+     * - Nested segments are allowed (e.g. `namespace/cache`)
      * - Separators are normalized to {@see \DIR_SEP}; empty and `.` segments are dropped
+     * - A `!hash` suffix is appended for uniqueness, using {@see get_hash()}
      *
-     * @param null|string $filename     Basename or relative file path under the temp root
-     * @param null|string $subDirectory Optional subdirectory under the temp root
+     * @param null|string $relativePath Basename or relative path under the temp root
      *
      * @return non-empty-string Absolute (or drive-rooted) path ending in `!` + 16 Crockford chars
      *
      * @throws RuntimeException if the path attempts upwards traversal
      */
     function get_temp_path(
-        null|string $filename = null,
-        null|string $subDirectory = null,
+        null|string $relativePath = null,
     ): string {
-        $components = \implode(\DIR_SEP, [
-            \sys_get_temp_dir(),
-            $subDirectory ?? '',
-            empty($filename) ? 'tmp' : \rtrim($filename, '!'),
-        ]);
+        $relativePath = $relativePath === null || $relativePath === '' ? 'tmp' : \rtrim($relativePath, '!');
+        $absolutePath = \sys_get_temp_dir() . \DIR_SEP . $relativePath;
 
-        $resolve = \strtr($components, '\\', \DIR_SEP);
-
-        $leading = \str_starts_with($resolve, \DIR_SEP) ? \DIR_SEP : '';
+        $normalizedPath = \strtr($absolutePath, '\\', \DIR_SEP);
+        $rootSeparator  = \str_starts_with($normalizedPath, \DIR_SEP) ? \DIR_SEP : '';
 
         $fragments = \array_filter(
-            \explode(\DIR_SEP, $resolve),
+            \explode(\DIR_SEP, $normalizedPath),
             static fn(string $f): bool => $f !== '' && $f !== '.',
         );
 
         if (\in_array('..', $fragments, true)) {
             throw new RuntimeException(
-                message: "Invalid path: `{$resolve}`. Cannot traverse upwards.",
+                message: "Invalid path: `{$normalizedPath}`. Cannot traverse upwards.",
                 context: \func_get_args(),
             );
         }
 
-        return $leading . \implode(\DIR_SEP, $fragments) . '!' . get_hash();
+        return $rootSeparator . \implode(\DIR_SEP, $fragments) . '!' . get_hash();
     }
 
     /**

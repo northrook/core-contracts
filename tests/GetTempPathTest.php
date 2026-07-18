@@ -14,35 +14,36 @@ final class GetTempPathTest extends TestCase
 {
     public function testDefaultPath(): void
     {
-        $path = get_temp_path();
-
-        self::assertTempPath($path, 'tmp');
+        self::assertTempPath(get_temp_path(), 'tmp');
     }
 
-    public function testFilename(): void
+    public function testRelativePath(): void
     {
         self::assertTempPath(get_temp_path('cache'), 'cache');
     }
 
-    public function testEmptyFilenameDefaultsToTmp(): void
+    public function testEmptyRelativePathDefaultsToTmp(): void
     {
         self::assertTempPath(get_temp_path(''), 'tmp');
     }
 
-    public function testStripsTrailingBangFromFilename(): void
+    public function testStripsTrailingBang(): void
     {
         self::assertTempPath(get_temp_path('cache!'), 'cache');
     }
 
-    public function testSubDirectory(): void
+    public function testNestedRelativePath(): void
     {
-        self::assertTempPath(get_temp_path('cache', 'northrook'), 'northrook' . \DIR_SEP . 'cache');
+        self::assertTempPath(
+            get_temp_path('northrook/cache'),
+            'northrook' . \DIR_SEP . 'cache',
+        );
     }
 
     public function testCollapsesDotAndEmptySegments(): void
     {
         self::assertTempPath(
-            get_temp_path('x', 'a/./b//c'),
+            get_temp_path('a/./b//c/x'),
             'a' . \DIR_SEP . 'b' . \DIR_SEP . 'c' . \DIR_SEP . 'x',
         );
     }
@@ -50,7 +51,7 @@ final class GetTempPathTest extends TestCase
     public function testNormalizesBackslashes(): void
     {
         self::assertTempPath(
-            get_temp_path('x', 'a\\b'),
+            get_temp_path('a\\b\\x'),
             'a' . \DIR_SEP . 'b' . \DIR_SEP . 'x',
         );
     }
@@ -61,24 +62,23 @@ final class GetTempPathTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{null|string, null|string}>
+     * @return iterable<string, array{string}>
      */
     public static function provideTraversalCases(): iterable
     {
-        yield 'parent in subdirectory' => ['x', '../evil'];
-        yield 'parent in filename' => ['../evil', null];
-        yield 'nested parent' => ['x', 'a/../../b'];
+        yield 'parent segment' => ['../evil'];
+        yield 'nested parent' => ['a/../../b'];
+        yield 'trailing parent' => ['a/..'];
     }
 
     #[DataProvider('provideTraversalCases')]
     public function testRejectsUpwardTraversal(
-        null|string $filename,
-        null|string $subDirectory,
+        string $relativePath,
     ): void {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Cannot traverse upwards.');
 
-        get_temp_path($filename, $subDirectory);
+        get_temp_path($relativePath);
     }
 
     private static function assertTempPath(
