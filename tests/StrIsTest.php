@@ -82,4 +82,25 @@ final class StrIsTest extends ValidationTestCase
         yield 'empty' => ['', false];
         yield 'contains letter' => ['12a', false];
     }
+
+    #[DataProvider('provideXdigitCases')]
+    public function testStrIsXdigit(
+        string $string,
+        bool $expected,
+    ): void {
+        self::assertSame($expected, self::isXdigit($string));
+    }
+
+    /**
+     * @return iterable<string, array{string, bool}>
+     */
+    public static function provideXdigitCases(): iterable
+    {
+        yield 'valid lowercase' => ['deadbeef', true];
+        yield 'valid uppercase' => ['DEADBEEF', true];
+        yield 'valid mixed' => ['Cafe1234', true];
+        yield 'empty' => ['', false];
+        yield 'contains non-hex letter' => ['12g', false];
+        yield 'contains punctuation' => ['cafe-1234', false];
+    }
 }

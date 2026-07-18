@@ -559,12 +559,12 @@
       "source": {
         "type": "git",
         "url": "https://github.com/northrook/php-cs.git",
-        "reference": "5d1802d2b2fa7867d2ba28c0cfecd534dc4a3a9f"
+        "reference": "1559e56361f8e431ae9b412bd627f41acb6ac4b5"
       },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/northrook/php-cs/zipball/5d1802d2b2fa7867d2ba28c0cfecd534dc4a3a9f",
-        "reference": "5d1802d2b2fa7867d2ba28c0cfecd534dc4a3a9f",
+        "url": "https://api.github.com/repos/northrook/php-cs/zipball/1559e56361f8e431ae9b412bd627f41acb6ac4b5",
+        "reference": "1559e56361f8e431ae9b412bd627f41acb6ac4b5",
         "shasum": ""
       },
       "require": {
@@ -603,7 +603,7 @@
         "issues": "https://github.com/northrook/php-cs/issues",
         "source": "https://github.com/northrook/php-cs/tree/main"
       },
-      "time": "2026-07-15T21:36:30+00:00"
+      "time": "2026-07-17T09:44:35+00:00"
     },
     {
       "name": "northrook/php-debug",

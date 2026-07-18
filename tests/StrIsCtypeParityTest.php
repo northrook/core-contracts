@@ -12,7 +12,7 @@ use PHPUnit\Framework\Attributes\RequiresPhpExtension;
  * Validates byte-level `str_is_*` helpers against `ext-ctype` in the C locale.
  *
  * `str_is_*` rejects empty strings (except `str_is_ascii`); `ctype_*` does the same
- * for alpha, alnum, and digit. Parity is asserted on a corpus that includes every
+ * for alpha, alnum, digit, and xdigit. Parity is asserted on a corpus that includes every
  * 7-bit code unit and representative UTF-8 input.
  */
 #[RequiresPhpExtension('ctype')]
@@ -60,6 +60,17 @@ final class StrIsCtypeParityTest extends ValidationTestCase
         self::assertSame(
             \ctype_digit($string),
             self::isDigit($string),
+            $string,
+        );
+    }
+
+    #[DataProvider('provideCtypeParityCases')]
+    public function testXdigitMatchesCtypeXdigit(
+        string $string,
+    ): void {
+        self::assertSame(
+            \ctype_xdigit($string),
+            self::isXdigit($string),
             $string,
         );
     }

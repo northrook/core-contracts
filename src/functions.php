@@ -433,8 +433,95 @@ namespace Northrook\Contracts {
     use Northrook\Contracts\Attributes\Secret;
     use Northrook\Contracts\Exceptions\FilesystemException;
     use Northrook\Contracts\Exceptions\RuntimeException;
+    use staabm\SideEffectsDetector\SideEffect;
 
     use function Northrook\Contracts\Internal\_match_charset;
+
+    /**
+     * Generates a 16-character non-cryptographic Crockford Base32 string.
+     *
+     * Uses `mt_rand` as its entropy source.
+     *
+     * Suitable for temp file names and other low-stakes identifiers.
+     *
+     * Not appropriate for security-sensitive contexts.
+     *
+     * @return non-empty-string 16 characters from {@see \CROCKFORD_BASE32}
+     */
+    function get_hash(): string
+    {
+        $output = \array_fill(0, 16, '');
+        $bits   = 0;
+        $val    = 0;
+
+        for ($i = 0; $i < 16; $i++) {
+            if ($bits < 5) {
+                $val  = \mt_rand(0, 0xFFFF) | ( \mt_rand(0, 0xFFFF) << 16 );
+                $bits = 32;
+            }
+
+            $output[$i] = \CROCKFORD_BASE32[( $val >> ( $bits - 5 ) ) & 31];
+            $bits       -= 5;
+        }
+
+        $hash = \implode('', $output);
+
+        if (strlen($hash) !== 16) {
+            throw new RuntimeException(
+                message: 'Unexpected hash length: ' . \strlen($hash) . '. Expected 16.',
+                context: \func_get_args(),
+            );
+        }
+
+        return $hash;
+    }
+
+    /**
+     * Builds a unique path under the system temporary directory.
+     *
+     * Does not create directories or files; returns a path string only.
+     *
+     * - Root is always {@see \sys_get_temp_dir()}
+     * - `$subDirectory` is optional and may contain nested segments
+     * - `$filename` defaults to `tmp` when `null` or empty; trailing `!` characters are stripped
+     * - `$filename` is appended with `!hash` using {@see get_hash()}
+     * - Separators are normalized to {@see \DIR_SEP}; empty and `.` segments are dropped
+     *
+     * @param null|string $filename     Basename or relative file path under the temp root
+     * @param null|string $subDirectory Optional subdirectory under the temp root
+     *
+     * @return non-empty-string Absolute (or drive-rooted) path ending in `!` + 16 Crockford chars
+     *
+     * @throws RuntimeException if the path attempts upwards traversal
+     */
+    function get_temp_path(
+        null|string $filename = null,
+        null|string $subDirectory = null,
+    ): string {
+        $components = \implode(\DIR_SEP, [
+            \sys_get_temp_dir(),
+            $subDirectory ?? '',
+            empty($filename) ? 'tmp' : \rtrim($filename, '!'),
+        ]);
+
+        $resolve = \strtr($components, '\\', \DIR_SEP);
+
+        $leading = \str_starts_with($resolve, \DIR_SEP) ? \DIR_SEP : '';
+
+        $fragments = \array_filter(
+            \explode(\DIR_SEP, $resolve),
+            static fn(string $f): bool => $f !== '' && $f !== '.',
+        );
+
+        if (\in_array('..', $fragments, true)) {
+            throw new RuntimeException(
+                message: "Invalid path: `{$resolve}`. Cannot traverse upwards.",
+                context: \func_get_args(),
+            );
+        }
+
+        return $leading . \implode(\DIR_SEP, $fragments) . '!' . get_hash();
+    }
 
     /**
      * Validates structural string keys used across the contract layer.
@@ -676,6 +763,28 @@ namespace Northrook\Contracts {
         return _match_charset(
             $string,
             \CHARSET_DIGIT,
+        );
+    }
+
+    /**
+     * Tests whether a string is a non-empty sequence of ASCII hexadecimal digits.
+     *
+     * - Allowed bytes are exactly those in {@see \CHARSET_XDIGIT} (`0-9`, `a-f`, `A-F`).
+     * - Other letters, punctuation, and non-ASCII bytes are rejected.
+     * - An empty string is rejected.
+     *
+     * @param string $string Candidate value to inspect.
+     *
+     * @return bool `true` when `$string` is non-empty and every byte is a hex digit
+     *
+     * @phpstan-assert-if-true non-empty-string $string
+     */
+    function str_is_xdigit(
+        string $string,
+    ): bool {
+        return _match_charset(
+            $string,
+            \CHARSET_XDIGIT,
         );
     }
 

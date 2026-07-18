@@ -13,6 +13,7 @@ use function Northrook\Contracts\str_is_alnum;
 use function Northrook\Contracts\str_is_alpha;
 use function Northrook\Contracts\str_is_ascii;
 use function Northrook\Contracts\str_is_digit;
+use function Northrook\Contracts\str_is_xdigit;
 
 /**
  * Wrappers keep PHPUnit cases readable while avoiding literal-type narrowing in static analysis.
@@ -64,5 +65,11 @@ abstract class ValidationTestCase extends TestCase
         string $string,
     ): bool {
         return str_is_digit($string);
+    }
+
+    protected static function isXdigit(
+        string $string,
+    ): bool {
+        return str_is_xdigit($string);
     }
 }

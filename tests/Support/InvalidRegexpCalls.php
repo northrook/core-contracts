@@ -12,7 +12,9 @@ final class InvalidRegexpCalls
     public static function unclosedNamedGroup(): void
     {
         @\preg_match(
-                /** @lang none */
-                '/(?P<unclosed/', 'subject');
+            /** @lang none */
+            '/(?P<unclosed/',
+            'subject',
+        );
     }
 }
