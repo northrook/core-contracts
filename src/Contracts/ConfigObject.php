@@ -37,6 +37,7 @@ abstract readonly class ConfigObject extends DataObject
         array $config,
     ): static {
         try {
+            // @phpstan-ignore-next-line - Unsafe usage of new static() is intentional
             return new static(...$config);
         } catch (\Throwable $exception) {
             throw new RuntimeException(

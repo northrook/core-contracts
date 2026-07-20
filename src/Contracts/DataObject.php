@@ -9,7 +9,7 @@ use Northrook\Contracts\Exceptions\RuntimeException;
 
 abstract readonly class DataObject implements \JsonSerializable, \Stringable
 {
-    protected function __construct(...$args)
+    protected function __construct()
     {
         // TODO: Validation when settled on the contract
     }
