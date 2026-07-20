@@ -31,6 +31,9 @@ final class ContractsPathsTest extends TestCase
         $cache = \sys_get_temp_dir();
 
         self::assertNotFalse($root);
+        if ($cache === '') {
+            $this->fail('Expected cache directory to exist.');
+        }
 
         Contracts::register(
             root: $root,

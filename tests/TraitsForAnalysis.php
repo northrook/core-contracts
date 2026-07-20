@@ -6,7 +6,13 @@ namespace Northrook\Contracts;
 
 use Northrook\Contracts\Container\Autowire\{Logger, Pathfinder, Profiler, Settings};
 use Northrook\Contracts\Container\Parameter;
-use Northrook\Contracts\Interfaces\{PathfinderInterface, ProfilerInterface, SettingsInterface};
+use Northrook\Contracts\Interfaces\{
+    PathfinderInterface,
+    PathInterface,
+    ProfilerInterface,
+    SettingsInterface,
+    UrlInterface
+};
 use Northrook\Contracts\Profiler\ProfilerEvent;
 use Stringable;
 
@@ -35,19 +41,15 @@ final class TraitsForAnalysis
 final class TraitsForAnalysisPathfinder implements PathfinderInterface
 {
     public function getPath(
-        string|Stringable $path,
-        null|string|Stringable $relativeTo = null,
-        bool $nullable = false,
-    ): null|string {
-        return $nullable ? null : '/';
+        string|Stringable $reference,
+    ): null|PathInterface {
+        return null;
     }
 
     public function getUrl(
-        string|Stringable $path,
-        null|string|Stringable $relativeTo = null,
-        bool $nullable = false,
-    ): null|string {
-        return $nullable ? null : '/';
+        string|Stringable $reference,
+    ): null|UrlInterface {
+        return null;
     }
 }
 

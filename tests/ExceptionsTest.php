@@ -10,6 +10,7 @@ use Northrook\Contracts\Exceptions\CurlException;
 use Northrook\Contracts\Exceptions\ErrorException;
 use Northrook\Contracts\Exceptions\FileNotFoundException;
 use Northrook\Contracts\Exceptions\FilesystemException;
+use Northrook\Contracts\Exceptions\InvalidArgumentException;
 use Northrook\Contracts\Exceptions\RecursionException;
 use Northrook\Contracts\Exceptions\RegexpException;
 use Northrook\Contracts\Exceptions\RuntimeException;
@@ -48,6 +49,7 @@ final class ExceptionsTest extends TestCase
 
         $exception = match ($class) {
             CurlException::class            => new CurlException('https://example.test'),
+            InvalidArgumentException::class => new InvalidArgumentException(name: 'reference'),
             RegexpException::class          => new RegexpException('pattern failed'),
             ErrorException::class => new ErrorException(
                 error: RuntimeError::from([
@@ -73,6 +75,7 @@ final class ExceptionsTest extends TestCase
     public static function provideSubclassExtendsContractsRuntimeException(): iterable
     {
         yield CurlException::class => [CurlException::class];
+        yield InvalidArgumentException::class => [InvalidArgumentException::class];
         yield RegexpException::class => [RegexpException::class];
         yield ErrorException::class => [ErrorException::class];
         yield FilesystemException::class => [FilesystemException::class];
@@ -96,6 +99,47 @@ final class ExceptionsTest extends TestCase
         $previous  = new PhpRuntimeException('upstream');
         $exception = new CurlException('https://example.test', previous: $previous);
 
+        self::assertSame($previous, $exception->getPrevious());
+    }
+
+    public function testInvalidArgumentExceptionBuildsDefaultMessageFromNameAndTypes(): void
+    {
+        $exception = new InvalidArgumentException(
+            name: 'reference',
+            expected: 'https://example.test',
+            received: ['path' => '/tmp'],
+        );
+
+        self::assertSame(
+            "Invalid argument 'reference' expected to be of type 'string', received 'array'",
+            $exception->getMessage(),
+        );
+        self::assertSame('reference', $exception->context['name']);
+        self::assertSame('https://example.test', $exception->context['expected']);
+        self::assertSame(['path' => '/tmp'], $exception->context['received']);
+    }
+
+    public function testInvalidArgumentExceptionUsesGenericMessageWithoutDetails(): void
+    {
+        $exception = new InvalidArgumentException();
+
+        self::assertSame('Invalid argument', $exception->getMessage());
+        self::assertNull($exception->context['name']);
+        self::assertNull($exception->context['expected']);
+        self::assertNull($exception->context['received']);
+    }
+
+    public function testInvalidArgumentExceptionPreservesExplicitMessageAndPrevious(): void
+    {
+        $previous  = new PhpRuntimeException('upstream');
+        $exception = new InvalidArgumentException(
+            name: 'reference',
+            message: 'Call getUrl() for public URLs.',
+            previous: $previous,
+        );
+
+        self::assertSame('Call getUrl() for public URLs.', $exception->getMessage());
+        self::assertSame('reference', $exception->context['name']);
         self::assertSame($previous, $exception->getPrevious());
     }
 

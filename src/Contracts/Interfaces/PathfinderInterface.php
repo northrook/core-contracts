@@ -12,28 +12,28 @@ use Stringable;
 interface PathfinderInterface
 {
     /**
-     * @param string|Stringable      $path
-     * @param null|string|Stringable $relativeTo
-     * @param bool                   $nullable
+     * Resolves `$reference` to a filesystem {@see PathInterface}.
      *
-     * @return ($nullable is true ? null|string : non-empty-string)
+     * Relative references without `{parameter.key}` braces are resolved from the project root.
+     *
+     * @param string|Stringable $reference `{key}`, `{key}/suffix`, or path
+     *
+     * @throws \Northrook\Contracts\Exceptions\InvalidArgumentException when {@see static::getUrl()} should have been called
      */
     public function getPath(
-        string|Stringable $path,
-        null|string|Stringable $relativeTo = null,
-        bool $nullable = false,
-    ): null|string;
+        string|Stringable $reference,
+    ): null|PathInterface;
 
     /**
-     * @param string|Stringable      $path
-     * @param null|string|Stringable $relativeTo
-     * @param bool                   $nullable
+     * Resolves `$reference` to a public {@see UrlInterface}.
      *
-     * @return ($nullable is true ? null|string : non-empty-string)
+     * Relative references without `{parameter.key}` braces are resolved from `url.base`.
+     *
+     * @param string|Stringable $reference `{key}`, `{key}/suffix`, or URL/path
+     *
+     * @throws \Northrook\Contracts\Exceptions\InvalidArgumentException when {@see static::getPath()} should have been called
      */
     public function getUrl(
-        string|Stringable $path,
-        null|string|Stringable $relativeTo = null,
-        bool $nullable = false,
-    ): null|string;
+        string|Stringable $reference,
+    ): null|UrlInterface;
 }

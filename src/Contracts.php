@@ -101,9 +101,19 @@ final class Contracts extends Singleton
     ): static {
         $rootDirectory = self::resolveRootDirectory($root);
 
+        if ($rootDirectory === '') {
+            throw new RuntimeException('Root directory cannot be empty');
+        }
+
+        $cacheDirectory = self::resolveCacheDirectory($rootDirectory, $cache);
+
+        if ($cacheDirectory === '') {
+            throw new RuntimeException('Cache directory cannot be empty');
+        }
+
         return new self(
             rootDirectory: $rootDirectory,
-            cacheDirectory: self::resolveCacheDirectory($rootDirectory, $cache),
+            cacheDirectory: $cacheDirectory,
             logger: $logger ?? new NullLogger(),
             timezone: $timezone ?? new \DateTimeZone('UTC'),
         );
@@ -147,7 +157,7 @@ final class Contracts extends Singleton
 
         $cwd = \getcwd();
 
-        if (\is_string($cwd) && $cwd !== '') {
+        if (\is_string($cwd) && ! empty($cwd)) {
             $dir = $cwd;
 
             while (true) {

@@ -683,10 +683,7 @@ namespace Northrook\Contracts\Internal {
                     return null;
                 }
 
-                if (
-                    \strlen($portPart) > 1
-                    && \strspn($portPart, \CHARSET_DIGIT, 1) !== ( \strlen($portPart) - 1 )
-                ) {
+                if (\strlen($portPart) > 1 && \strspn($portPart, \CHARSET_DIGIT, 1) !== ( \strlen($portPart) - 1 )) {
                     return null;
                 }
             }
@@ -822,17 +819,18 @@ namespace Northrook\Contracts\Internal {
 
         $segments = \explode('/', $path);
 
-        if ($segments[0] === ''
-            || ! _uri_match_component($segments[0], \CHARSET_URI_SEGMENT_NC)
-        ) {
+        if ($segments[0] === '' || ! _uri_match_component($segments[0], \CHARSET_URI_SEGMENT_NC)) {
             return false;
         }
 
         $rest = \array_slice($segments, 1);
 
-        return $rest === [] || array_all(
-            $rest,
-            static fn($segment) => _uri_match_component($segment, \CHARSET_URI_PCHAR),
+        return (
+            $rest === []
+            || array_all(
+                $rest,
+                static fn($segment) => _uri_match_component($segment, \CHARSET_URI_PCHAR),
+            )
         );
     }
 }
