@@ -1,4 +1,4 @@
-<?php /** @noinspection ALL */
+<?php
 
 declare(strict_types=1);
 
@@ -65,11 +65,7 @@ namespace {
      */
     function is_pest(): bool
     {
-        return (
-            \defined('PEST')
-            || \class_exists(\Pest\Tester::class, false)
-            || \class_exists(\Pest\TestSuite::class, false)
-        );
+        return \defined('PEST') || \class_exists('\Pest\Tester', false) || \class_exists('\Pest\TestSuite', false);
     }
 
     /**
@@ -77,7 +73,7 @@ namespace {
      */
     function is_codeception(): bool
     {
-        return \defined('CODECEPTION_VERSION') || \class_exists(\Codeception\Codecept::class, false);
+        return \defined('CODECEPTION_VERSION') || \class_exists('\Codeception\Codecept', false);
     }
 
     /**
@@ -174,7 +170,11 @@ namespace {
         }
 
         if (\function_exists('xdebug_info')) {
-            /** @var mixed $modes */
+            /**
+             * @var mixed $modes
+             *
+             * @noinspection PhpVoidFunctionResultUsedInspection
+             */
             $modes = @\xdebug_info('mode');
 
             if (\is_array($modes)) {
@@ -204,7 +204,7 @@ namespace {
      */
     function is_tracy_loaded(): bool
     {
-        return \class_exists(\Tracy\Debugger::class, false);
+        return \class_exists('\Tracy\Debugger', false);
     }
 
     /**
@@ -316,7 +316,7 @@ namespace {
      */
     function is_php_debug_build(): bool
     {
-        return \defined('PHP_DEBUG') && (bool) \PHP_DEBUG;
+        return \defined('PHP_DEBUG') && \PHP_DEBUG;
     }
 
     /**
@@ -430,10 +430,8 @@ namespace Northrook\Contracts\Internal {
 }
 
 namespace Northrook\Contracts {
-    use Northrook\Contracts\Attributes\Secret;
     use Northrook\Contracts\Exceptions\FilesystemException;
     use Northrook\Contracts\Exceptions\RuntimeException;
-    use staabm\SideEffectsDetector\SideEffect;
 
     use function Northrook\Contracts\Internal\_match_charset;
 
@@ -474,6 +472,46 @@ namespace Northrook\Contracts {
         }
 
         return $hash;
+    }
+
+    /**
+     * Canonical xxHash32 checksum of a value as Crockford Base32.
+     *
+     * Returns an 8-character string; the standard short checksum shape for
+     * cache keys, path namespaces, and other non-cryptographic fingerprints.
+     *
+     * Compatible with `Northrook\Hash::checksum()` from `northrook/hasher`.
+     *
+     * Not appropriate for security-sensitive contexts.
+     *
+     * @return non-empty-string 8 characters from {@see \CROCKFORD_BASE32}
+     */
+    function get_checksum(
+        string $value,
+    ): string {
+        $output = \array_fill(0, 8, '');
+        $packed = \unpack('N', \hash('xxh32', $value, true));
+        $digest = $packed[1] ?? throw new RuntimeException(
+            message: 'Failed to unpack xxh32 digest',
+            context: ['value' => $value],
+        );
+
+        // LSB-first into the rightmost characters (same as Hash::value / checksum)
+        for ($i = 7; $i >= 0; $i--) {
+            $output[$i] = \CROCKFORD_BASE32[$digest & 31];
+            $digest     >>= 5;
+        }
+
+        $checksum = \implode('', $output);
+
+        if (strlen($checksum) !== 8) {
+            throw new RuntimeException(
+                message: 'Unexpected checksum length: ' . \strlen($checksum) . '. Expected 8.',
+                context: \func_get_args(),
+            );
+        }
+
+        return $checksum;
     }
 
     /**

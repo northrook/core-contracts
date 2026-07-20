@@ -10,6 +10,8 @@ use Northrook\Contracts\Singleton;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
+use function Northrook\Contracts\get_checksum;
+
 final class SingletonTest extends TestCase
 {
     protected function setUp(): void
@@ -41,12 +43,17 @@ final class SingletonTest extends TestCase
     public function testContractsRegisterThenGet(): void
     {
         $logger     = new NullLogger();
-        $registered = Contracts::register($logger);
+        $registered = Contracts::register(logger: $logger);
 
         self::assertTrue(Contracts::isRegistered());
         self::assertSame($registered, Contracts::get());
         self::assertSame($logger, Contracts::log());
         self::assertSame('UTC', Contracts::timezone()->getName());
+        self::assertDirectoryExists(Contracts::root());
+        self::assertSame(
+            \realpath(\sys_get_temp_dir()) . \DIR_SEP . get_checksum(Contracts::root()),
+            Contracts::cache(),
+        );
     }
 
     public function testContractsGetAutoRegisters(): void

@@ -31,6 +31,8 @@
   "prefer-stable": true,
   "require": {
     "php": ">=8.4",
+    "ext-hash": "*",
+    "composer-runtime-api": "^2.2",
     "psr/log": "@stable",
     "psr/cache": "@stable",
     "psr/container": "@stable",
@@ -48,5 +50,10 @@
     "test": "vendor/bin/phpunit",
     "php-cs-config": "vendor/bin/php-cs-config",
     "collision": "vendor/bin/collision-check"
+  },
+  "config": {
+    "allow-plugins": {
+      "pestphp/pest-plugin": false
+    }
   }
 }
