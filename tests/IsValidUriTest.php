@@ -44,5 +44,47 @@ final class IsValidUriTest extends ValidationTestCase
         yield 'control char' => ["https://example.com/\n", false];
         yield 'unicode host' => ['https://exämple.com/', false];
         yield 'scheme starting digit' => ['1http://example.com', false];
+
+        // antifootgun: single-char schemes rejected by default
+        yield 'drive letter slash' => ['C:/app/file.txt', false];
+        yield 'drive letter authority' => ['C://app/file.txt', false];
+        yield 'single char scheme url' => ['x://example.test', false];
+    }
+
+    #[DataProvider('provideRelativeUriCases')]
+    public function testAllowRelative(
+        string $value,
+        bool $expected,
+    ): void {
+        self::assertSame($expected, self::validUri($value, allowRelative: true));
+    }
+
+    /**
+     * @return iterable<string, array{string, bool}>
+     */
+    public static function provideRelativeUriCases(): iterable
+    {
+        yield 'path-absolute' => ['/assets/app.css', true];
+        yield 'path-noscheme' => ['assets/app.css', true];
+        yield 'network-path' => ['//cdn.example.test/x', true];
+        yield 'query only' => ['?q=1', true];
+        yield 'fragment only' => ['#section', true];
+        yield 'absolute still ok' => ['https://example.com/a', true];
+        yield 'mailto still ok' => ['mailto:user@example.com', true];
+
+        yield 'empty' => ['', false];
+        yield 'space' => ['/assets/app css', false];
+        yield 'bad pct' => ['/a%zz', false];
+        yield 'drive letter still rejected' => ['C:/app/file.txt', false];
+        yield 'drive letter authority still rejected' => ['C://app/file.txt', false];
+    }
+
+    public function testAllowSingleCharScheme(): void
+    {
+        self::assertFalse(self::validUri('C:/app/file.txt'));
+        self::assertTrue(self::validUri('C:/app/file.txt', allowSingleCharScheme: true));
+
+        self::assertFalse(self::validUri('x://example.test'));
+        self::assertTrue(self::validUri('x://example.test', allowSingleCharScheme: true));
     }
 }

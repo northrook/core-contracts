@@ -43,6 +43,13 @@ namespace {
 
     /** Modest IPv6 / IPv4-mapped literal body (inside `[]`) */
     const CHARSET_URI_IP_LITERAL = CHARSET_XDIGIT . ':.';
+
+    /**
+     * RFC 3986 `segment-nz-nc` body without pct-encoded (no `:`).
+     *
+     * Used for the first segment of `path-noscheme` relative references.
+     */
+    const CHARSET_URI_SEGMENT_NC = CHARSET_URI_UNRESERVED . CHARSET_URI_SUBDELIMS . '@';
 }
 
 namespace Northrook\Contracts {

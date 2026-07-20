@@ -38,10 +38,15 @@ final class IsValidUrlTest extends ValidationTestCase
 
         yield 'empty' => ['', false];
         yield 'no scheme' => ['example.com', false];
-        yield 'relative path' => ['/path', false];
+        yield 'path-absolute' => ['/path', false];
+        yield 'path-noscheme' => ['assets/app.css', false];
+        yield 'network-path' => ['//cdn.example.test/x', false];
         yield 'space in host' => ['http://exa mple.com', false];
         yield 'bad pct-encoding' => ['http://example.com/%zz', false];
         yield 'unicode host' => ['https://exämple.com/', false];
+        yield 'drive letter slash' => ['C:/app/file.txt', false];
+        yield 'drive letter authority' => ['C://app/file.txt', false];
+        yield 'single char scheme' => ['x://example.test', false];
     }
 
     public function testMailtoDivergesFromUri(): void
@@ -50,5 +55,14 @@ final class IsValidUrlTest extends ValidationTestCase
 
         self::assertTrue(self::validUri($value));
         self::assertFalse(self::validUrl($value));
+    }
+
+    public function testSingleCharSchemeNeverAcceptedAsUrl(): void
+    {
+        self::assertFalse(self::validUrl('C://app/file.txt'));
+        self::assertFalse(self::validUrl('x://example.test'));
+        // even when URI would allow it
+        self::assertTrue(self::validUri('x://example.test', allowSingleCharScheme: true));
+        self::assertFalse(self::validUrl('x://example.test'));
     }
 }

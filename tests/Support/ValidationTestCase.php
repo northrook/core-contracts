@@ -77,8 +77,10 @@ abstract class ValidationTestCase extends TestCase
 
     protected static function validUri(
         string $value,
+        bool $allowRelative = false,
+        bool $allowSingleCharScheme = false,
     ): bool {
-        return is_valid_uri($value);
+        return is_valid_uri($value, $allowRelative, $allowSingleCharScheme);
     }
 
     protected static function validUrl(
