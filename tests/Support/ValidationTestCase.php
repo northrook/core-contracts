@@ -9,6 +9,8 @@ use PHPUnit\Framework\TestCase;
 use function Northrook\Contracts\Internal\_match_charset;
 use function Northrook\Contracts\is_cache_key;
 use function Northrook\Contracts\is_valid_key;
+use function Northrook\Contracts\is_valid_uri;
+use function Northrook\Contracts\is_valid_url;
 use function Northrook\Contracts\str_is_alnum;
 use function Northrook\Contracts\str_is_alpha;
 use function Northrook\Contracts\str_is_ascii;
@@ -71,5 +73,17 @@ abstract class ValidationTestCase extends TestCase
         string $string,
     ): bool {
         return str_is_xdigit($string);
+    }
+
+    protected static function validUri(
+        string $value,
+    ): bool {
+        return is_valid_uri($value);
+    }
+
+    protected static function validUrl(
+        string $value,
+    ): bool {
+        return is_valid_url($value);
     }
 }

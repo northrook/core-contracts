@@ -427,6 +427,271 @@ namespace Northrook\Contracts\Internal {
 
         return \strspn($string, $characters) === \strlen($string);
     }
+
+    /**
+     * Validates a URI component: each byte is in `$charset`, or a `%` HEXDIG HEXDIG sequence.
+     *
+     * Empty `$string` is valid (callers decide emptiness separately when needed).
+     *
+     * @internal
+     */
+    function _uri_match_component(
+        string $string,
+        string $charset,
+    ): bool {
+        $length = \strlen($string);
+        $offset = 0;
+
+        while ($offset < $length) {
+            $byte = $string[$offset];
+
+            if ($byte === '%') {
+                if (( $offset + 2 ) >= $length) {
+                    return false;
+                }
+
+                if (\strspn($string, \CHARSET_XDIGIT, $offset + 1, 2) !== 2) {
+                    return false;
+                }
+
+                $offset += 3;
+                continue;
+            }
+
+            if (! \str_contains($charset, $byte)) {
+                return false;
+            }
+
+            $offset++;
+        }
+
+        return true;
+    }
+
+    /**
+     * Scans an absolute URI string (RFC 3986 shape, ASCII / pct-encoded only).
+     *
+     * @internal
+     *
+     * @return null|array{authority: bool, host: string}
+     */
+    function _scan_uri(
+        string $value,
+    ): null|array {
+        if ($value === '') {
+            return null;
+        }
+
+        $schemeEnd = \strpos($value, ':');
+
+        if ($schemeEnd === false || $schemeEnd === 0) {
+            return null;
+        }
+
+        $scheme = \substr($value, 0, $schemeEnd);
+
+        if (\strspn($scheme[0], \CHARSET_ALPHA) !== 1) {
+            return null;
+        }
+
+        if (\strspn($scheme, \CHARSET_URI_SCHEME) !== $schemeEnd) {
+            return null;
+        }
+
+        $rest      = \substr($value, $schemeEnd + 1);
+        $authority = false;
+        $host      = '';
+
+        if (\str_starts_with($rest, '//')) {
+            $authority = true;
+            $rest      = \substr($rest, 2);
+
+            $authorityEnd  = \strcspn($rest, '/?#');
+            $authorityPart = \substr($rest, 0, $authorityEnd);
+            $rest          = \substr($rest, $authorityEnd);
+
+            $userinfoEnd = \strrpos($authorityPart, '@');
+
+            if ($userinfoEnd !== false) {
+                $userinfo = \substr($authorityPart, 0, $userinfoEnd);
+                $hostPort = \substr($authorityPart, $userinfoEnd + 1);
+
+                if (! _uri_match_component($userinfo, \CHARSET_URI_USERINFO)) {
+                    return null;
+                }
+            } else {
+                $hostPort = $authorityPart;
+            }
+
+            if ($hostPort !== '' && $hostPort[0] === '[') {
+                $close = \strpos($hostPort, ']');
+
+                if ($close === false) {
+                    return null;
+                }
+
+                $host     = \substr($hostPort, 0, $close + 1);
+                $portPart = \substr($hostPort, $close + 1);
+
+                $inner = \substr($host, 1, -1);
+
+                if ($inner === '') {
+                    return null;
+                }
+
+                if ($inner[0] === 'v' || $inner[0] === 'V') {
+                    if (
+                        \strlen($inner) < 3
+                        || ! _uri_match_component(
+                            \substr($inner, 1),
+                            \CHARSET_XDIGIT . '.' . \CHARSET_URI_UNRESERVED . \CHARSET_URI_SUBDELIMS . ':',
+                        )
+                    ) {
+                        return null;
+                    }
+                } elseif (\strspn($inner, \CHARSET_URI_IP_LITERAL) !== \strlen($inner)) {
+                    return null;
+                }
+
+                if ($portPart !== '') {
+                    if ($portPart[0] !== ':') {
+                        return null;
+                    }
+
+                    if (
+                        \strlen($portPart) > 1
+                        && \strspn($portPart, \CHARSET_DIGIT, 1) !== ( \strlen($portPart) - 1 )
+                    ) {
+                        return null;
+                    }
+                }
+            } else {
+                $portSep = \strpos($hostPort, ':');
+
+                if ($portSep === false) {
+                    $host = $hostPort;
+                } else {
+                    $host = \substr($hostPort, 0, $portSep);
+                    $port = \substr($hostPort, $portSep + 1);
+
+                    if ($port !== '' && \strspn($port, \CHARSET_DIGIT) !== \strlen($port)) {
+                        return null;
+                    }
+                }
+
+                if (! _uri_match_component($host, \CHARSET_URI_REGNAME)) {
+                    return null;
+                }
+            }
+        }
+
+        $fragmentSep = \strpos($rest, '#');
+
+        if ($fragmentSep !== false) {
+            $fragment = \substr($rest, $fragmentSep + 1);
+            $rest     = \substr($rest, 0, $fragmentSep);
+
+            if (! _uri_match_component($fragment, \CHARSET_URI_QUERY)) {
+                return null;
+            }
+        }
+
+        $querySep = \strpos($rest, '?');
+
+        if ($querySep !== false) {
+            $query = \substr($rest, $querySep + 1);
+            $rest  = \substr($rest, 0, $querySep);
+
+            if (! _uri_match_component($query, \CHARSET_URI_QUERY)) {
+                return null;
+            }
+        }
+
+        // `$rest` is now hier-part path only (authority already stripped when present).
+        if ($authority) {
+            // path-abempty = *( "/" segment )
+            if ($rest !== '' && ! _uri_match_path_abempty($rest)) {
+                return null;
+            }
+        } elseif ($rest === '') {
+            // path-empty
+        } elseif ($rest[0] === '/') {
+            // path-absolute
+            if (! _uri_match_path_absolute($rest)) {
+                return null;
+            }
+        } else {
+            // path-rootless
+            if (! _uri_match_path_rootless($rest)) {
+                return null;
+            }
+        }
+
+        return [
+            'authority' => $authority,
+            'host'      => $host,
+        ];
+    }
+
+    /**
+     * @internal
+     */
+    function _uri_match_path_abempty(
+        string $path,
+    ): bool {
+        if ($path === '') {
+            return true;
+        }
+
+        if ($path[0] !== '/') {
+            return false;
+        }
+
+        return array_all(
+            \explode('/', \substr($path, 1)),
+            fn($segment) => _uri_match_component($segment, \CHARSET_URI_PCHAR),
+        );
+    }
+
+    /**
+     * @internal
+     */
+    function _uri_match_path_absolute(
+        string $path,
+    ): bool {
+        if ($path === '/') {
+            return true;
+        }
+
+        if ($path[0] !== '/' || \strlen($path) < 2) {
+            return false;
+        }
+
+        return _uri_match_path_rootless(\substr($path, 1));
+    }
+
+    /**
+     * @internal
+     */
+    function _uri_match_path_rootless(
+        string $path,
+    ): bool {
+        if ($path === '') {
+            return false;
+        }
+
+        $segments = \explode('/', $path);
+
+        // segment-nz *( "/" segment ) — first segment must be non-empty
+        if ($segments[0] === '') {
+            return false;
+        }
+
+        return array_all(
+            $segments,
+            static fn($segment) => _uri_match_component($segment, \CHARSET_URI_PCHAR),
+        );
+    }
 }
 
 namespace Northrook\Contracts {
@@ -434,6 +699,7 @@ namespace Northrook\Contracts {
     use Northrook\Contracts\Exceptions\RuntimeException;
 
     use function Northrook\Contracts\Internal\_match_charset;
+    use function Northrook\Contracts\Internal\_scan_uri;
 
     /**
      * Generates a 16-character non-cryptographic Crockford Base32 string.
@@ -858,5 +1124,54 @@ namespace Northrook\Contracts {
             $key,
             \CHARSET_ALNUM . '.-:',
         );
+    }
+
+    /**
+     * Validates absolute URI string shape (RFC 3986-inspired).
+     *
+     * - Requires a scheme (`ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )` followed by `:`).
+     * - Accepts hierarchical and opaque forms (`https://…`, `mailto:…`, `urn:…`, custom schemes).
+     * - ASCII structure only; non-ASCII hosts (IDN) are rejected — use punycode first.
+     * - Percent-encoding must be well-formed (`%` + two hex digits).
+     * - Shape only: no DNS lookup, no HTTP probe, no scheme allowlist.
+     *
+     * Relative references without a scheme (`/path`, `?q=1`) are rejected.
+     *
+     * @param string $value Candidate URI
+     *
+     * @return bool `true` when `$value` matches absolute URI shape
+     *
+     * @phpstan-assert-if-true non-empty-string $value
+     */
+    function is_valid_uri(
+        string $value,
+    ): bool {
+        return _scan_uri($value) !== null;
+    }
+
+    /**
+     * Validates hierarchical network URL string shape.
+     *
+     * Requires a successful {@see is_valid_uri()} scan **and** an authority form
+     * (`scheme://…`) with a non-empty host. Opaque URIs (`mailto:…`, `urn:…`) fail.
+     *
+     * This is **not** a WHATWG URL Living Standard parser — it is a practical
+     * authority-based subset of the URI grammar used for http(s)-style strings.
+     *
+     * - Shape only: no DNS lookup, no HTTP probe, no scheme allowlist.
+     * - ASCII / pct-encoded only; IDN unicode hosts are rejected.
+     *
+     * @param string $value Candidate URL
+     *
+     * @return bool `true` when `$value` is an absolute URI with `//` and a non-empty host
+     *
+     * @phpstan-assert-if-true non-empty-string $value
+     */
+    function is_valid_url(
+        string $value,
+    ): bool {
+        $scan = _scan_uri($value);
+
+        return $scan !== null && $scan['authority'] && $scan['host'] !== '';
     }
 }

@@ -19,6 +19,30 @@ namespace {
     const CHARSET_DIGIT   = '0123456789';
     const CHARSET_XDIGIT  = '0123456789abcdefABCDEF';
     const CHARSET_ASCII   = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\x7F";
+
+    /** RFC 3986 `unreserved` = ALPHA / DIGIT / "-" / "." / "_" / "~" */
+    const CHARSET_URI_UNRESERVED = CHARSET_ALNUM . '-._~';
+
+    /** RFC 3986 `sub-delims` */
+    const CHARSET_URI_SUBDELIMS = "!$&'()*+,;=";
+
+    /** RFC 3986 `scheme` body after the leading ALPHA */
+    const CHARSET_URI_SCHEME = CHARSET_ALNUM . '+-.';
+
+    /** RFC 3986 `pchar` without pct-encoded */
+    const CHARSET_URI_PCHAR = CHARSET_URI_UNRESERVED . CHARSET_URI_SUBDELIMS . ':@';
+
+    /** RFC 3986 `userinfo` without pct-encoded */
+    const CHARSET_URI_USERINFO = CHARSET_URI_UNRESERVED . CHARSET_URI_SUBDELIMS . ':';
+
+    /** RFC 3986 `reg-name` without pct-encoded */
+    const CHARSET_URI_REGNAME = CHARSET_URI_UNRESERVED . CHARSET_URI_SUBDELIMS;
+
+    /** RFC 3986 `query` / `fragment` without pct-encoded */
+    const CHARSET_URI_QUERY = CHARSET_URI_PCHAR . '/?';
+
+    /** Modest IPv6 / IPv4-mapped literal body (inside `[]`) */
+    const CHARSET_URI_IP_LITERAL = CHARSET_XDIGIT . ':.';
 }
 
 namespace Northrook\Contracts {
