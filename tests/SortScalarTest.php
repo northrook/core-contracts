@@ -55,4 +55,52 @@ final class SortScalarTest extends TestCase
             ]),
         );
     }
+
+    public function testSortValuesNonArrayPassthrough(): void
+    {
+        self::assertSame('hello', \sort_values('hello'));
+        self::assertSame(42, \sort_values(42));
+        self::assertNull(\sort_values(null));
+    }
+
+    public function testSortValuesSortsLists(): void
+    {
+        self::assertSame([1, 2, 3], \sort_values([3, 1, 2]));
+    }
+
+    public function testSortValuesPreservesAssociativeKeyOrder(): void
+    {
+        self::assertSame(
+            ['b' => 2, 'a' => 1],
+            \sort_values(['b' => 2, 'a' => 1]),
+        );
+    }
+
+    public function testSortValuesRecursesIntoNestedLists(): void
+    {
+        self::assertSame(
+            [
+                'z' => [1, 2, 3],
+                'a' => [8, 9],
+            ],
+            \sort_values([
+                'z' => [3, 1, 2],
+                'a' => [9, 8],
+            ]),
+        );
+    }
+
+    public function testSortValuesNormalizesChildrenBeforeSortingLists(): void
+    {
+        self::assertSame(
+            [
+                [1, 2],
+                [3, 4],
+            ],
+            \sort_values([
+                [4, 3],
+                [2, 1],
+            ]),
+        );
+    }
 }

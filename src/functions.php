@@ -422,6 +422,34 @@ namespace {
     }
 
     /**
+     * Recursively normalizes list value order for stable fingerprints.
+     *
+     * - List arrays are sorted with {@see sort()}
+     * - Associative arrays keep key order
+     * - Non-arrays are returned unchanged
+     *
+     * Children are normalized before the current list is sorted so nested
+     * comparisons see already-stable values.
+     */
+    function sort_values(
+        mixed $value,
+    ): mixed {
+        if (! \is_array($value)) {
+            return $value;
+        }
+
+        foreach ($value as $key => $nested) {
+            $value[$key] = sort_values($nested);
+        }
+
+        if (\array_is_list($value)) {
+            \sort($value);
+        }
+
+        return $value;
+    }
+
+    /**
      * Tests whether every character in a string belongs to a fixed character set.
      *
      * This is the low-level primitive behind the public `str_is_*` validators.
@@ -928,8 +956,9 @@ namespace Northrook\Contracts {
      * cache keys, path namespaces, and other non-cryptographic fingerprints.
      *
      * Scalars are cast to string before hashing. Non-scalars are serialized;
-     * pass `$sort = true` to normalize associative array key order via
-     * {@see \sort_keys()} first (list order is preserved).
+     * optionally normalize array order first:
+     * - `$ksort` — associative keys via {@see \sort_keys()}
+     * - `$vsort` — list values via {@see \sort_values()}
      *
      * String inputs remain compatible with `Northrook\Hash::checksum()` from
      * `northrook/hasher`.
@@ -940,10 +969,17 @@ namespace Northrook\Contracts {
      */
     function get_checksum(
         mixed $value,
-        bool $sort = false,
+        bool $ksort = false,
+        bool $vsort = false,
     ): string {
         if (! is_scalar($value)) {
-            $data = \serialize($sort ? \sort_keys($value) : $value);
+            if ($ksort) {
+                $value = \sort_keys($value);
+            }
+            if ($vsort) {
+                $value = \sort_values($value);
+            }
+            $data = \serialize($value);
         } else {
             $data = (string) $value;
         }

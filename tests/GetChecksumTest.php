@@ -87,7 +87,7 @@ final class GetChecksumTest extends TestCase
         );
     }
 
-    public function testSortNormalizesAssociativeKeyOrder(): void
+    public function testKsortNormalizesAssociativeKeyOrder(): void
     {
         self::assertSame(
             get_checksum(['a' => 1, 'b' => 2], true),
@@ -96,7 +96,7 @@ final class GetChecksumTest extends TestCase
         self::assertSame('0133F8FG', get_checksum(['b' => 2, 'a' => 1], true));
     }
 
-    public function testSortNormalizesNestedAssociativeKeys(): void
+    public function testKsortNormalizesNestedAssociativeKeys(): void
     {
         $unordered = ['z' => ['b' => 2, 'a' => 1], 'a' => 0];
         $ordered   = ['a' => 0, 'z' => ['a' => 1, 'b' => 2]];
@@ -106,12 +106,59 @@ final class GetChecksumTest extends TestCase
         self::assertNotSame(get_checksum($ordered), get_checksum($unordered));
     }
 
-    public function testSortPreservesListOrder(): void
+    public function testKsortPreservesListOrder(): void
     {
         self::assertSame('02CZJYN3', get_checksum([1, 2, 3], true));
         self::assertNotSame(
             get_checksum([1, 2, 3], true),
             get_checksum([3, 2, 1], true),
+        );
+    }
+
+    public function testVsortNormalizesListOrder(): void
+    {
+        self::assertSame(
+            get_checksum([1, 2, 3], vsort: true),
+            get_checksum([3, 2, 1], vsort: true),
+        );
+        self::assertSame(
+            get_checksum([1, 2, 3]),
+            get_checksum([1, 2, 3], vsort: true),
+        );
+        self::assertNotSame(
+            get_checksum([1, 2, 3]),
+            get_checksum([3, 2, 1]),
+        );
+    }
+
+    public function testVsortPreservesAssociativeKeyOrder(): void
+    {
+        self::assertNotSame(
+            get_checksum(['b' => 2, 'a' => 1], vsort: true),
+            get_checksum(['a' => 1, 'b' => 2], vsort: true),
+        );
+        self::assertSame(
+            get_checksum(['b' => 2, 'a' => 1]),
+            get_checksum(['b' => 2, 'a' => 1], vsort: true),
+        );
+    }
+
+    public function testKsortAndVsortTogether(): void
+    {
+        $a = ['z' => [3, 1, 2], 'a' => [9, 8]];
+        $b = ['a' => [8, 9], 'z' => [2, 1, 3]];
+
+        self::assertSame(
+            get_checksum($a, ksort: true, vsort: true),
+            get_checksum($b, ksort: true, vsort: true),
+        );
+        self::assertNotSame(
+            get_checksum($a, ksort: true),
+            get_checksum($b, ksort: true),
+        );
+        self::assertNotSame(
+            get_checksum($a, vsort: true),
+            get_checksum($b, vsort: true),
         );
     }
 
