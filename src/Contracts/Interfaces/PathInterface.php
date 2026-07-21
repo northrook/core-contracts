@@ -4,11 +4,6 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Interfaces;
 
-use RuntimeException;
-use SplFileInfo;
-use Stringable;
-use ValueError;
-
 /**
  * Mutable filesystem path value object.
  *
@@ -18,7 +13,7 @@ use ValueError;
  *
  * Mutating methods update the instance in place and return {@see static} for chaining.
  */
-interface PathInterface extends Stringable
+interface PathInterface extends \Stringable
 {
     /**
      * Normalized filesystem path string.
@@ -30,16 +25,16 @@ interface PathInterface extends Stringable
     /**
      * Appends a path segment to this path.
      *
-     * @throws ValueError When this path resolves to an existing file.
+     * @throws \ValueError When this path resolves to an existing file.
      */
     public function append(
-        string|Stringable $string,
+        string|\Stringable $string,
     ): static;
 
     /**
      * Whether this path exists on disk.
      *
-     * @throws RuntimeException When `$throwOnError` is true and the path does not exist.
+     * @throws \Northrook\Contracts\Exceptions\RuntimeException When `$throwOnError` is true and the path does not exist.
      */
     public function exists(
         bool $throwOnError = false,
@@ -114,7 +109,7 @@ interface PathInterface extends Stringable
     /**
      * Underlying {@see SplFileInfo} for this path.
      */
-    public function getSplFileInfo(): SplFileInfo;
+    public function getSplFileInfo(): \SplFileInfo;
 
     /**
      * Atomically writes `$content` to this path.
@@ -123,7 +118,7 @@ interface PathInterface extends Stringable
      *
      * @param resource|string $content
      *
-     * @return bool True on success, false on failure.
+     * @return bool `true` on success, `false` on failure.
      */
     public function save(
         mixed $content,
@@ -133,7 +128,7 @@ interface PathInterface extends Stringable
     /**
      * Creates the parent directory of this path when it does not exist.
      *
-     * @return bool True when the directory exists or was created, false on failure.
+     * @return bool `true` when the directory exists or was created, `false` on failure.
      */
     public function mkdir(
         int $permissions = 0777,
@@ -145,7 +140,7 @@ interface PathInterface extends Stringable
      *
      * @return ($throw is true ? string : null|string)
      *
-     * @throws RuntimeException When `$throw` is true and reading fails
+     * @throws \Northrook\Contracts\Exceptions\RuntimeException when `$throw` is true and reading fails
      */
     public function getContents(
         bool $throw = false,
@@ -157,23 +152,21 @@ interface PathInterface extends Stringable
      * When `$alwaysOverwrite` is false, existing newer targets may be left untouched per the filesystem implementation.
      */
     public function copy(
-        string|Stringable $target,
+        string|\Stringable $target,
         bool $alwaysOverwrite = false,
     ): static;
 
     /**
      * Removes the file or directory at this path.
      *
-     * @return bool True on success, false on failure.
+     * @return bool `true` on success, `false` on failure.
      */
     public function remove(): bool;
 
     /**
      * Runs `glob()` patterns relative to this path.
      *
-     * When this path is an existing file, patterns are relative to its directory
-     * ({@see dirname()}). Otherwise patterns are relative to this path as a
-     * directory base.
+     * When this path is an existing file, patterns are relative to its directory {@see dirname()}.
      *
      * @param string|string[] $pattern
      *

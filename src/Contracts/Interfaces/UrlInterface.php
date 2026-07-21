@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Interfaces;
 
-use Stringable;
-
 /**
  * Mutable public URL value object.
  *
@@ -15,7 +13,7 @@ use Stringable;
  *
  * Mutating methods update the instance in place and return {@see static} for chaining.
  */
-interface UrlInterface extends Stringable
+interface UrlInterface extends \Stringable
 {
     /**
      * Normalized URL string.
@@ -30,7 +28,7 @@ interface UrlInterface extends Stringable
      * Query merges use later keys to override existing ones.
      */
     public function append(
-        string|Stringable $string,
+        string|\Stringable $string,
     ): static;
 
     /**
@@ -83,7 +81,7 @@ interface UrlInterface extends Stringable
     /**
      * Whether {@see $value} has a valid URL shape.
      *
-     * Structural only — does not perform an HTTP request.
+     * Structural only, does not perform an HTTP request.
      */
     public function isValid(): bool;
 
@@ -99,16 +97,11 @@ interface UrlInterface extends Stringable
      *
      * Pass null to remove the host component. Empty string is rejected.
      *
-     * Removing the host from an authority-form URL that still has a scheme
-     * (`https://example.test/…`) must throw — implementations must not produce
-     * malformed results such as `https:/path` or `https:///path`.
-     *
-     * When the host is already absent, null is a no-op. Protocol-relative
-     * references (`//host/…`) may drop authority and become a path-absolute URI.
-     *
      * @throws \Northrook\Contracts\Exceptions\InvalidArgumentException
      */
-    public function withHost(null|string $host): static;
+    public function withHost(
+        null|string $host,
+    ): static;
 
     /**
      * Replaces the path component.
@@ -129,27 +122,34 @@ interface UrlInterface extends Stringable
     /**
      * Replaces the entire query string.
      *
-     * Array values must be null, scalar, or Stringable (list items likewise).
+     * Array values must be null, scalar, or {@see \Stringable} (list items likewise).
      * Invalid values or an invalid resulting URL throw; the instance is unchanged.
      *
      * @param array<string, mixed>|string $query Parsed map or raw query string (without `?`).
      *
      * @throws \Northrook\Contracts\Exceptions\InvalidArgumentException
      */
-    public function withQuery(array|string $query): static;
+    public function withQuery(
+        array|string $query,
+    ): static;
     /**
      * Sets a single query parameter (overwrites when the key already exists).
      *
      * @throws \Northrook\Contracts\Exceptions\InvalidArgumentException
      */
-    public function withQueryParam(string $key, mixed $value): static;
+    public function withQueryParam(
+        string $key,
+        mixed $value,
+    ): static;
 
     /**
      * Removes a query parameter when present.
      *
      * @throws \Northrook\Contracts\Exceptions\InvalidArgumentException
      */
-    public function withoutQueryParam(string $key): static;
+    public function withoutQueryParam(
+        string $key,
+    ): static;
     /**
      * Merges query parameters into the current query (later keys override).
      *
@@ -157,7 +157,9 @@ interface UrlInterface extends Stringable
      *
      * @throws \Northrook\Contracts\Exceptions\InvalidArgumentException
      */
-    public function mergeQuery(array $query): static;
+    public function mergeQuery(
+        array $query,
+    ): static;
 
     /**
      * Whether the endpoint responds with an HTTP 2xx or 3xx status.
@@ -201,6 +203,6 @@ interface UrlInterface extends Stringable
      * @throws \Northrook\Contracts\Exceptions\CurlException When the download fails.
      */
     public function download(
-        null|string|Stringable $destination = null,
+        null|string|\Stringable $destination = null,
     ): PathInterface;
 }

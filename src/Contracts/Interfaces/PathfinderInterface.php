@@ -8,9 +8,6 @@ namespace Northrook\Contracts\Interfaces;
  * Resolves configured parameter references into filesystem paths and public URLs.
  *
  * Call-site forms: `{key}`, `{key}/suffix`, or a bare/absolute/URI string.
- * Bare references (no leading `{key}`) are passed through unchanged, then
- * type-checked by the method — there is no implicit join onto a project root
- * or `url.base`.
  */
 interface PathfinderInterface
 {
@@ -36,8 +33,7 @@ interface PathfinderInterface
      * @return null|UrlInterface `null` when the reference cannot be resolved
      *
      * @throws \Northrook\Contracts\Exceptions\InvalidArgumentException when the resolved value is filesystem path
-     *  @throws \Northrook\Contracts\Exceptions\RuntimeException when the `$reference` value is malformed
-     *
+     * @throws \Northrook\Contracts\Exceptions\RuntimeException when the `$reference` value is malformed
      */
     public function getUrl(
         string|\Stringable $reference,
