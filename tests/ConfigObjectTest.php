@@ -22,7 +22,15 @@ final class ConfigObjectTest extends TestCase
         self::assertSame(5, $config->count);
     }
 
-    public function testFromAppliesConstructorDefaults(): void
+    public function testFromAppliesDefaults(): void
+    {
+        $config = TestConfigObject::from([]);
+
+        self::assertSame(__NAMESPACE__, $config->name);
+        self::assertSame(0, $config->count);
+    }
+
+    public function testFromOverridesDefaults(): void
     {
         $config = TestConfigObject::from([
             'name' => 'example',
@@ -35,14 +43,14 @@ final class ConfigObjectTest extends TestCase
     public function testFromThrowsOnMissingRequiredParameters(): void
     {
         try {
-            TestConfigObject::from([
-                // Missing required `name`.
+            RequiredConfigObject::from([
+                // Missing required `name`; no DEFAULTS cover it.
                 'count' => 1,
             ]);
             self::fail('Expected RuntimeException.');
         } catch (RuntimeException $exception) {
             self::assertSame(
-                'Failed to create ' . TestConfigObject::class . ' from config array.',
+                'Failed to create ' . RequiredConfigObject::class . ' from config array.',
                 $exception->getMessage(),
             );
             self::assertInstanceOf(\ArgumentCountError::class, $exception->getPrevious());
@@ -87,6 +95,23 @@ final class ConfigObjectTest extends TestCase
 
 final readonly class TestConfigObject extends ConfigObject
 {
+    const array DEFAULTS = [
+        'name'  => __NAMESPACE__,
+        'count' => 0,
+    ];
+
+    public function __construct(
+        public string $name,
+        public int $count = 0,
+    ) {
+        parent::__construct();
+    }
+}
+
+final readonly class RequiredConfigObject extends ConfigObject
+{
+    const array DEFAULTS = [];
+
     public function __construct(
         public string $name,
         public int $count = 0,

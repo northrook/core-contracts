@@ -44,9 +44,9 @@ abstract readonly class ConfigObject extends DataObject
         array $config,
     ): static {
         try {
-            // @phpstan-ignore-next-line - Unsafe usage of new static() is intentional
             $args = array_merge(static::DEFAULTS, $config);
 
+            // @phpstan-ignore-next-line - Unsafe usage of new static() is intentional
             return new static(...$args);
         } catch (\Throwable $exception) {
             throw new RuntimeException(
