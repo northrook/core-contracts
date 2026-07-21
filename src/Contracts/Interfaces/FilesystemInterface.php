@@ -300,4 +300,16 @@ interface FilesystemInterface
     public function createdTime(
         string $path,
     ): int;
+
+    /**
+     * Matches paths against one or more glob patterns.
+     *
+     * @param string|iterable<string> $patterns Absolute or relative glob pattern(s)
+     *
+     * @return list<string>
+     */
+    public function glob(
+        string|iterable $patterns,
+        null|int $flags = null,
+    ): array;
 }
