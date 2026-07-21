@@ -4,36 +4,42 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Interfaces;
 
-use Stringable;
-
 /**
- * Resolves filesystem paths and public URLs relative to the application root.
+ * Resolves configured parameter references into filesystem paths and public URLs.
+ *
+ * Call-site forms: `{key}`, `{key}/suffix`, or a bare/absolute/URI string.
+ * Bare references (no leading `{key}`) are passed through unchanged, then
+ * type-checked by the method — there is no implicit join onto a project root
+ * or `url.base`.
  */
 interface PathfinderInterface
 {
     /**
      * Resolves `$reference` to a filesystem {@see PathInterface}.
      *
-     * Relative references without `{parameter.key}` braces are resolved from the project root.
+     * @param string|\Stringable $reference `{key}`, `{key}/suffix`, `path/to/location`
      *
-     * @param string|Stringable $reference `{key}`, `{key}/suffix`, or path
+     * @return null|PathInterface `null` when the reference cannot be resolved
      *
-     * @throws \Northrook\Contracts\Exceptions\InvalidArgumentException when {@see static::getUrl()} should have been called
+     * @throws \Northrook\Contracts\Exceptions\InvalidArgumentException when the resolved value is a URL shape
+     * @throws \Northrook\Contracts\Exceptions\RuntimeException when the `$reference` value is malformed
      */
     public function getPath(
-        string|Stringable $reference,
+        string|\Stringable $reference,
     ): null|PathInterface;
 
     /**
      * Resolves `$reference` to a public {@see UrlInterface}.
      *
-     * Relative references without `{parameter.key}` braces are resolved from `url.base`.
+     * @param string|\Stringable $reference `{key}`, `{key}/suffix`, `scheme://host/path`
      *
-     * @param string|Stringable $reference `{key}`, `{key}/suffix`, or URL/path
+     * @return null|UrlInterface `null` when the reference cannot be resolved
      *
-     * @throws \Northrook\Contracts\Exceptions\InvalidArgumentException when {@see static::getPath()} should have been called
+     * @throws \Northrook\Contracts\Exceptions\InvalidArgumentException when the resolved value is filesystem path
+     *  @throws \Northrook\Contracts\Exceptions\RuntimeException when the `$reference` value is malformed
+     *
      */
     public function getUrl(
-        string|Stringable $reference,
+        string|\Stringable $reference,
     ): null|UrlInterface;
 }

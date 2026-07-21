@@ -169,7 +169,11 @@ interface PathInterface extends Stringable
     public function remove(): bool;
 
     /**
-     * Runs `glob()` patterns relative to this path's directory.
+     * Runs `glob()` patterns relative to this path.
+     *
+     * When this path is an existing file, patterns are relative to its directory
+     * ({@see dirname()}). Otherwise patterns are relative to this path as a
+     * directory base.
      *
      * @param string|string[] $pattern
      *
