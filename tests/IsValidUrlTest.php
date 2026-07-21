@@ -26,6 +26,7 @@ final class IsValidUrlTest extends ValidationTestCase
         yield 'ftp' => ['ftp://ftp.example.com/file', true];
         yield 'http ipv4' => ['http://127.0.0.1:8080/status', true];
         yield 'http ipv6' => ['http://[::1]/index', true];
+        yield 'http ipvfuture' => ['http://[v1.a]/', true];
         yield 'userinfo' => ['https://user:pass@example.com/x', true];
         yield 'pct-encoded path' => ['https://example.com/a%20b', true];
 
@@ -35,6 +36,8 @@ final class IsValidUrlTest extends ValidationTestCase
         yield 'file empty host' => ['file:///etc/passwd', false];
         yield 'https empty host' => ['https://', false];
         yield 'https empty host with path' => ['https:///path', false];
+        yield 'ipvfuture missing dot' => ['http://[vABC]/', false];
+        yield 'ipvfuture empty after dot' => ['http://[v1.]/', false];
 
         yield 'empty' => ['', false];
         yield 'no scheme' => ['example.com', false];

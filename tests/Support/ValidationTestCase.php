@@ -6,7 +6,6 @@ namespace Northrook\Contracts\Tests\Support;
 
 use PHPUnit\Framework\TestCase;
 
-use function Northrook\Contracts\Internal\_match_charset;
 use function Northrook\Contracts\is_cache_key;
 use function Northrook\Contracts\is_valid_key;
 use function Northrook\Contracts\is_valid_uri;
@@ -26,7 +25,7 @@ abstract class ValidationTestCase extends TestCase
         string $string,
         string $characters,
     ): bool {
-        return _match_charset($string, $characters);
+        return \match_charset($string, $characters);
     }
 
     protected static function validKey(

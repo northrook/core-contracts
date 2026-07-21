@@ -30,6 +30,8 @@ final class IsValidUriTest extends ValidationTestCase
         yield 'file empty host' => ['file:///etc/passwd', true];
         yield 'http ipv4' => ['http://127.0.0.1:8080/status', true];
         yield 'http ipv6' => ['http://[::1]/index', true];
+        yield 'http ipvfuture' => ['http://[v1.a]/', true];
+        yield 'http ipvfuture uppercase V' => ['http://[VF.something]/', true];
         yield 'userinfo' => ['https://user:pass@example.com/x', true];
         yield 'pct-encoded path' => ['https://example.com/a%20b', true];
         yield 'https empty host empty path' => ['https://', true];
@@ -44,6 +46,10 @@ final class IsValidUriTest extends ValidationTestCase
         yield 'control char' => ["https://example.com/\n", false];
         yield 'unicode host' => ['https://exämple.com/', false];
         yield 'scheme starting digit' => ['1http://example.com', false];
+        yield 'ipvfuture missing dot' => ['http://[vABC]/', false];
+        yield 'ipvfuture empty after dot' => ['http://[v1.]/', false];
+        yield 'ipvfuture no hex before dot' => ['http://[v.a]/', false];
+        yield 'ipvfuture too short' => ['http://[v1]/', false];
 
         // antifootgun: single-char schemes rejected by default
         yield 'drive letter slash' => ['C:/app/file.txt', false];

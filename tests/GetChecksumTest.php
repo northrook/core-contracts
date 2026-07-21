@@ -32,6 +32,28 @@ final class GetChecksumTest extends TestCase
         self::assertSame($expected, get_checksum($input));
     }
 
+    /**
+     * Scalars are string-cast before hashing.
+     *
+     * @return iterable<string, array{mixed, string}>
+     */
+    public static function provideScalarCasts(): iterable
+    {
+        yield 'int' => [42, '00CP0KCV'];
+        yield 'int-string' => ['42', '00CP0KCV'];
+        yield 'float' => [3.14, '01JYX563'];
+        yield 'true' => [true, '02VESJ5J'];
+        yield 'false-as-empty' => [false, '001CRQ85'];
+    }
+
+    #[DataProvider('provideScalarCasts')]
+    public function testScalarsAreStringCast(
+        mixed $input,
+        string $expected,
+    ): void {
+        self::assertSame($expected, get_checksum($input));
+    }
+
     public function testLengthAndCharset(): void
     {
         $checksum = get_checksum('hello');
@@ -43,5 +65,62 @@ final class GetChecksumTest extends TestCase
     public function testDeterministic(): void
     {
         self::assertSame(get_checksum('hello'), get_checksum('hello'));
+        self::assertSame(
+            get_checksum(['b' => 2, 'a' => 1]),
+            get_checksum(['b' => 2, 'a' => 1]),
+        );
+    }
+
+    public function testNullIsSerialized(): void
+    {
+        self::assertSame('025Z4AM8', get_checksum(null));
+        self::assertNotSame(get_checksum(''), get_checksum(null));
+    }
+
+    public function testArrayPreservesKeyOrderWithoutSort(): void
+    {
+        self::assertSame('02S1DKS0', get_checksum(['b' => 2, 'a' => 1]));
+        self::assertSame('0133F8FG', get_checksum(['a' => 1, 'b' => 2]));
+        self::assertNotSame(
+            get_checksum(['b' => 2, 'a' => 1]),
+            get_checksum(['a' => 1, 'b' => 2]),
+        );
+    }
+
+    public function testSortNormalizesAssociativeKeyOrder(): void
+    {
+        self::assertSame(
+            get_checksum(['a' => 1, 'b' => 2], true),
+            get_checksum(['b' => 2, 'a' => 1], true),
+        );
+        self::assertSame('0133F8FG', get_checksum(['b' => 2, 'a' => 1], true));
+    }
+
+    public function testSortNormalizesNestedAssociativeKeys(): void
+    {
+        $unordered = ['z' => ['b' => 2, 'a' => 1], 'a' => 0];
+        $ordered   = ['a' => 0, 'z' => ['a' => 1, 'b' => 2]];
+
+        self::assertSame(get_checksum($ordered, true), get_checksum($unordered, true));
+        self::assertSame('00KQBWGS', get_checksum($unordered, true));
+        self::assertNotSame(get_checksum($ordered), get_checksum($unordered));
+    }
+
+    public function testSortPreservesListOrder(): void
+    {
+        self::assertSame('02CZJYN3', get_checksum([1, 2, 3], true));
+        self::assertNotSame(
+            get_checksum([1, 2, 3], true),
+            get_checksum([3, 2, 1], true),
+        );
+    }
+
+    public function testObjectIsSerialized(): void
+    {
+        $checksum = get_checksum((object) ['b' => 2, 'a' => 1]);
+
+        self::assertSame(8, \strlen($checksum));
+        self::assertSame(8, \strspn($checksum, \CROCKFORD_BASE32));
+        self::assertSame('011SZ7ZP', $checksum);
     }
 }

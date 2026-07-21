@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests\Support;
 
-use function Northrook\Contracts\Internal\_match_charset;
 use function Northrook\Contracts\is_valid_key;
 
 final class InvalidValidationCalls
 {
     public static function matchCharsetWithEmptyCharset(): void
     {
-        _match_charset('a', '');
+        \match_charset('a', '');
     }
 
     public static function validKeyWithEmptyCharset(): void

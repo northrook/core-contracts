@@ -389,8 +389,37 @@ namespace {
     }
 }
 
-namespace Northrook\Contracts\Internal {
+namespace {
     use Northrook\Contracts\Exceptions\RuntimeException;
+
+    use function Northrook\Contracts\Internal\_scan_relative_ref;
+    use function Northrook\Contracts\Internal\_scan_uri_tail;
+    use function Northrook\Contracts\Internal\_uri_is_scheme;
+
+    /**
+     * Recursively normalizes array key order for stable fingerprints.
+     *
+     * - Associative arrays are sorted with {@see ksort()}
+     * - List arrays keep insertion order
+     * - Non-arrays are returned unchanged
+     */
+    function sort_keys(
+        mixed $value,
+    ): mixed {
+        if (! \is_array($value)) {
+            return $value;
+        }
+
+        if (! \array_is_list($value)) {
+            \ksort($value);
+        }
+
+        foreach ($value as $key => $nested) {
+            $value[$key] = sort_keys($nested);
+        }
+
+        return $value;
+    }
 
     /**
      * Tests whether every character in a string belongs to a fixed character set.
@@ -401,8 +430,6 @@ namespace Northrook\Contracts\Internal {
      *
      * There is no locale, Unicode property, or normalization step.
      *
-     * @internal
-     *
      * @param string $string     Candidate value to inspect
      * @param string $characters Allowed code units (must be non-empty)
      *
@@ -410,7 +437,7 @@ namespace Northrook\Contracts\Internal {
      *
      * @throws RuntimeException when `$characters` is empty
      */
-    function _match_charset(
+    function match_charset(
         string $string,
         string $characters,
     ): bool {
@@ -428,6 +455,46 @@ namespace Northrook\Contracts\Internal {
         return \strspn($string, $characters) === \strlen($string);
     }
 
+    /**
+     * Scans a URI or URI-reference string (RFC 3986 shape, ASCII / pct-encoded only).
+     *
+     * Returns `{authority, host}` on success, or `null` when `$value` fails the
+     * selected grammar. Path, query, and fragment are validated but not returned.
+     *
+     * @return null|array{authority: bool, host: string}
+     */
+    function scan_uri(
+        string $value,
+        bool $allowRelative = false,
+        bool $allowSingleCharScheme = false,
+    ): null|array {
+        if ($value === '') {
+            return null;
+        }
+
+        $schemeEnd = \strpos($value, ':');
+
+        if ($schemeEnd !== false && $schemeEnd > 0) {
+            $scheme = \substr($value, 0, $schemeEnd);
+
+            if (_uri_is_scheme($scheme)) {
+                if (! $allowSingleCharScheme && $schemeEnd < 2) {
+                    return null;
+                }
+
+                return _scan_uri_tail(\substr($value, $schemeEnd + 1));
+            }
+        }
+
+        if (! $allowRelative) {
+            return null;
+        }
+
+        return _scan_relative_ref($value);
+    }
+}
+
+namespace Northrook\Contracts\Internal {
     /**
      * Validates a URI component: each byte is in `$charset`, or a `%` HEXDIG HEXDIG sequence.
      *
@@ -484,106 +551,22 @@ namespace Northrook\Contracts\Internal {
     }
 
     /**
-     * Scans a URI or URI-reference string (RFC 3986 shape, ASCII / pct-encoded only).
+     * Scans the path / authority / query / fragment body shared by absolute
+     * URIs and relative references.
+     *
+     * When `$relative` is `true`, a rootless path uses `path-noscheme`;
+     * otherwise it uses `path-rootless`.
      *
      * @internal
      *
      * @return null|array{authority: bool, host: string}
      */
-    function _scan_uri(
-        string $value,
-        bool $allowRelative = false,
-        bool $allowSingleCharScheme = false,
-    ): null|array {
-        if ($value === '') {
-            return null;
-        }
-
-        $schemeEnd = \strpos($value, ':');
-
-        if ($schemeEnd !== false && $schemeEnd > 0) {
-            $scheme = \substr($value, 0, $schemeEnd);
-
-            if (_uri_is_scheme($scheme)) {
-                if (! $allowSingleCharScheme && $schemeEnd < 2) {
-                    return null;
-                }
-
-                return _scan_uri_tail(\substr($value, $schemeEnd + 1));
-            }
-        }
-
-        if (! $allowRelative) {
-            return null;
-        }
-
-        return _scan_relative_ref($value);
-    }
-
-    /**
-     * Scans hier-part / opaque tail after `scheme:`, or a relative-ref body.
-     *
-     * @internal
-     *
-     * @return null|array{authority: bool, host: string}
-     */
-    function _scan_uri_tail(
+    function _scan_path_body(
         string $rest,
+        bool $relative = false,
     ): null|array {
         $authority = false;
         $host      = '';
-
-        if (\str_starts_with($rest, '//')) {
-            $parsed = _uri_parse_authority(\substr($rest, 2));
-
-            if ($parsed === null) {
-                return null;
-            }
-
-            $authority = true;
-            $host      = $parsed['host'];
-            $rest      = $parsed['rest'];
-        }
-
-        $rest = _uri_strip_query_fragment($rest);
-
-        if ($rest === null) {
-            return null;
-        }
-
-        if ($authority) {
-            if ($rest !== '' && ! _uri_match_path_abempty($rest)) {
-                return null;
-            }
-        } elseif ($rest === '') {
-            // path-empty
-        } elseif ($rest[0] === '/') {
-            if (! _uri_match_path_absolute($rest)) {
-                return null;
-            }
-        } elseif (! _uri_match_path_rootless($rest)) {
-            return null;
-        }
-
-        return [
-            'authority' => $authority,
-            'host'      => $host,
-        ];
-    }
-
-    /**
-     * Scans RFC 3986 `relative-ref`.
-     *
-     * @internal
-     *
-     * @return null|array{authority: bool, host: string}
-     */
-    function _scan_relative_ref(
-        string $value,
-    ): null|array {
-        $authority = false;
-        $host      = '';
-        $rest      = $value;
 
         if (\str_starts_with($rest, '//')) {
             $parsed = _uri_parse_authority(\substr($rest, 2));
@@ -613,7 +596,11 @@ namespace Northrook\Contracts\Internal {
             if (! _uri_match_path_absolute($rest)) {
                 return null;
             }
-        } elseif (! _uri_match_path_noscheme($rest)) {
+        } elseif ($relative) {
+            if (! _uri_match_path_noscheme($rest)) {
+                return null;
+            }
+        } elseif (! _uri_match_path_rootless($rest)) {
             return null;
         }
 
@@ -621,6 +608,68 @@ namespace Northrook\Contracts\Internal {
             'authority' => $authority,
             'host'      => $host,
         ];
+    }
+
+    /**
+     * Scans hier-part / opaque tail after `scheme:`.
+     *
+     * @internal
+     *
+     * @return null|array{authority: bool, host: string}
+     */
+    function _scan_uri_tail(
+        string $rest,
+    ): null|array {
+        return _scan_path_body($rest, relative: false);
+    }
+
+    /**
+     * Scans RFC 3986 `relative-ref`.
+     *
+     * @internal
+     *
+     * @return null|array{authority: bool, host: string}
+     */
+    function _scan_relative_ref(
+        string $value,
+    ): null|array {
+        return _scan_path_body($value, relative: true);
+    }
+
+    /**
+     * RFC 3986 `IPvFuture` = `"v" 1*HEXDIG "." 1*( unreserved / sub-delims / ":" )`.
+     *
+     * `$inner` is the bracket body including the leading `v` / `V`.
+     *
+     * @internal
+     */
+    function _uri_match_ipv_future(
+        string $inner,
+    ): bool {
+        if ($inner === '' || $inner[0] !== 'v' && $inner[0] !== 'V') {
+            return false;
+        }
+
+        $rest   = \substr($inner, 1);
+        $hexLen = \strspn($rest, \CHARSET_XDIGIT);
+
+        if ($hexLen < 1) {
+            return false;
+        }
+
+        if (( $rest[$hexLen] ?? null ) !== '.') {
+            return false;
+        }
+
+        $tail = \substr($rest, $hexLen + 1);
+
+        if ($tail === '') {
+            return false;
+        }
+
+        $allowed = \CHARSET_URI_UNRESERVED . \CHARSET_URI_SUBDELIMS . ':';
+
+        return \strspn($tail, $allowed) === \strlen($tail);
     }
 
     /**
@@ -665,13 +714,7 @@ namespace Northrook\Contracts\Internal {
             }
 
             if ($inner[0] === 'v' || $inner[0] === 'V') {
-                if (
-                    \strlen($inner) < 3
-                    || ! _uri_match_component(
-                        \substr($inner, 1),
-                        \CHARSET_XDIGIT . '.' . \CHARSET_URI_UNRESERVED . \CHARSET_URI_SUBDELIMS . ':',
-                    )
-                ) {
+                if (! _uri_match_ipv_future($inner)) {
                     return null;
                 }
             } elseif (\strspn($inner, \CHARSET_URI_IP_LITERAL) !== \strlen($inner)) {
@@ -839,9 +882,6 @@ namespace Northrook\Contracts {
     use Northrook\Contracts\Exceptions\FilesystemException;
     use Northrook\Contracts\Exceptions\RuntimeException;
 
-    use function Northrook\Contracts\Internal\_match_charset;
-    use function Northrook\Contracts\Internal\_scan_uri;
-
     /**
      * Generates a 16-character non-cryptographic Crockford Base32 string.
      *
@@ -869,7 +909,7 @@ namespace Northrook\Contracts {
             $bits       -= 5;
         }
 
-        $hash = \implode('', $output);
+        $hash = \implode($output);
 
         if (strlen($hash) !== 16) {
             throw new RuntimeException(
@@ -887,29 +927,43 @@ namespace Northrook\Contracts {
      * Returns an 8-character string; the standard short checksum shape for
      * cache keys, path namespaces, and other non-cryptographic fingerprints.
      *
-     * Compatible with `Northrook\Hash::checksum()` from `northrook/hasher`.
+     * Scalars are cast to string before hashing. Non-scalars are serialized;
+     * pass `$sort = true` to normalize associative array key order via
+     * {@see \sort_keys()} first (list order is preserved).
+     *
+     * String inputs remain compatible with `Northrook\Hash::checksum()` from
+     * `northrook/hasher`.
      *
      * Not appropriate for security-sensitive contexts.
      *
      * @return non-empty-string 8 characters from {@see \CROCKFORD_BASE32}
      */
     function get_checksum(
-        string $value,
+        mixed $value,
+        bool $sort = false,
     ): string {
+        if (! is_scalar($value)) {
+            $data = \serialize($sort ? \sort_keys($value) : $value);
+        } else {
+            $data = (string) $value;
+        }
+
         $output = \array_fill(0, 8, '');
-        $packed = \unpack('N', \hash('xxh32', $value, true));
+        $packed = \unpack('N', \hash('xxh32', $data, true));
         $digest = $packed[1] ?? throw new RuntimeException(
-            message: 'Failed to unpack xxh32 digest',
-            context: ['value' => $value],
+            message: 'Failed to unpack xxh32 digest from `data`',
+            context: [
+                'data'  => $data,
+                'value' => $value,
+            ],
         );
 
-        // LSB-first into the rightmost characters (same as Hash::value / checksum)
         for ($i = 7; $i >= 0; $i--) {
             $output[$i] = \CROCKFORD_BASE32[$digest & 31];
             $digest     >>= 5;
         }
 
-        $checksum = \implode('', $output);
+        $checksum = \implode($output);
 
         if (strlen($checksum) !== 8) {
             throw new RuntimeException(
@@ -1074,7 +1128,7 @@ namespace Northrook\Contracts {
             return false;
         }
 
-        return _match_charset(
+        return \match_charset(
             $key,
             $allowed,
         );
@@ -1133,7 +1187,7 @@ namespace Northrook\Contracts {
         string $string,
     ): bool {
         return $string === ''
-        || _match_charset(
+        || \match_charset(
             $string,
             \CHARSET_ASCII,
         );
@@ -1155,7 +1209,7 @@ namespace Northrook\Contracts {
     function str_is_alpha(
         string $string,
     ): bool {
-        return _match_charset(
+        return \match_charset(
             $string,
             \CHARSET_ALPHA,
         );
@@ -1177,7 +1231,7 @@ namespace Northrook\Contracts {
     function str_is_alnum(
         string $string,
     ): bool {
-        return _match_charset(
+        return \match_charset(
             $string,
             \CHARSET_ALNUM,
         );
@@ -1199,7 +1253,7 @@ namespace Northrook\Contracts {
     function str_is_digit(
         string $string,
     ): bool {
-        return _match_charset(
+        return \match_charset(
             $string,
             \CHARSET_DIGIT,
         );
@@ -1221,7 +1275,7 @@ namespace Northrook\Contracts {
     function str_is_xdigit(
         string $string,
     ): bool {
-        return _match_charset(
+        return \match_charset(
             $string,
             \CHARSET_XDIGIT,
         );
@@ -1261,7 +1315,7 @@ namespace Northrook\Contracts {
             }
         }
 
-        return _match_charset(
+        return \match_charset(
             $key,
             \CHARSET_ALNUM . '.-:',
         );
@@ -1297,7 +1351,7 @@ namespace Northrook\Contracts {
         bool $allowRelative = false,
         bool $allowSingleCharScheme = false,
     ): bool {
-        return _scan_uri($value, $allowRelative, $allowSingleCharScheme) !== null;
+        return \scan_uri($value, $allowRelative, $allowSingleCharScheme) !== null;
     }
 
     /**
@@ -1325,7 +1379,7 @@ namespace Northrook\Contracts {
     function is_valid_url(
         string $value,
     ): bool {
-        $scan = _scan_uri($value);
+        $scan = \scan_uri($value);
 
         return $scan !== null && $scan['authority'] && $scan['host'] !== '';
     }
