@@ -19,6 +19,13 @@ use Northrook\Contracts\Exceptions\RuntimeException;
 abstract readonly class ConfigObject extends DataObject
 {
     /**
+     * @abstract
+     *
+     * @var array<non-empty-string, mixed>
+     */
+    const array DEFAULTS = [];
+
+    /**
      * Creates an instance from an associative config array.
      *
      * Keys are forwarded to the constructor as named arguments via `new static(...$config)`.
@@ -38,7 +45,9 @@ abstract readonly class ConfigObject extends DataObject
     ): static {
         try {
             // @phpstan-ignore-next-line - Unsafe usage of new static() is intentional
-            return new static(...$config);
+            $args = array_merge(static::DEFAULTS, $config);
+
+            return new static(...$args);
         } catch (\Throwable $exception) {
             throw new RuntimeException(
                 message: 'Failed to create ' . static::class . ' from config array.',
