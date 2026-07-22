@@ -137,11 +137,25 @@ final class NormalizePathTest extends TestCase
             true,
         ];
 
+        yield 'strip trailing separator' => [
+            '/var/www/',
+            '/var/www',
+            false,
+            false,
+        ];
+
         yield 'root already trailing' => [
             '/',
             '/',
             false,
             true,
+        ];
+
+        yield 'root strip kept' => [
+            '/',
+            '/',
+            false,
+            false,
         ];
 
         yield 'empty string' => [

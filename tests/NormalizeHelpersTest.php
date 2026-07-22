@@ -33,6 +33,7 @@ final class NormalizeHelpersTest extends TestCase
         yield 'scheme body only' => ['file://C:\\Windows\\x', 'file://C:/Windows/x'];
         yield 'scheme token intact' => ['PHAR:///path\\to', 'PHAR:///path/to'];
         yield 'trailing' => ['a\\b', 'a/b/', true];
+        yield 'strip trailing' => ['a\\b\\', 'a/b', false];
         yield 'empty' => ['', ''];
         yield 'nullish via default' => ['', ''];
     }
@@ -121,6 +122,13 @@ final class NormalizeHelpersTest extends TestCase
             'https://ex.com/a/',
             '-',
             true,
+        ];
+
+        yield 'strip trailing slash' => [
+            'https://ex.com/a/',
+            'https://ex.com/a',
+            '-',
+            false,
         ];
 
         yield 'lowercase path' => [

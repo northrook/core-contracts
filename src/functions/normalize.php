@@ -8,6 +8,7 @@ namespace Northrook\Contracts {
 
     use function Northrook\Contracts\Internal\_is_path_scheme;
     use function Northrook\Contracts\Internal\_path_root;
+    use function Northrook\Contracts\Internal\_trailing_separator;
 
     /**
      * Normalize a filesystem path string.
@@ -34,7 +35,7 @@ namespace Northrook\Contracts {
      *
      * @param null|array<null|string|Stringable>|string|Stringable $path
      * @param bool                                                 $traversal          Resolve `..` segments
-     * @param bool                                                 $trailingSeparator  Ensure a trailing {@see \DIR_SEP}
+     * @param bool                                                 $trailingSeparator  `true` ensure trailing {@see \DIR_SEP}; `false` strip it (roots like `/` kept)
      * @param bool                                                 $throwOnEmpty       Throw instead of returning `''`
      *
      * @return string
@@ -120,11 +121,10 @@ namespace Northrook\Contracts {
             $segments[] = $segment;
         }
 
-        $normalized = $prefix . \implode(\DIR_SEP, $segments);
-
-        if ($trailingSeparator && $normalized !== '' && ! \str_ends_with($normalized, \DIR_SEP)) {
-            $normalized .= \DIR_SEP;
-        }
+        $normalized = _trailing_separator(
+            $prefix . \implode(\DIR_SEP, $segments),
+            $trailingSeparator,
+        );
 
         if ($normalized === '') {
             return $throwOnEmpty
@@ -150,7 +150,7 @@ namespace Northrook\Contracts {
      * — use {@see normalize_path()} for full path canonicalization.
      *
      * @param null|string|Stringable  $path
-     * @param bool                    $trailingSeparator  Append {@see \DIR_SEP} when missing
+     * @param bool                    $trailingSeparator  `true` ensure trailing {@see \DIR_SEP}; `false` strip it
      *
      * @return string
      */
@@ -178,11 +178,7 @@ namespace Northrook\Contracts {
             $path = \str_replace('/', \DIR_SEP, $path);
         }
 
-        if ($trailingSeparator && ! \str_ends_with($path, \DIR_SEP)) {
-            $path .= \DIR_SEP;
-        }
-
-        return $path;
+        return _trailing_separator($path, $trailingSeparator);
     }
 
     /**
@@ -249,7 +245,7 @@ namespace Northrook\Contracts {
      *
      * @param null|array<null|string|Stringable>|string|Stringable $url
      * @param false|string                                         $substituteWhitespace Replace runs of whitespace (`'-'` default; `false` keeps them)
-     * @param bool                                                 $trailingSlash        Ensure a trailing `/` on the path
+     * @param bool                                                 $trailingSlash        `true` ensure trailing `/` on the path; `false` strip it
      * @param bool                                                 $lowercasePath        Lowercase the path body (scheme always lowercased)
      */
     function normalize_url(
@@ -337,12 +333,22 @@ namespace Northrook\Contracts {
             $path = \strtolower($path);
         }
 
-        if ($trailingSlash) {
-            $path .= '/';
+        $path = _trailing_separator($path, $trailingSlash, '/');
+
+        if ($trailingSlash && $path === '') {
+            $path = '/';
         }
 
-        // No scheme → root-relative (`/path`), matching the historical core helper.
-        return ( $scheme !== '' ? $scheme : '/' ) . $path . $query . $fragment;
+        // No scheme → root-relative (`/path`). Avoid `//` when the path itself is `/`.
+        if ($scheme === '') {
+            if ($path === '' || $path === '/') {
+                return '/' . $query . $fragment;
+            }
+
+            return '/' . $path . $query . $fragment;
+        }
+
+        return $scheme . $path . $query . $fragment;
     }
 }
 
@@ -419,5 +425,31 @@ namespace Northrook\Contracts\Internal {
             && \strspn($scheme[0], \CHARSET_ALPHA) === 1
             && \strspn($scheme, \CHARSET_URI_SCHEME) === \strlen($scheme)
         );
+    }
+
+    /**
+     * Enforce presence or absence of a trailing separator.
+     *
+     * - `$trailing = true`  → append `$separator` when missing
+     * - `$trailing = false` → strip trailing `$separator`s
+     *
+     * All-separator roots are preserved: `/` stays `/`, `//` stays `//`.
+     *
+     * @internal
+     */
+    function _trailing_separator(
+        string $path,
+        bool $trailing,
+        string $separator = \DIR_SEP,
+    ): string {
+        if ($path === '') {
+            return '';
+        }
+
+        if ($trailing) {
+            return \str_ends_with($path, $separator) ? $path : $path . $separator;
+        }
+
+        return \rtrim($path, $separator) ?: ( \str_starts_with($path, '//') ? '//' : $separator );
     }
 }
