@@ -16,7 +16,8 @@
     },
     "files": [
       "src/constants.php",
-      "src/functions.php"
+      "src/functions.php",
+      "src/functions/normalize.php"
     ]
   },
   "autoload-dev": {
