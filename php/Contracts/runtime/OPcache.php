@@ -194,7 +194,8 @@ final class OPcache
     }
 
     /**
-     * @param non-empty-string $name
+     * @param string $path Filesystem path; must be non-empty
+     * @param string $name Label used in the empty-path exception message
      *
      * @return non-empty-string
      */

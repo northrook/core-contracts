@@ -111,7 +111,7 @@ final readonly class ColorPalette extends DataObject
      *
      * @param null|Formatter $parse Optional transform for each CSS value
      *
-     * @return array<string, string> as `[name => value]`
+     * @return array<string, string> as `[--custom-property => value]`
      */
     public function variables(
         null|string   $prefix = null,

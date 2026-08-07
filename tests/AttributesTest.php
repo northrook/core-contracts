@@ -13,7 +13,7 @@ use Northrook\Contracts\Path;
 use Northrook\Contracts\PathfinderInterface;
 use Northrook\Contracts\Redactor;
 use Northrook\Contracts\Secret;
-use Northrook\Contracts\Uri;
+use Northrook\Contracts\Url;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
@@ -382,7 +382,7 @@ final class AttributesPathfinderStub implements PathfinderInterface
 
     public function getUrl(
         string|\Stringable $reference,
-    ): null|Uri {
+    ): null|Url {
         return null;
     }
 }

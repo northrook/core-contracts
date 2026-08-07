@@ -64,8 +64,9 @@ final class ListenerMap
     }
 
     /**
-     * Descriptors for the concrete event class and every parent type that
-     * implements {@see EventInterface} (most specific last, unsorted).
+     * Descriptors whose registered event type is a parent of, or the same as,
+     * `$event` ({@see \is_a()}), appended in `$this->listeners` key order —
+     * no specificity or priority sort.
      *
      * @param object|class-string $event
      *

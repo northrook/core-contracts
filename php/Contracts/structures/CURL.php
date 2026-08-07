@@ -49,6 +49,9 @@ final class CURL implements CurlInterface
      * @param array<string, mixed>     $defaultOptions     Applied as Symfony client defaults (nested keys like `headers` merge via {@see HttpClientInterface::withOptions()})
      * @param int                      $maxHostConnections Passed to {@see CurlHttpClient} / {@see HttpClient::create()}
      * @param int                      $maxPendingPushes   Passed to {@see CurlHttpClient} / {@see HttpClient::create()}
+     * @param null|LoggerInterface     $logger             `null` → {@see NullLogger}
+     * @param null|FilesystemInterface $filesystem         Prefer for inspect-cache I/O when set
+     * @param null|string              $cacheDirectory     Inspect-cache root; `null` → temp path under {@see Normalize::path()}
      * @param null|HttpClientInterface $httpClient         When set, used as the base client (defaults baked via {@see HttpClientInterface::withOptions()})
      */
     public function __construct(

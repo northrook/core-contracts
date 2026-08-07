@@ -64,8 +64,6 @@ final class OnEvent
      * @throws InvalidArgumentException When `$class` is missing, `$method` is not a public
      *                                  instance method, the first parameter cannot accept
      *                                  {@see $event}, or a conflicting re-bind is attempted
-     *
-     * @used-by {@see ContainerInterface}
      */
     public function register(
         string $class,

@@ -59,9 +59,9 @@ final readonly class Autodiscover implements AutodiscoverInterface
     /**
      * `factory` string must be a public static method on the class.
      *
-     * @var false|string
+     * @var null|string
      */
-    public null|false|string $factory;
+    public null|string $factory;
 
     /**
      * Callbacks the container invokes on the service immediately after instantiation.

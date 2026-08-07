@@ -84,9 +84,11 @@ final readonly class Timestamp implements \Stringable
     }
 
     /**
-     * Returns the current instant as a millisecond count.
+     * Millisecond epoch count for `$from` (same forms as the constructor);
+     * `null` → current instant.
      *
      * @param null|string|int|float $from
+     *
      * @return int
      */
     public static function number(

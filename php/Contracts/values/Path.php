@@ -14,8 +14,6 @@ namespace Northrook\Contracts;
  * {@see File} / {@see Directory} when the path is known to be a file or
  * directory and typed I/O or listing matters.
  *
- * Replaces the deprecated {@see PathInterface} surface under immutable returns.
- *
  * Optional {@see FilesystemInterface} collaborator: when present, all I/O and
  * existence predicates go through it; when null, simple native PHP is used.
  */

@@ -60,7 +60,7 @@ final readonly class Email implements Reference
      * @param bool                                     $allowQuoted Accept quoted-string local-parts
      * @param null|callable(string, string): ?string   $policy      `fn( string $local, string $domain ): ?string`
      *                                                              — null passes, string rejects with that reason
-     * @param bool                                     $dnsCheck    Verify MX/A/AAA records via live DNS queries
+     * @param bool                                     $dnsCheck    Verify MX/A/AAAA records via live DNS queries
      *
      * @throws InvalidArgumentException When `$value` is not a valid email address
      */
@@ -90,7 +90,7 @@ final readonly class Email implements Reference
      *
      * @param bool                                   $allowQuoted Accept quoted-string local-parts
      * @param null|callable(string, string): ?string $policy      Rejection callback; string return = reason
-     * @param bool                                   $dnsCheck    Verify MX/A/AAA records via live DNS queries
+     * @param bool                                   $dnsCheck    Verify MX/A/AAAA records via live DNS queries
      *
      * @return non-empty-string
      */

@@ -37,7 +37,13 @@ final class Contracts extends Singleton
     }
 
     /**
-     * @param null|Redactor  $secretRedactor  Global dump redactor; `null` → {@see Redactor}
+     * @param null|string|\Stringable                                   $rootDirectory   Via {@see System::resolveRootDirectory()}
+     * @param null|string|\Stringable                                   $cacheDirectory  Via {@see System::resolveCacheDirectory()}; created if missing
+     * @param null|LoggerInterface                                      $logger          `null` → {@see NullLogger}
+     * @param null|string|\Stringable|\DateTimeZone|\DateTimeInterface  $timezone        Via {@see Timezone::from()}; `null` → UTC
+     * @param null|CurlInterface                                        $curl            Optional shared client; stored as-is
+     * @param null|FilesystemInterface                                  $filesystem      Optional I/O collaborator; stored as-is
+     * @param null|Redactor                                             $secretRedactor  Optional dump redactor; stored as-is — {@see \Northrook\Contracts\Secret::redact()} falls back to {@see Redactor} when unset
      */
     public static function register(
         null|string|\Stringable                                  $rootDirectory = null,

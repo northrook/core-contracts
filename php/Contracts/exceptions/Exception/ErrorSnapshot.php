@@ -7,7 +7,7 @@ namespace Northrook\Contracts\Exception;
 use Northrook\Contracts\DataObject;
 
 /**
- * @used-by ErrorReport
+ * @used-by \Northrook\Contracts\ErrorReport
  */
 final readonly class ErrorSnapshot extends DataObject
 {

@@ -96,10 +96,15 @@ final class ServiceDefinition
 
     /**
      * @param class-string                                                        $class
+     * @param ServiceBinding                                                      $binding
      * @param class-string|Alias|array<array-key, class-string>                   $aliases
      * @param array<int, Tag|TagFrom>                                             $tags
      * @param ArgumentMap                                                         $arguments
+     * @param bool                                                                $autowire
+     * @param bool                                                                $preload
+     * @param false|string                                                        $factory
      * @param \Northrook\Contracts\Callback[]                                     $callbacks
+     * @param bool                                                                $locked
      */
     private function __construct(
         string             $class,
@@ -596,10 +601,16 @@ final class ServiceDefinition
 
     /**
      * @param class-string                         $class
+     * @param null|Autodiscover                    $autodiscover
      * @param array<array-key, class-string>       $aliases
      * @param array<int, Tag|TagFrom>              $tags
      * @param ArgumentMap                          $arguments
+     * @param bool                                 $autowire
+     * @param bool                                 $preload
+     * @param false|string                         $factory
      * @param \Northrook\Contracts\Callback[]      $callbacks
+     * @param ServiceBinding                       $binding
+     * @param bool                                 $locked
      */
     public static function register(
         string            $class,

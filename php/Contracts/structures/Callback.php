@@ -35,6 +35,7 @@ final class Callback
 
     /**
      * @param class-string $class
+     * @param string       $method
      * @param mixed        ...$args
      */
     public static function staticMethod(
