@@ -4,74 +4,75 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts\Exceptions\RuntimeException;
 use Northrook\Contracts\ReservedMemory;
+use Northrook\Contracts\RuntimeException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class ReservedMemoryTest extends TestCase
 {
-    public function testConstructDoesNotReserve(): void
+    public function testConstructorDoesNotReserve(): void
     {
-        $memory = new ReservedMemory(64);
+        $memory = new ReservedMemory(1_024);
 
-        self::assertSame(64, $memory->bytes());
         self::assertFalse($memory->isReserved());
+        self::assertSame(1_024, $memory->bytes());
     }
 
     public function testReserveReleaseLifecycle(): void
     {
-        $memory = new ReservedMemory(64);
+        $memory = new ReservedMemory(1_024);
 
         $memory->reserve();
         self::assertTrue($memory->isReserved());
-        self::assertSame(64, $memory->bytes());
 
         $memory->release();
         self::assertFalse($memory->isReserved());
-        self::assertSame(64, $memory->bytes());
     }
 
     public function testReserveIsIdempotent(): void
     {
-        $memory = new ReservedMemory(64);
+        $memory = new ReservedMemory(1_024);
 
         $memory->reserve();
         $memory->reserve();
 
         self::assertTrue($memory->isReserved());
+        self::assertSame(1_024, $memory->bytes());
     }
 
-    public function testReleaseWhenEmptyIsNoOp(): void
+    public function testReleaseWithoutReserveIsNoOp(): void
     {
-        $memory = new ReservedMemory(64);
+        $memory = new ReservedMemory(1_024);
 
         $memory->release();
 
         self::assertFalse($memory->isReserved());
     }
 
-    #[DataProvider('provideInvalidBytes')]
-    public function testRejectsOutOfRangeBytes(
-        int $bytes,
-    ): void {
-        $this->expectException(RuntimeException::class);
+    public function testReserveAfterReleaseReallocates(): void
+    {
+        $memory = new ReservedMemory(1_024);
 
-        new ReservedMemory($bytes);
+        $memory->reserve();
+        $memory->release();
+        $memory->reserve();
+
+        self::assertTrue($memory->isReserved());
     }
 
     /**
-     * @return iterable<string, array{int}>
+     * @return \Generator<string, array{int}>
      */
-    public static function provideInvalidBytes(): iterable
+    public static function provideValidByteCounts(): \Generator
     {
-        yield 'zero' => [0];
-        yield 'negative' => [-1];
-        yield 'above max' => [16_777_217];
+        yield 'minimum' => [1];
+        yield 'arbitrary' => [65_536];
+        yield 'maximum' => [16_777_216];
     }
 
-    #[DataProvider('provideBoundaryBytes')]
-    public function testAcceptsBoundaryBytes(
+    #[DataProvider('provideValidByteCounts')]
+    public function testConstructorAcceptsByteRange(
         int $bytes,
     ): void {
         $memory = new ReservedMemory($bytes);
@@ -81,11 +82,20 @@ final class ReservedMemoryTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{int}>
+     * @return \Generator<string, array{int}>
      */
-    public static function provideBoundaryBytes(): iterable
+    public static function provideInvalidByteCounts(): \Generator
     {
-        yield 'min' => [1];
-        yield 'max' => [16_777_216];
+        yield 'zero' => [0];
+        yield 'negative' => [-1];
+        yield 'above maximum' => [16_777_217];
+    }
+
+    #[DataProvider('provideInvalidByteCounts')]
+    public function testConstructorRejectsOutOfRangeBytes(
+        int $bytes,
+    ): void {
+        $this->expectException(RuntimeException::class);
+        new ReservedMemory($bytes);
     }
 }

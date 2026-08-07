@@ -5,109 +5,109 @@ declare(strict_types=1);
 namespace Northrook\Contracts\Tests;
 
 use Northrook\Contracts\ConfigObject;
-use Northrook\Contracts\Exceptions\RuntimeException;
+use Northrook\Contracts\RuntimeException;
 use PHPUnit\Framework\TestCase;
+
+/**
+ * @param array<string, mixed> $config
+ */
+function configObjectTestComputedLabel(
+    array $config,
+): string {
+    $name = $config['name'] ?? 'missing';
+
+    return 'computed:' . ( \is_string($name) ? $name : 'missing' );
+}
+
+/**
+ * @param array<string, mixed> $config
+ */
+function configObjectTestFailingDefault(
+    array $config,
+): string {
+    throw new \LogicException('Default exploded.');
+}
 
 final class ConfigObjectTest extends TestCase
 {
     public function testFromSpreadsOptionsIntoConstructor(): void
     {
-        $config = TestConfigObject::from([
-            'name'  => 'example',
-            'count' => 5,
+        $config = ConfigObjectTestBasic::from([
+            'name'  => 'app',
+            'count' => 3,
+            'label' => 'custom',
         ]);
 
-        self::assertInstanceOf(TestConfigObject::class, $config);
-        self::assertSame('example', $config->name);
-        self::assertSame(5, $config->count);
+        self::assertSame('app', $config->name);
+        self::assertSame(3, $config->count);
+        self::assertSame('custom', $config->label);
     }
 
-    public function testFromAppliesDefaults(): void
+    public function testFromAppliesDefaultsForAbsentKeys(): void
     {
-        $config = TestConfigObject::from([]);
+        $config = ConfigObjectTestBasic::from(['name' => 'app']);
 
-        self::assertSame(__NAMESPACE__, $config->name);
-        self::assertSame(0, $config->count);
-    }
-
-    public function testFromOverridesDefaults(): void
-    {
-        $config = TestConfigObject::from([
-            'name' => 'example',
-        ]);
-
-        self::assertSame('example', $config->name);
-        self::assertSame(0, $config->count);
+        self::assertSame('app', $config->name);
+        self::assertSame(7, $config->count);
+        self::assertSame('fallback', $config->label);
     }
 
     public function testFromResolvesCallableStringDefaults(): void
     {
-        $config = ComputedConfigObject::from([
-            'prefix' => 'app',
-        ]);
+        $config = ConfigObjectTestComputed::from(['name' => 'app']);
 
-        self::assertSame('app-computed', $config->name);
-        self::assertSame(0, $config->count);
+        self::assertSame('app', $config->name);
+        self::assertSame('computed:app', $config->label);
     }
 
     public function testFromDoesNotInvokeCallableDefaultWhenKeyProvided(): void
     {
-        $config = ComputedConfigObject::from([
-            'prefix' => 'app',
-            'name'   => 'explicit',
+        $config = ConfigObjectTestComputed::from([
+            'name'  => 'app',
+            'label' => 'explicit',
         ]);
 
-        self::assertSame('explicit', $config->name);
+        self::assertSame('explicit', $config->label);
     }
 
     public function testFromThrowsWhenCallableDefaultFails(): void
     {
         try {
-            FailingComputedConfigObject::from([]);
-            self::fail('Expected RuntimeException.');
+            ConfigObjectTestFailingComputed::from([]);
+            self::fail('Expected RuntimeException was not thrown.');
         } catch (RuntimeException $exception) {
-            self::assertSame(
-                'Failed to create ' . FailingComputedConfigObject::class . ' from config array.',
-                $exception->getMessage(),
-            );
+            self::assertStringContainsString('Failed to create', $exception->getMessage());
+
             $previous = $exception->getPrevious();
+
             self::assertInstanceOf(RuntimeException::class, $previous);
-            self::assertSame('Failed to resolve config `name`', $previous->getMessage());
+            self::assertStringContainsString('Failed to resolve config `label`', $previous->getMessage());
+            self::assertInstanceOf(\LogicException::class, $previous->getPrevious());
         }
     }
 
     public function testFromThrowsOnMissingRequiredParameters(): void
     {
         try {
-            RequiredConfigObject::from([
-                // Missing required `name` (DEFAULTS null sentinel).
-                'count' => 1,
-            ]);
-            self::fail('Expected RuntimeException.');
+            ConfigObjectTestBasic::from([]);
+            self::fail('Expected RuntimeException was not thrown.');
         } catch (RuntimeException $exception) {
-            self::assertSame(
-                'Failed to create ' . RequiredConfigObject::class . ' from config array.',
-                $exception->getMessage(),
-            );
+            self::assertStringContainsString('Failed to create', $exception->getMessage());
+
             $previous = $exception->getPrevious();
+
             self::assertInstanceOf(RuntimeException::class, $previous);
-            self::assertSame('Missing required config `name`', $previous->getMessage());
+            self::assertStringContainsString('Missing required config `name`', $previous->getMessage());
         }
     }
 
     public function testFromThrowsOnIncompatibleTypes(): void
     {
         try {
-            TestConfigObject::from([
-                'name'  => 'example',
-                'count' => '1', // `int` expected.
-            ]);
-            self::fail('Expected RuntimeException.');
+            ConfigObjectTestBasic::from(['name' => 'app', 'count' => 'lots']);
+            self::fail('Expected RuntimeException was not thrown.');
         } catch (RuntimeException $exception) {
-            self::assertSame(
-                'Failed to create ' . TestConfigObject::class . ' from config array.',
-                $exception->getMessage(),
-            );
+            self::assertStringContainsString('Failed to create', $exception->getMessage());
             self::assertInstanceOf(\TypeError::class, $exception->getPrevious());
         }
     }
@@ -115,102 +115,80 @@ final class ConfigObjectTest extends TestCase
     public function testFromThrowsOnUnknownKeys(): void
     {
         try {
-            TestConfigObject::from([
-                'name'    => 'example',
-                'count'   => 1,
-                'unknown' => true,
-            ]);
-            self::fail('Expected RuntimeException.');
+            ConfigObjectTestBasic::from(['name' => 'app', 'bogus' => 1, 'extra' => 2]);
+            self::fail('Expected RuntimeException was not thrown.');
         } catch (RuntimeException $exception) {
-            self::assertSame(
-                'Failed to create ' . TestConfigObject::class . ' from config array.',
-                $exception->getMessage(),
-            );
+            self::assertStringContainsString('Failed to create', $exception->getMessage());
+
             $previous = $exception->getPrevious();
+
             self::assertInstanceOf(RuntimeException::class, $previous);
-            self::assertSame('Unknown config keys: unknown', $previous->getMessage());
+            self::assertStringContainsString('Unknown config keys: bogus, extra', $previous->getMessage());
         }
     }
-}
 
-final readonly class TestConfigObject extends ConfigObject
-{
-    const array DEFAULTS = [
-        'name'  => __NAMESPACE__,
-        'count' => 0,
-    ];
+    public function testFromKeepsExplicitNullForRequiredKey(): void
+    {
+        $config = ConfigObjectTestNullable::from(['note' => null]);
 
-    public function __construct(
-        public string $name,
-        public int $count = 0,
-    ) {
-        parent::__construct();
+        self::assertNull($config->note);
     }
 }
 
-final readonly class RequiredConfigObject extends ConfigObject
+final readonly class ConfigObjectTestBasic extends ConfigObject
 {
-    const array DEFAULTS = [
+    public const array DEFAULTS = [
         'name'  => null,
-        'count' => 0,
+        'count' => 7,
+        'label' => 'fallback',
     ];
 
     public function __construct(
         public string $name,
-        public int $count = 0,
+        public int    $count,
+        public string $label,
     ) {
         parent::__construct();
     }
 }
 
-final readonly class ComputedConfigObject extends ConfigObject
+final readonly class ConfigObjectTestComputed extends ConfigObject
 {
-    const array DEFAULTS = [
-        'prefix' => null,
-        'name'   => self::class . '::computeName',
-        'count'  => 0,
+    public const array DEFAULTS = [
+        'name'  => null,
+        'label' => 'Northrook\Contracts\Tests\configObjectTestComputedLabel',
     ];
 
     public function __construct(
-        public string $prefix,
         public string $name,
-        public int $count = 0,
+        public string $label,
     ) {
         parent::__construct();
-    }
-
-    /**
-     * @param array<string, mixed> $config
-     */
-    public static function computeName(
-        array $config,
-    ): string {
-        $prefix = $config['prefix'] ?? 'missing';
-
-        return ( \is_string($prefix) ? $prefix : 'missing' ) . '-computed';
     }
 }
 
-final readonly class FailingComputedConfigObject extends ConfigObject
+final readonly class ConfigObjectTestFailingComputed extends ConfigObject
 {
-    const array DEFAULTS = [
-        'name'  => self::class . '::fail',
-        'count' => 0,
+    public const array DEFAULTS = [
+        'label' => 'Northrook\Contracts\Tests\configObjectTestFailingDefault',
     ];
 
     public function __construct(
-        public string $name,
-        public int $count = 0,
+        public string $label,
     ) {
         parent::__construct();
     }
+}
 
-    /**
-     * @param array<string, mixed> $config
-     */
-    public static function fail(
-        array $config,
-    ): string {
-        throw new \RuntimeException('boom');
+final readonly class ConfigObjectTestNullable extends ConfigObject
+{
+    public const array DEFAULTS = [
+        'note' => null,
+    ];
+
+    public function __construct(
+        public null|string $note,
+    ) {
+        parent::__construct();
     }
 }

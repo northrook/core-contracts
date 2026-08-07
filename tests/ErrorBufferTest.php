@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts\ErrorHandler\ErrorBuffer;
-use Northrook\Contracts\ErrorHandler\RuntimeError;
+use Northrook\Contracts\ErrorBuffer;
+use Northrook\Contracts\Exception\RuntimeError;
 use PHPUnit\Framework\TestCase;
 
 final class ErrorBufferTest extends TestCase
@@ -14,18 +14,24 @@ final class ErrorBufferTest extends TestCase
 
     protected function setUp(): void
     {
-        ErrorBuffer::setShared($this->buffer = new ErrorBuffer());
+        ErrorBuffer::shared()->reset();
+        ErrorBuffer::setShared(null);
+        $this->buffer = new ErrorBuffer;
     }
 
     protected function tearDown(): void
     {
+        ErrorBuffer::shared()->reset();
         ErrorBuffer::setShared(null);
     }
 
-    public function testRecordAndAll(): void
+    public function testRecordAccumulatesErrors(): void
     {
-        $first  = RuntimeError::from(self::sampleArray('first'));
-        $second = RuntimeError::from(self::sampleArray('second'));
+        self::assertSame([], $this->buffer->all());
+        self::assertSame(0, $this->buffer->count());
+
+        $first  = $this->error('first');
+        $second = $this->error('second');
 
         $this->buffer->record($first);
         $this->buffer->record($second);
@@ -34,33 +40,28 @@ final class ErrorBufferTest extends TestCase
         self::assertSame(2, $this->buffer->count());
     }
 
-    public function testRecordFrom(): void
+    public function testRecordFromCreatesRuntimeError(): void
     {
-        $this->buffer->recordFrom(E_USER_NOTICE, 'notice', '/tmp/a.php', 3);
+        $this->buffer->recordFrom(\E_USER_NOTICE, 'recorded message', 'some/file.php', 42);
 
-        self::assertCount(1, $this->buffer->all());
-        $last = $this->buffer->last();
-        if ($last === null) {
-            self::fail('Expected a buffered error.');
-        }
-        self::assertSame(E_USER_NOTICE, $last->type);
-        self::assertSame('notice', $last->message);
-        self::assertSame('/tmp/a.php', $last->file);
-        self::assertSame(3, $last->line);
+        $error = $this->buffer->last();
+
+        self::assertInstanceOf(RuntimeError::class, $error);
+        self::assertSame(\E_USER_NOTICE, $error->type);
+        self::assertSame('recorded message', $error->message);
+        self::assertSame('some/file.php', $error->file);
+        self::assertSame(42, $error->line);
+        self::assertSame(1, $this->buffer->count());
     }
 
     public function testAllReturnsExportableRuntimeErrors(): void
     {
-        $this->buffer->record(RuntimeError::from(self::sampleArray('one')));
-        $this->buffer->record(RuntimeError::from(self::sampleArray('two')));
+        $this->buffer->recordFrom(\E_USER_WARNING, 'export me', __FILE__, __LINE__);
 
-        self::assertSame([
-            self::sampleArray('one'),
-            self::sampleArray('two'),
-        ], \array_map(
-            static fn(RuntimeError $error): array => $error->toArray(),
-            $this->buffer->all(),
-        ));
+        $exported = $this->buffer->all()[0]->toArray();
+        $restored = RuntimeError::from($exported);
+
+        self::assertSame($exported, $restored->toArray());
     }
 
     public function testLastReturnsNullWhenEmpty(): void
@@ -70,38 +71,70 @@ final class ErrorBufferTest extends TestCase
 
     public function testLastReturnsMostRecentEntry(): void
     {
-        $this->buffer->record(RuntimeError::from(self::sampleArray('first')));
-        $second = RuntimeError::from(self::sampleArray('second'));
-        $this->buffer->record($second);
+        $this->buffer->record($this->error('older'));
+        $recent = $this->error('recent');
+        $this->buffer->record($recent);
 
-        self::assertSame($second, $this->buffer->last());
+        self::assertSame($recent, $this->buffer->last());
     }
 
-    public function testMarkAndSince(): void
+    public function testMarkAndSinceReturnsEntriesAfterMark(): void
     {
-        $this->buffer->record(RuntimeError::from(self::sampleArray('first')));
-        $mark   = $this->buffer->mark();
-        $second = RuntimeError::from(self::sampleArray('second'));
-        $this->buffer->record($second);
+        $this->buffer->record($this->error('before mark'));
+        $mark = $this->buffer->mark();
 
-        self::assertSame([$second], $this->buffer->since($mark));
-        self::assertSame([$second->toArray()], \array_map(
-            static fn(RuntimeError $error): array => $error->toArray(),
-            $this->buffer->since($mark),
-        ));
+        self::assertSame(1, $mark);
+
+        $after = $this->error('after mark');
+        $this->buffer->record($after);
+        $this->buffer->record($this->error('also after'));
+
+        $since = $this->buffer->since($mark);
+
+        self::assertSame([$after, $since[1]], $since);
+        self::assertCount(2, $since);
+        self::assertSame('after mark', $since[0]->message);
     }
 
     public function testSinceTreatsNegativeMarkAsZero(): void
     {
-        $first = RuntimeError::from(self::sampleArray('first'));
-        $this->buffer->record($first);
+        $this->buffer->record($this->error('one'));
+        $this->buffer->record($this->error('two'));
 
-        self::assertSame([$first], $this->buffer->since(-1));
+        self::assertSame($this->buffer->all(), $this->buffer->since(-3));
+    }
+
+    public function testSinceBeyondEndReturnsEmptyList(): void
+    {
+        $this->buffer->record($this->error('only'));
+
+        self::assertSame([], $this->buffer->since(99));
+    }
+
+    public function testSinceArraysMapsToErrorArrays(): void
+    {
+        $this->buffer->recordFrom(\E_USER_WARNING, 'as array', 'file.php', 7);
+        $mark = $this->buffer->mark();
+        $this->buffer->recordFrom(\E_USER_NOTICE, 'after', 'file.php', 8);
+
+        $arrays = $this->buffer->sinceArrays($mark);
+
+        self::assertCount(1, $arrays);
+        self::assertSame(
+            [
+                'type'    => \E_USER_NOTICE,
+                'message' => 'after',
+                'file'    => 'file.php',
+                'line'    => 8,
+            ],
+            $arrays[0],
+        );
     }
 
     public function testResetClearsBuffer(): void
     {
-        $this->buffer->record(RuntimeError::from(self::sampleArray('first')));
+        $this->buffer->record($this->error('stale'));
+
         $this->buffer->reset();
 
         self::assertSame([], $this->buffer->all());
@@ -109,10 +142,8 @@ final class ErrorBufferTest extends TestCase
         self::assertNull($this->buffer->last());
     }
 
-    public function testSharedReturnsSameInstanceUntilReset(): void
+    public function testSharedReturnsSameInstance(): void
     {
-        ErrorBuffer::setShared(null);
-
         $shared = ErrorBuffer::shared();
 
         self::assertSame($shared, ErrorBuffer::shared());
@@ -120,30 +151,30 @@ final class ErrorBufferTest extends TestCase
 
     public function testSetSharedReplacesInstance(): void
     {
-        $custom = new ErrorBuffer();
-        ErrorBuffer::setShared($custom);
-        $custom->record(RuntimeError::from(self::sampleArray('custom')));
+        $replacement = new ErrorBuffer;
 
-        self::assertSame($custom, ErrorBuffer::shared());
-        self::assertSame('custom', ErrorBuffer::shared()->last()?->message);
+        ErrorBuffer::setShared($replacement);
+
+        self::assertSame($replacement, ErrorBuffer::shared());
     }
 
-    /**
-     * @return array{
-     *     type: int,
-     *     message: string,
-     *     file: string,
-     *     line: int,
-     * }
-     */
-    private static function sampleArray(
+    public function testSetSharedNullRecreatesInstanceLazily(): void
+    {
+        $original = ErrorBuffer::shared();
+
+        ErrorBuffer::setShared(null);
+
+        self::assertNotSame($original, ErrorBuffer::shared());
+    }
+
+    private function error(
         string $message,
-    ): array {
-        return [
-            'type'    => E_USER_NOTICE,
+    ): RuntimeError {
+        return RuntimeError::from([
+            'type'    => \E_USER_WARNING,
             'message' => $message,
-            'file'    => '/tmp/file.php',
-            'line'    => 10,
-        ];
+            'file'    => __FILE__,
+            'line'    => __LINE__,
+        ]);
     }
 }

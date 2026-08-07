@@ -12,19 +12,26 @@ final class GetHashTest extends TestCase
 {
     public function testLengthIsSixteen(): void
     {
-        self::assertSame(16, \strlen(get_hash()));
+        self::assertSame(16, strlen(get_hash()));
     }
 
     public function testUsesCrockfordBase32(): void
     {
-        $hash = get_hash();
+        for ($i = 0; $i < 16; $i++) {
+            $hash = get_hash();
 
-        self::assertSame(16, \strspn($hash, \CROCKFORD_BASE32));
-        self::assertDoesNotMatchRegularExpression('/[ILOU]/i', $hash);
+            self::assertSame(16, strspn($hash, \CROCKFORD_BASE32));
+        }
     }
 
     public function testSmokeUniqueness(): void
     {
-        self::assertNotSame(get_hash(), get_hash());
+        $hashes = [];
+
+        for ($i = 0; $i < 64; $i++) {
+            $hashes[] = get_hash();
+        }
+
+        self::assertSame($hashes, array_unique($hashes));
     }
 }

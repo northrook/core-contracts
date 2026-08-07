@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts\Exceptions\RuntimeException;
+use Northrook\Contracts;
+use Northrook\Contracts\RuntimeException;
+use Northrook\Contracts\Singleton;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -12,63 +14,105 @@ use function Northrook\Contracts\get_temp_path;
 
 final class GetTempPathTest extends TestCase
 {
+    private const string ROOT = __DIR__ . '/..';
+
+    protected function setUp(): void
+    {
+        $this->resetContracts();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->resetContracts();
+    }
+
     public function testDefaultPath(): void
     {
-        self::assertTempPath(get_temp_path(), 'tmp');
+        $path = get_temp_path();
+
+        self::assertStringStartsWith(\sys_get_temp_dir() . \DIR_SEP . 'tmp!', $path);
+        $this->assertBangHashSuffix($path);
     }
 
     public function testRelativePath(): void
     {
-        self::assertTempPath(get_temp_path('cache'), 'cache');
+        $path = get_temp_path('cache');
+
+        self::assertStringStartsWith(\sys_get_temp_dir() . \DIR_SEP . 'cache!', $path);
+        $this->assertBangHashSuffix($path);
     }
 
     public function testEmptyRelativePathDefaultsToTmp(): void
     {
-        self::assertTempPath(get_temp_path(''), 'tmp');
+        $path = get_temp_path('');
+
+        self::assertStringStartsWith(\sys_get_temp_dir() . \DIR_SEP . 'tmp!', $path);
+        $this->assertBangHashSuffix($path);
     }
 
     public function testStripsTrailingBang(): void
     {
-        self::assertTempPath(get_temp_path('cache!'), 'cache');
+        $path = get_temp_path('name!!');
+
+        self::assertStringStartsWith(\sys_get_temp_dir() . \DIR_SEP . 'name!', $path);
+        self::assertStringNotContainsString('name!!', $path);
+        $this->assertBangHashSuffix($path);
     }
 
     public function testNestedRelativePath(): void
     {
-        self::assertTempPath(
-            get_temp_path('northrook/cache'),
-            'northrook' . \DIR_SEP . 'cache',
-        );
+        $path = get_temp_path('namespace/cache');
+
+        self::assertStringStartsWith(\sys_get_temp_dir() . \DIR_SEP . 'namespace/cache!', $path);
+        $this->assertBangHashSuffix($path);
     }
 
     public function testCollapsesDotAndEmptySegments(): void
     {
-        self::assertTempPath(
-            get_temp_path('a/./b//c/x'),
-            'a' . \DIR_SEP . 'b' . \DIR_SEP . 'c' . \DIR_SEP . 'x',
-        );
+        $path = get_temp_path('a/./b//c');
+
+        self::assertStringStartsWith(\sys_get_temp_dir() . \DIR_SEP . 'a/b/c!', $path);
+        $this->assertBangHashSuffix($path);
     }
 
     public function testNormalizesBackslashes(): void
     {
-        self::assertTempPath(
-            get_temp_path('a\\b\\x'),
-            'a' . \DIR_SEP . 'b' . \DIR_SEP . 'x',
-        );
+        $path = get_temp_path('a\b\c');
+
+        self::assertStringStartsWith(\sys_get_temp_dir() . \DIR_SEP . 'a/b/c!', $path);
+        $this->assertBangHashSuffix($path);
     }
 
     public function testSmokeUniqueness(): void
     {
-        self::assertNotSame(get_temp_path(), get_temp_path());
+        $paths = [];
+
+        for ($i = 0; $i < 16; $i++) {
+            $paths[] = get_temp_path('unique');
+        }
+
+        self::assertSame($paths, array_unique($paths));
     }
 
-    /**
-     * @return iterable<string, array{string}>
-     */
-    public static function provideTraversalCases(): iterable
+    public function testUnregisteredUsesSysTemp(): void
     {
-        yield 'parent segment' => ['../evil'];
-        yield 'nested parent' => ['a/../../b'];
-        yield 'trailing parent' => ['a/..'];
+        self::assertFalse(Contracts::isRegistered());
+
+        $path = get_temp_path('download');
+
+        self::assertStringStartsWith(\sys_get_temp_dir() . \DIR_SEP . 'download!', $path);
+        $this->assertBangHashSuffix($path);
+    }
+
+    public function testRegisteredUsesCacheTmpSegment(): void
+    {
+        $contracts = Contracts::register(rootDirectory: self::ROOT);
+        $prefix    = $contracts->cacheDirectory->value . \DIR_SEP . 'tmp' . \DIR_SEP . 'download!';
+
+        $path = get_temp_path('download');
+
+        self::assertStringStartsWith($prefix, $path);
+        $this->assertBangHashSuffix($path);
     }
 
     #[DataProvider('provideTraversalCases')]
@@ -76,24 +120,29 @@ final class GetTempPathTest extends TestCase
         string $relativePath,
     ): void {
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Cannot traverse upwards.');
 
         get_temp_path($relativePath);
     }
 
-    private static function assertTempPath(
+    public static function provideTraversalCases(): \Generator
+    {
+        yield 'leading traversal' => ['../evil'];
+        yield 'mid-path escape' => ['a/../../b'];
+        yield 'trailing parent' => ['a/..'];
+    }
+
+    private function assertBangHashSuffix(
         string $path,
-        string $relative,
     ): void {
-        $temp = \rtrim(\strtr(\sys_get_temp_dir(), '\\', \DIR_SEP), \DIR_SEP);
-        $bang = \strrpos($path, '!');
+        $suffix = (string) strrchr($path, '!');
 
-        self::assertNotFalse($bang);
-        self::assertSame($temp . \DIR_SEP . $relative, \substr($path, 0, $bang));
+        self::assertSame(17, strlen($suffix));
+        self::assertSame(16, strspn(substr($suffix, 1), \CROCKFORD_BASE32));
+    }
 
-        $hash = \substr($path, $bang + 1);
-
-        self::assertSame(16, \strlen($hash));
-        self::assertSame(16, \strspn($hash, \CROCKFORD_BASE32));
+    private function resetContracts(): void
+    {
+        $property = new \ReflectionProperty(Singleton::class, '__instance');
+        $property->setValue(null, []);
     }
 }

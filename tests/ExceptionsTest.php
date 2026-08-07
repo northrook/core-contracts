@@ -4,350 +4,384 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts\ErrorHandler\ErrorBuffer;
-use Northrook\Contracts\ErrorHandler\RuntimeError;
-use Northrook\Contracts\Exceptions\CurlException;
-use Northrook\Contracts\Exceptions\ErrorException;
-use Northrook\Contracts\Exceptions\FileNotFoundException;
-use Northrook\Contracts\Exceptions\FilesystemException;
-use Northrook\Contracts\Exceptions\InvalidArgumentException;
-use Northrook\Contracts\Exceptions\RecursionException;
-use Northrook\Contracts\Exceptions\RegexpException;
-use Northrook\Contracts\Exceptions\RuntimeException;
-use Northrook\Contracts\Exceptions\ServiceNotFoundException;
-use Northrook\Contracts\Tests\Support\InvalidRegexpCalls;
+use Northrook\Contracts\ContainerException;
+use Northrook\Contracts\CurlException;
+use Northrook\Contracts\DependencyException;
+use Northrook\Contracts\ErrorBuffer;
+use Northrook\Contracts\Exception\ErrorSnapshot;
+use Northrook\Contracts\Exception\StackFrame;
+use Northrook\Contracts\FileNotFoundException;
+use Northrook\Contracts\FilesystemException;
+use Northrook\Contracts\InvalidArgumentException;
+use Northrook\Contracts\NotFoundException;
+use Northrook\Contracts\RecursionException;
+use Northrook\Contracts\RegexpException;
+use Northrook\Contracts\RuntimeException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use RuntimeException as PhpRuntimeException;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 
-use function Northrook\Contracts\is_valid_path_length;
-
-use const Northrook\Logger\LOG_LEVEL, PREG_INTERNAL_ERROR;
+use const Northrook\Contracts\LOG_LEVEL;
 
 final class ExceptionsTest extends TestCase
 {
     protected function setUp(): void
     {
-        error_clear_last();
         ErrorBuffer::shared()->reset();
+        ErrorBuffer::setShared(null);
     }
 
     protected function tearDown(): void
     {
-        error_clear_last();
         ErrorBuffer::shared()->reset();
+        ErrorBuffer::setShared(null);
     }
 
-    /**
-     * @param class-string $class
-     */
-    #[DataProvider('provideSubclassExtendsContractsRuntimeException')]
+    #[DataProvider('provideExceptionSubclasses')]
     public function testSubclassExtendsContractsRuntimeException(
-        string $class,
+        \Closure $factory,
     ): void {
-        self::assertTrue(\is_subclass_of($class, RuntimeException::class));
-
-        $exception = match ($class) {
-            CurlException::class            => new CurlException('https://example.test'),
-            InvalidArgumentException::class => new InvalidArgumentException(name: 'reference'),
-            RegexpException::class          => new RegexpException('pattern failed'),
-            ErrorException::class => new ErrorException(
-                error: RuntimeError::from([
-                    'type'    => E_USER_NOTICE,
-                    'message' => 'fixture',
-                    'file'    => '/tmp/fixture.php',
-                    'line'    => 1,
-                ]),
-            ),
-            FilesystemException::class      => new FilesystemException('filesystem failure'),
-            FileNotFoundException::class    => new FileNotFoundException(),
-            ServiceNotFoundException::class => new ServiceNotFoundException('App\\Service'),
-            RecursionException::class       => new RecursionException(),
-            default                         => self::fail("Unhandled exception class: {$class}"),
-        };
+        $exception = $factory();
 
         self::assertInstanceOf(RuntimeException::class, $exception);
+        self::assertInstanceOf(\RuntimeException::class, $exception);
     }
 
-    /**
-     * @return iterable<string, array{class-string}>
-     */
-    public static function provideSubclassExtendsContractsRuntimeException(): iterable
+    public static function provideExceptionSubclasses(): \Generator
     {
-        yield CurlException::class => [CurlException::class];
-        yield InvalidArgumentException::class => [InvalidArgumentException::class];
-        yield RegexpException::class => [RegexpException::class];
-        yield ErrorException::class => [ErrorException::class];
-        yield FilesystemException::class => [FilesystemException::class];
-        yield FileNotFoundException::class => [FileNotFoundException::class];
-        yield ServiceNotFoundException::class => [ServiceNotFoundException::class];
-        yield RecursionException::class => [RecursionException::class];
+        yield 'ContainerException' => [static fn() => new ContainerException('container failure')];
+        yield 'CurlException' => [static fn() => new CurlException('https://example.com')];
+        yield 'DependencyException' => [static fn() => new DependencyException('missing dependency')];
+        yield 'FileNotFoundException' => [static fn() => new FileNotFoundException];
+        yield 'FilesystemException' => [static fn() => new FilesystemException('fs failure')];
+        yield 'InvalidArgumentException' => [static fn() => new InvalidArgumentException('invalid')];
+        yield 'NotFoundException' => [static fn() => new NotFoundException('not found')];
+        yield 'RecursionException' => [static fn() => new RecursionException];
+        yield 'RegexpException' => [static fn() => new RegexpException('regexp failure')];
     }
 
-    public function testCurlExceptionStoresUrlInContextAndUsesErrorSeverity(): void
+    public function testContainerExceptionImplementsPsrInterface(): void
     {
-        $exception = new CurlException('https://example.test');
-
-        self::assertSame('https://example.test', $exception->url);
-        self::assertSame('https://example.test', $exception->context['url']);
-        self::assertSame(LOG_LEVEL['error'], $exception->getCode());
-        self::assertSame("HTTP request to 'https://example.test' failed", $exception->getMessage());
+        self::assertInstanceOf(ContainerExceptionInterface::class, new ContainerException('failure'));
     }
 
-    public function testCurlExceptionPreservesExplicitPrevious(): void
+    public function testNotFoundExceptionImplementsPsrInterface(): void
     {
-        $previous  = new PhpRuntimeException('upstream');
-        $exception = new CurlException('https://example.test', previous: $previous);
+        $exception = new NotFoundException;
 
-        self::assertSame($previous, $exception->getPrevious());
-    }
-
-    public function testInvalidArgumentExceptionBuildsDefaultMessageFromNameAndTypes(): void
-    {
-        $exception = new InvalidArgumentException(
-            name: 'reference',
-            expected: 'https://example.test',
-            received: ['path' => '/tmp'],
-        );
-
-        self::assertSame(
-            "Invalid argument 'reference' expected to be of type 'string', received 'array'",
-            $exception->getMessage(),
-        );
-        self::assertSame('reference', $exception->context['name']);
-        self::assertSame('https://example.test', $exception->context['expected']);
-        self::assertSame(['path' => '/tmp'], $exception->context['received']);
-    }
-
-    public function testInvalidArgumentExceptionUsesGenericMessageWithoutDetails(): void
-    {
-        $exception = new InvalidArgumentException();
-
-        self::assertSame('Invalid argument', $exception->getMessage());
-        self::assertNull($exception->context['name']);
-        self::assertNull($exception->context['expected']);
-        self::assertNull($exception->context['received']);
-    }
-
-    public function testInvalidArgumentExceptionPreservesExplicitMessageAndPrevious(): void
-    {
-        $previous  = new PhpRuntimeException('upstream');
-        $exception = new InvalidArgumentException(
-            name: 'reference',
-            message: 'Call getUrl() for public URLs.',
-            previous: $previous,
-        );
-
-        self::assertSame('Call getUrl() for public URLs.', $exception->getMessage());
-        self::assertSame('reference', $exception->context['name']);
-        self::assertSame($previous, $exception->getPrevious());
-    }
-
-    public function testRegexpExceptionMapsPregErrorCodeToMessageAndCode(): void
-    {
-        $exception = new RegexpException(PREG_INTERNAL_ERROR);
-
-        self::assertSame(RegexpException::MESSAGES[PREG_INTERNAL_ERROR], $exception->getMessage());
-        self::assertSame(PREG_INTERNAL_ERROR, $exception->getCode());
-    }
-
-    public function testRegexpExceptionCheckThrowsOnPregFailure(): void
-    {
-        InvalidRegexpCalls::unclosedNamedGroup();
-
-        $this->expectException(RegexpException::class);
-
-        RegexpException::check();
-    }
-
-    public function testFilesystemExceptionExposesPathFromContext(): void
-    {
-        $exception = new FilesystemException(
-            message: 'Denied',
-            path: '/tmp/example.txt',
-        );
-
-        self::assertSame('/tmp/example.txt', $exception->getPath());
-        self::assertSame('/tmp/example.txt', $exception->context['path']);
-        self::assertSame(LOG_LEVEL['error'], $exception->getCode());
-    }
-
-    public function testFileNotFoundExceptionBuildsDefaultMessageFromPath(): void
-    {
-        $exception = new FileNotFoundException(path: '/missing.txt');
-
-        self::assertSame("File '/missing.txt' could not be found.", $exception->getMessage());
-        self::assertSame('/missing.txt', $exception->getPath());
-    }
-
-    public function testFileNotFoundExceptionUsesGenericMessageWithoutPath(): void
-    {
-        $exception = new FileNotFoundException();
-
-        self::assertSame('File could not be found.', $exception->getMessage());
-        self::assertNull($exception->getPath());
-    }
-
-    public function testServiceNotFoundExceptionBuildsServiceIdAndAlternativesMessage(): void
-    {
-        $exception = new ServiceNotFoundException(
-            id: 'App\\Service',
-            reference: 'default',
-            alternatives: ['App\\Other', 'App\\Backup'],
-        );
-
-        self::assertSame('App\\Service.default', $exception->serviceId);
-        self::assertStringContainsString('Did you mean one of these:', $exception->getMessage());
-        self::assertSame('App\\Service', $exception->context['id']);
-        self::assertSame('default', $exception->context['reference']);
-        self::assertSame(['App\\Other', 'App\\Backup'], $exception->context['alternatives']);
-    }
-
-    public function testRecursionExceptionUsesDefaultMessageAndCriticalSeverity(): void
-    {
-        $exception = new RecursionException();
-
-        self::assertSame('Recursion limit exceeded.', $exception->getMessage());
+        self::assertInstanceOf(NotFoundExceptionInterface::class, $exception);
+        self::assertSame('Unspecified error', $exception->getMessage());
         self::assertSame(LOG_LEVEL['critical'], $exception->getCode());
     }
 
-    public function testRuntimeExceptionFreezesContextValues(): void
+    public function testDependencyExceptionRequiresMessage(): void
     {
-        $exception = new RuntimeException(
-            message: 'Invalid payload.',
-            context: ['payload' => ['id' => 1]],
-            previous: false,
+        $exception = new DependencyException(
+            'Package northrook/missing is required',
+            context: ['package' => 'northrook/missing'],
         );
 
-        self::assertSame(['id' => 1], $exception->context['payload']);
+        self::assertSame('Package northrook/missing is required', $exception->getMessage());
+        self::assertSame(LOG_LEVEL['critical'], $exception->getCode());
+        self::assertSame('northrook/missing', $exception->context['package']);
     }
 
-    public function testRuntimeExceptionConstructsWhenContextCannotBeSerialized(): void
+    public function testCurlExceptionCarriesUrlInPropertyAndContext(): void
     {
-        $cloneable  = new SnapshotUnserializableCloneable();
-        $uncopyable = new SnapshotUncopyable();
+        $exception = new CurlException('https://example.com/api', context: ['attempt' => 2]);
 
-        $exception = new RuntimeException(
-            message: 'wrapper',
-            context: [
-                'cloneable'  => $cloneable,
-                'uncopyable' => $uncopyable,
-            ],
-            previous: false,
+        self::assertSame('https://example.com/api', $exception->url);
+        self::assertSame('https://example.com/api', $exception->context['url']);
+        self::assertSame(2, $exception->context['attempt']);
+        self::assertSame("HTTP request to 'https://example.com/api' failed", $exception->getMessage());
+        self::assertSame(LOG_LEVEL['error'], $exception->getCode());
+    }
+
+    public function testCurlExceptionAcceptsExplicitMessageAndCode(): void
+    {
+        $exception = new CurlException(
+            'https://example.com',
+            message: 'Connection refused',
+            code: 42,
         );
 
-        self::assertSame('wrapper', $exception->getMessage());
-        self::assertInstanceOf(SnapshotUnserializableCloneable::class, $exception->context['cloneable']);
-        self::assertNotSame($cloneable, $exception->context['cloneable']);
-        self::assertSame(
-            '[Uncloneable: ' . SnapshotUncopyable::class . ']',
-            $exception->context['uncopyable'],
-        );
+        self::assertSame('Connection refused', $exception->getMessage());
+        self::assertSame(42, $exception->getCode());
     }
 
-    public function testRuntimeExceptionFreezesBufferOntoErrorsProperty(): void
-    {
-        ErrorBuffer::shared()->recordFrom(E_USER_NOTICE, 'first notice', '/tmp/a.php', 1);
-        ErrorBuffer::shared()->recordFrom(E_USER_WARNING, 'second warning', '/tmp/b.php', 2);
-
-        $exception = new RuntimeException(message: 'wrapper');
-
-        self::assertNull($exception->getPrevious());
-        self::assertArrayNotHasKey('phpErrors', $exception->context);
-        self::assertCount(2, $exception->errors);
-        self::assertSame('first notice', $exception->errors[0]->message);
-        self::assertSame('second warning', $exception->errors[1]->message);
-    }
-
-    public function testRuntimeExceptionErrorsIsEmptyWhenBufferIsEmpty(): void
-    {
-        $exception = new RuntimeException(message: 'wrapper');
-
-        self::assertSame([], $exception->errors);
-        self::assertArrayNotHasKey('phpErrors', $exception->context);
-    }
-
-    public function testRuntimeExceptionDoesNotAttachStalePhpErrorWhenPreviousIsFalse(): void
-    {
-        @\trigger_error('stale notice', E_USER_NOTICE);
-
-        $exception = new RuntimeException(
-            message: 'wrapper',
-            previous: false,
+    #[DataProvider('provideInvalidArgumentMessages')]
+    public function testInvalidArgumentBuildsDefaultMessage(
+        null|string $name,
+        mixed       $expected,
+        mixed       $received,
+        string      $message,
+    ): void {
+        $exception = new InvalidArgumentException(
+            name    : $name,
+            expected: $expected,
+            received: $received,
         );
 
-        self::assertNull($exception->getPrevious());
+        self::assertSame($message, $exception->getMessage());
     }
 
-    public function testErrorExceptionWrapsRuntimeErrorWithoutDuplicatingPreviousChain(): void
+    public static function provideInvalidArgumentMessages(): \Generator
     {
-        @\trigger_error('notice message', E_USER_NOTICE);
-
-        $runtimeError = RuntimeError::fromLast();
-        self::assertNotNull($runtimeError);
-
-        $exception = new ErrorException();
-
-        self::assertSame('notice message', $exception->getMessage());
-        self::assertSame($runtimeError->type, $exception->getCode());
-        self::assertSame($runtimeError->file, $exception->getFile());
-        self::assertSame($runtimeError->line, $exception->getLine());
-        self::assertSame($runtimeError->toArray(), $exception->error);
-        self::assertSame($runtimeError->toArray(), $exception->getError()->toArray());
-        self::assertNull($exception->getPrevious());
-        self::assertArrayHasKey('phpError', $exception->context);
+        yield 'bare' => [null, null, null, 'Invalid argument'];
+        yield 'name only' => ['config', null, null, "Invalid argument 'config'"];
+        yield 'name and expected' => [
+            'config',
+            'string',
+            null,
+            "Invalid argument 'config' expected to be of type 'string'",
+        ];
+        yield 'descriptive expected label' => [
+            'value',
+            'string|Stringable',
+            123,
+            "Invalid argument 'value' expected to be of type 'string|Stringable', received 'int'",
+        ];
+        yield 'non-string expected uses debug type' => [
+            'config',
+            [],
+            null,
+            "Invalid argument 'config' expected to be of type 'array'",
+        ];
+        yield 'name, expected and received' => [
+            'config',
+            'string',
+            42,
+            "Invalid argument 'config' expected to be of type 'string', received 'int'",
+        ];
+        yield 'received only' => [null, null, 3.14, "Invalid argument, received 'float'"];
     }
 
-    public function testErrorExceptionAcceptsExplicitRuntimeError(): void
+    public function testInvalidArgumentRecordsNameExpectedReceivedInContext(): void
     {
-        $runtimeError = RuntimeError::from([
-            'type'    => E_USER_WARNING,
-            'message' => 'explicit runtime',
-            'file'    => '/tmp/runtime.php',
-            'line'    => 15,
-        ]);
+        $exception = new InvalidArgumentException(
+            name    : 'email',
+            expected: 'string',
+            received: null,
+            context : ['extra' => 'kept'],
+        );
 
-        $exception = new ErrorException(error: $runtimeError);
-
-        self::assertSame('explicit runtime', $exception->getMessage());
-        self::assertSame('/tmp/runtime.php', $exception->getFile());
-        self::assertSame(15, $exception->getLine());
+        self::assertSame('email', $exception->context['name']);
+        self::assertSame('string', $exception->context['expected']);
+        self::assertArrayHasKey('received', $exception->context);
+        self::assertSame('kept', $exception->context['extra']);
     }
 
-    public function testErrorExceptionWithoutRuntimeErrorThrowsRuntimeException(): void
+    public function testInvalidArgumentHonorsExplicitMessage(): void
     {
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('No PHP error to wrap.');
+        $exception = new InvalidArgumentException(
+            message: 'Explicit message',
+            name   : 'ignored',
+        );
 
-        new ErrorException();
+        self::assertSame('Explicit message', $exception->getMessage());
     }
 
-    public function testErrorExceptionCheckThrowsWhenRuntimeErrorExists(): void
-    {
-        @\trigger_error('check me', E_USER_NOTICE);
+    #[DataProvider('provideRegexpErrorMappings')]
+    public function testRegexpExceptionMapsPregErrorCodes(
+        int    $pregError,
+        string $message,
+    ): void {
+        $exception = new RegexpException($pregError);
 
-        $this->expectException(ErrorException::class);
-        $this->expectExceptionMessage('check me');
-
-        ErrorException::check();
+        self::assertSame($message, $exception->getMessage());
+        self::assertSame($pregError, $exception->getCode());
     }
 
-    public function testErrorExceptionGetLastReturnsNullWhenNoError(): void
+    public static function provideRegexpErrorMappings(): \Generator
     {
-        self::assertNull(ErrorException::getLast());
+        yield 'internal' => [\PREG_INTERNAL_ERROR, 'Unspecified Internal error'];
+        yield 'backtrack limit' => [\PREG_BACKTRACK_LIMIT_ERROR, 'Backtrack: limit was exhausted'];
+        yield 'recursion limit' => [\PREG_RECURSION_LIMIT_ERROR, 'Recursion: limit was exhausted'];
+        yield 'bad utf8' => [\PREG_BAD_UTF8_ERROR, 'UTF-8: Malformed data'];
+        yield 'bad utf8 offset' => [\PREG_BAD_UTF8_OFFSET_ERROR, 'UTF-8: Invalid offset'];
+        yield 'jit stack limit' => [\PREG_JIT_STACKLIMIT_ERROR, 'JIT: Insufficient compiler disk space'];
     }
 
-    public function testIsValidPathLengthThrowsFilesystemExceptionWithPathContext(): void
+    public function testRegexpExceptionUnknownCodeFallsBack(): void
     {
-        $path = \str_repeat('a', MAX_PATH_LENGTH + 1);
+        $exception = new RegexpException(999);
+
+        self::assertSame('Unspecified error - invalid flag or message provided.', $exception->getMessage());
+        self::assertSame(999, $exception->getCode());
+    }
+
+    public function testRegexpExceptionStringMessageDefaultsCode(): void
+    {
+        $exception = new RegexpException('custom regexp failure');
+
+        self::assertSame('custom regexp failure', $exception->getMessage());
+        self::assertSame(LOG_LEVEL['error'], $exception->getCode());
+    }
+
+    public function testRegexpCheckThrowsOnPregError(): void
+    {
+        @\preg_match('//u', "\xB1\x31");
+
+        self::assertSame(\PREG_BAD_UTF8_ERROR, \preg_last_error());
 
         try {
-            is_valid_path_length($path);
-            self::fail('Expected FilesystemException was not thrown.');
-        } catch (FilesystemException $exception) {
-            self::assertSame($path, $exception->getPath());
-            self::assertStringContainsString((string) MAX_PATH_LENGTH, $exception->getMessage());
-            self::assertSame(LOG_LEVEL['error'], $exception->getCode());
+            RegexpException::check();
+            self::fail('Expected RegexpException from check()');
+        } catch (RegexpException $exception) {
+            self::assertSame('UTF-8: Malformed data', $exception->getMessage());
+            self::assertSame(\PREG_BAD_UTF8_ERROR, $exception->getCode());
         }
+    }
+
+    public function testRegexpCheckPassesWhenNoError(): void
+    {
+        \preg_match('//', 'clean');
+
+        self::assertSame(\PREG_NO_ERROR, \preg_last_error());
+
+        RegexpException::check();
+
+        self::assertSame(\PREG_NO_ERROR, \preg_last_error());
+    }
+
+    public function testFilesystemExceptionExposesPath(): void
+    {
+        $exception = new FilesystemException('write failed', path: '/var/data/file.txt');
+
+        self::assertSame('/var/data/file.txt', $exception->getPath());
+        self::assertSame('/var/data/file.txt', $exception->context['path']);
+        self::assertSame(LOG_LEVEL['error'], $exception->getCode());
+    }
+
+    public function testFilesystemExceptionPathIsNullWhenOmitted(): void
+    {
+        $exception = new FilesystemException('generic failure');
+
+        self::assertNull($exception->getPath());
+        self::assertSame([], $exception->context);
+    }
+
+    public function testFileNotFoundBuildsMessageFromPath(): void
+    {
+        $exception = new FileNotFoundException(path: '/missing/file.php');
+
+        self::assertSame("File '/missing/file.php' could not be found.", $exception->getMessage());
+        self::assertSame('/missing/file.php', $exception->getPath());
+    }
+
+    #[DataProvider('provideFileNotFoundEmptyPaths')]
+    public function testFileNotFoundGenericMessageWithoutPath(
+        null|string $path,
+    ): void {
+        $exception = new FileNotFoundException(path: $path);
+
+        self::assertSame('File could not be found.', $exception->getMessage());
+    }
+
+    public static function provideFileNotFoundEmptyPaths(): \Generator
+    {
+        yield 'null path' => [null];
+        yield 'empty path' => [''];
+    }
+
+    public function testFileNotFoundExtendsFilesystemException(): void
+    {
+        self::assertInstanceOf(FilesystemException::class, new FileNotFoundException);
+    }
+
+    public function testRecursionExceptionDefaults(): void
+    {
+        $exception = new RecursionException;
+
+        self::assertSame('Recursion limit exceeded.', $exception->getMessage());
+        self::assertSame(LOG_LEVEL['critical'], $exception->getCode());
+        self::assertSame([], $exception->context);
+        self::assertNull($exception->getPrevious());
+    }
+
+    public function testStackFrameFromArray(): void
+    {
+        // @phpstan-ignore-next-line Fictional stack frame.
+        $frame = StackFrame::from([
+            'file'     => '/src/app.php',
+            'line'     => 10,
+            'function' => 'run',
+            'class'    => 'App\\Runner',
+            'type'     => '->',
+            'args'     => ['a' => 1],
+        ]);
+
+        self::assertSame('/src/app.php', $frame->file);
+        self::assertSame(10, $frame->line);
+        self::assertSame('run', $frame->function);
+        self::assertSame('App\\Runner', $frame->class);
+        self::assertSame('->', $frame->type);
+        self::assertSame(['a' => 1], $frame->args);
+        self::assertSame([], $frame->code);
+    }
+
+    public function testStackFrameFromEmptyArrayDefaultsToNull(): void
+    {
+        $frame = StackFrame::from([]);
+
+        self::assertNull($frame->file);
+        self::assertNull($frame->line);
+        self::assertNull($frame->function);
+        self::assertNull($frame->class);
+        self::assertNull($frame->type);
+        self::assertSame([], $frame->args);
+        self::assertSame([], $frame->code);
+    }
+
+    public function testStackFrameFromThrowable(): void
+    {
+        try {
+            $this->throwForStackFrame();
+        } catch (\RuntimeException $exception) {
+            $frame = StackFrame::from($exception);
+        }
+
+        self::assertSame(__FILE__, $frame->file);
+        self::assertSame('throwForStackFrame', $frame->function);
+        self::assertSame(self::class, $frame->class);
+        self::assertSame('->', $frame->type);
+        self::assertIsInt($frame->line);
+    }
+
+    public function testStackFrameReadsCodeSnippetForReadableFile(): void
+    {
+        $frame = StackFrame::from(['file' => __FILE__, 'line' => $line = __LINE__ + 1], codeRadius: 2);
+        self::assertArrayHasKey($line, $frame->code);
+        self::assertSame('self::assertArrayHasKey($line, $frame->code);', \trim($frame->code[$line]));
+        self::assertNotSame([], $frame->code);
+    }
+
+    public function testErrorSnapshotCarriesFieldsAndStackFrame(): void
+    {
+        $snapshot = ErrorSnapshot::from(
+            class  : 'App\\Failure',
+            message: 'it broke',
+            code   : 500,
+            file   : '/src/app.php',
+            line   : 33,
+            meta   : ['hint' => 'check config'],
+        );
+
+        self::assertSame('App\\Failure', $snapshot->class);
+        self::assertSame('it broke', $snapshot->message);
+        self::assertSame(500, $snapshot->code);
+        self::assertSame('/src/app.php', $snapshot->file);
+        self::assertSame(33, $snapshot->line);
+        self::assertSame(['hint' => 'check config'], $snapshot->meta);
+        self::assertSame('/src/app.php', $snapshot->stackFrame->file);
+        self::assertSame(33, $snapshot->stackFrame->line);
+        self::assertSame('App\\Failure', $snapshot->stackFrame->class);
+        self::assertNull($snapshot->stackFrame->function);
+    }
+
+    private function throwForStackFrame(): never
+    {
+        throw new \RuntimeException('stack frame probe');
     }
 }

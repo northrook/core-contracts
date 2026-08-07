@@ -13,8 +13,7 @@
     </testsuites>
     <source>
         <include>
-            <file>src/functions.php</file>
-            <file>src/functions/normalize.php</file>
+            <directory>php</directory>
         </include>
     </source>
 </phpunit>

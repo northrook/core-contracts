@@ -2,14 +2,24 @@ includes:
 	- vendor/northrook/php-cs/extension.neon
 parameters:
 	paths:
-		- src
+		- php
 		- tests
 	excludePaths:
-		- tests/Support/InvalidAutodiscoverCalls.php
-		- tests/Support/InvalidValidationCalls.php
-		- tests/Support/InvalidRegexpCalls.php
+		- tests/Support/InvalidAutodiscoverCalls.php (?)
+		- tests/Support/InvalidValidationCalls.php (?)
+		- tests/Support/InvalidRegexpCalls.php (?)
 	ignoreErrors:
 		-
 			# Late static binding is intentional; subclasses with other constructors override create().
 			identifier: new.static
-			path: src/Contracts/Singleton.php
+			paths:
+				- php/Contracts/structures/Singleton.php
+				- php/Contracts/internals/ReferenceTrait.php
+				- php/Contracts/values/Uri.php
+				- php/Contracts/values/Path.php
+		-
+			# @property-read on interfaces/traits is a ClassRequiresMemberRule contract
+			# (PHP can't declare plain interface properties). PHPStan core treats it as
+			# magic get-only; constructor writes of the real property trip this. Real
+			# readonly misuse uses property.readOnlyAssignNotInConstructor — not silenced.
+			identifier: assign.propertyReadOnly

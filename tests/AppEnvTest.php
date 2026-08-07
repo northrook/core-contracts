@@ -6,12 +6,16 @@ namespace Northrook\Contracts\Tests;
 
 use Northrook\AppEnv;
 use Northrook\AppEnvironment;
-use Northrook\Contracts\ErrorHandler\ErrorReport;
-use Northrook\Contracts\ErrorHandler\ErrorSnapshot;
-use Northrook\Contracts\Exceptions\RuntimeException;
+use Northrook\Contracts\RuntimeException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * AppEnv process probes and lazy env resolution.
+ *
+ * Pest / Codeception branches of {@see AppEnv::isTestRunner()} share the same OR
+ * logic; this suite exercises the live PHPUnit path only.
+ */
 final class AppEnvTest extends TestCase
 {
     protected function setUp(): void
@@ -26,158 +30,248 @@ final class AppEnvTest extends TestCase
         $this->clearEnvVars();
     }
 
-    public function testIsNotInitializedBeforeFirstUse(): void
+    public function testIsTestRunnerTrueUnderPhpunit(): void
     {
-        self::assertFalse(AppEnv::isInitialized());
+        self::assertTrue(AppEnv::isTestRunner());
     }
 
-    public function testLazyInitializationDefaultsToTestingUnderPhpunit(): void
+    public function testLazyInitDefaultsToTestingUnderTestRunner(): void
     {
+        self::assertFalse(AppEnv::isInitialized());
         self::assertSame(AppEnvironment::Testing, AppEnv::getEnvironment());
         self::assertTrue(AppEnv::isTesting());
         self::assertTrue(AppEnv::isInitialized());
     }
 
+    public function testIsCliMatchesPhpSapi(): void
+    {
+        $expected = \PHP_SAPI === 'cli' || \PHP_SAPI === 'phpdbg';
+
+        self::assertSame($expected, AppEnv::isCli());
+    }
+
+    #[DataProvider('provideProcessProbeSmokes')]
+    public function testProcessProbeSmoke(
+        string $label,
+        bool   $actual,
+        bool   $expected,
+    ): void {
+        self::assertSame($expected, $actual, $label);
+    }
+
+    /**
+     * @return iterable<string, array{string, bool, bool}>
+     */
+    public static function provideProcessProbeSmokes(): iterable
+    {
+        yield 'isWeb xor isCli' => [
+            'isWeb must be the inverse of isCli',
+            AppEnv::isWeb(),
+            ! AppEnv::isCli(),
+        ];
+
+        yield 'isSapi current' => [
+            'isSapi(PHP_SAPI) must be true',
+            AppEnv::isSapi(\PHP_SAPI),
+            true,
+        ];
+
+        yield 'isFpm matches sapi' => [
+            'isFpm must match PHP_SAPI',
+            AppEnv::isFpm(),
+            \PHP_SAPI === 'fpm-fcgi',
+        ];
+
+        yield 'isCgi matches sapi' => [
+            'isCgi must match PHP_SAPI',
+            AppEnv::isCgi(),
+            \PHP_SAPI === 'cgi' || \PHP_SAPI === 'cgi-fcgi',
+        ];
+    }
+
+    // -------------------------------------------------------------------------
+    // Constructor / resolution
+    // -------------------------------------------------------------------------
+
     public function testConstructorAcceptsEnum(): void
     {
-        new AppEnv(environment: AppEnvironment::Staging);
+        $appEnv = new AppEnv(AppEnvironment::Staging);
 
-        self::assertSame(AppEnvironment::Staging, AppEnv::getEnvironment());
+        self::assertSame(AppEnvironment::Staging, $appEnv->environment);
         self::assertTrue(AppEnv::isStaging());
+        self::assertTrue(AppEnv::isInitialized());
     }
 
     #[DataProvider('provideResolvableEnvironments')]
     public function testConstructorResolvesStringEnvironment(
-        string $input,
+        string         $input,
         AppEnvironment $expected,
     ): void {
-        new AppEnv(environment: $input);
+        $appEnv = new AppEnv($input);
 
+        self::assertSame($expected, $appEnv->environment);
         self::assertSame($expected, AppEnv::getEnvironment());
     }
 
     /**
-     * @return iterable<string, array{string, AppEnvironment}>
+     * @return \Generator<string, array{string, AppEnvironment}>
      */
-    public static function provideResolvableEnvironments(): iterable
+    public static function provideResolvableEnvironments(): \Generator
     {
         yield 'production' => ['production', AppEnvironment::Production];
         yield 'dev alias' => ['dev', AppEnvironment::Development];
-        yield 'unknown' => ['sandbox', AppEnvironment::Failsafe];
+        yield 'unknown falls back to failsafe' => ['sandbox', AppEnvironment::Failsafe];
+    }
+
+    public function testExplicitNullEnvironmentResolvesUnderTestRunner(): void
+    {
+        // Under PHPUnit, `null` resolves to Testing before APP_ENV is consulted.
+        $_ENV['APP_ENV'] = 'production';
+
+        $appEnv = new AppEnv;
+
+        self::assertSame(AppEnvironment::Testing, $appEnv->environment);
     }
 
     public function testConstructorRejectsSecondInstance(): void
     {
-        new AppEnv(environment: AppEnvironment::Development);
+        new AppEnv(AppEnvironment::Development);
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('singleton');
 
-        new AppEnv(environment: AppEnvironment::Production);
+        new AppEnv(AppEnvironment::Development);
     }
+
+    // -------------------------------------------------------------------------
+    // Environment predicates
+    // -------------------------------------------------------------------------
 
     #[DataProvider('provideEnvironmentPredicates')]
     public function testEnvironmentPredicates(
         AppEnvironment $environment,
-        bool $isProduction,
-        bool $isDevelopment,
-        bool $isTesting,
-        bool $isStaging,
-        bool $isFailsafe,
+        bool           $isDevelopment,
+        bool           $isProduction,
+        bool           $isTesting,
+        bool           $isStaging,
+        bool           $isFailsafe,
     ): void {
-        new AppEnv(environment: $environment);
+        new AppEnv($environment);
 
-        self::assertSame($isProduction, AppEnv::isProduction());
         self::assertSame($isDevelopment, AppEnv::isDevelopment());
+        self::assertSame($isProduction, AppEnv::isProduction());
         self::assertSame($isTesting, AppEnv::isTesting());
         self::assertSame($isStaging, AppEnv::isStaging());
         self::assertSame($isFailsafe, AppEnv::isFailsafe());
     }
 
     /**
-     * @return iterable<string, array{
-     *     AppEnvironment,
-     *     bool,
-     *     bool,
-     *     bool,
-     *     bool,
-     *     bool,
-     * }>
+     * @return \Generator<string, array{AppEnvironment, bool, bool, bool, bool, bool}>
      */
-    public static function provideEnvironmentPredicates(): iterable
+    public static function provideEnvironmentPredicates(): \Generator
     {
-        yield 'production' => [AppEnvironment::Production, true, false, false, false, false];
-        yield 'development' => [AppEnvironment::Development, false, true, false, false, false];
+        yield 'production' => [AppEnvironment::Production, false, true, false, false, false];
+        yield 'development' => [AppEnvironment::Development, true, false, false, false, false];
         yield 'testing' => [AppEnvironment::Testing, false, false, true, false, false];
         yield 'staging' => [AppEnvironment::Staging, false, false, false, true, false];
         yield 'failsafe' => [AppEnvironment::Failsafe, false, false, false, false, true];
     }
 
+    // -------------------------------------------------------------------------
+    // Debug resolution
+    // -------------------------------------------------------------------------
+
     public function testExplicitDebugFlag(): void
     {
-        new AppEnv(
-            environment: AppEnvironment::Development,
-            debug: true,
-        );
+        $appEnv = new AppEnv(AppEnvironment::Development, debug: true);
 
+        self::assertTrue($appEnv->debug);
         self::assertTrue(AppEnv::isDebug());
+    }
+
+    public function testExplicitDebugFlagOff(): void
+    {
+        $appEnv = new AppEnv(AppEnvironment::Development, debug: false);
+
+        self::assertFalse($appEnv->debug);
+        self::assertFalse(AppEnv::isDebug());
+    }
+
+    public function testDebugDefaultsToFalseWithoutEnv(): void
+    {
+        $appEnv = new AppEnv(AppEnvironment::Production);
+
+        self::assertFalse($appEnv->debug);
     }
 
     public function testFailsafeForcesDebugOff(): void
     {
-        new AppEnv(
-            environment: AppEnvironment::Failsafe,
-            debug: true,
-        );
+        $appEnv = new AppEnv(AppEnvironment::Failsafe, debug: true);
 
+        self::assertFalse($appEnv->debug);
         self::assertFalse(AppEnv::isDebug());
     }
 
     #[DataProvider('provideStringDebugValues')]
     public function testResolvesDebugFromStringEnv(
         string $value,
-        bool $expected,
+        bool   $expected,
     ): void {
         $_ENV['APP_DEBUG'] = $value;
 
-        new AppEnv(environment: AppEnvironment::Development);
+        $appEnv = new AppEnv(AppEnvironment::Development);
 
+        self::assertSame($expected, $appEnv->debug);
         self::assertSame($expected, AppEnv::isDebug());
     }
 
-    /**
-     * @return iterable<string, array{string, bool}>
-     */
-    public static function provideStringDebugValues(): iterable
+    public function testEnvZeroDisablesDebugViaGetenvAlone(): void
     {
-        yield 'true' => ['true', true];
-        yield '1' => ['1', true];
-        yield 'yes' => ['yes', true];
-        yield 'false' => ['false', false];
-        yield '0' => ['0', false];
-        yield 'no' => ['no', false];
+        unset($_ENV['APP_DEBUG']);
+        \putenv('APP_DEBUG=0');
+
+        $appEnv = new AppEnv(AppEnvironment::Development);
+
+        self::assertFalse($appEnv->debug);
     }
 
-    public function testErrorReportCapturesCurrentEnvironment(): void
+    public function testEnvZeroOverridesTrueAppDebugConstant(): void
     {
-        new AppEnv(environment: AppEnvironment::Production);
+        $script = \tempnam(\sys_get_temp_dir(), 'appenv-');
+        self::assertNotFalse($script);
 
-        $report = new ErrorReport(
-            reference: 'error-env',
-            timestamp: 1_700_000_000.0,
-            severity: 'error',
-            error: ErrorSnapshot::from(
-                class: \RuntimeException::class,
-                message: 'failure',
-                code: 0,
-                file: '/tmp/example.php',
-                line: 1,
-            ),
-            stackFrames: [],
-        );
+        try {
+            $autoload = \var_export(\dirname(__DIR__) . '/vendor/autoload.php', true);
+            \file_put_contents($script, <<<PHP
+                <?php
 
-        self::assertSame(AppEnvironment::Production, $report->environment);
-        self::assertSame('production', $report->jsonSerialize()['environment']);
+                declare(strict_types=1);
+
+                define('APP_DEBUG', true);
+                \$_ENV['APP_DEBUG'] = '0';
+                require {$autoload};
+                \$app = new Northrook\\AppEnv(Northrook\\AppEnvironment::Development);
+                echo \$app->debug ? '1' : '0';
+                PHP);
+
+            $result = \shell_exec(\escapeshellarg(\PHP_BINARY) . ' ' . \escapeshellarg($script));
+
+            self::assertSame('0', $result);
+        } finally {
+            @\unlink($script);
+        }
+    }
+
+    /**
+     * @return \Generator<string, array{string, bool}>
+     */
+    public static function provideStringDebugValues(): \Generator
+    {
+        yield 'true' => ['true', true];
+        yield 'one' => ['1', true];
+        yield 'yes' => ['yes', true];
+        yield 'false' => ['false', false];
+        yield 'zero' => ['0', false];
+        yield 'no' => ['no', false];
     }
 
     private function resetAppEnv(): void

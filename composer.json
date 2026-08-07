@@ -12,39 +12,60 @@
   ],
   "autoload": {
     "psr-4": {
-      "Northrook\\": "src"
+      "Northrook\\": "php",
+      "Northrook\\Contracts\\": [
+        "php/Contracts",
+        "php/Contracts/application",
+        "php/Contracts/assets",
+        "php/Contracts/attributes",
+        "php/Contracts/container",
+        "php/Contracts/core",
+        "php/Contracts/errors",
+        "php/Contracts/exceptions",
+        "php/Contracts/interfaces",
+        "php/Contracts/internals",
+        "php/Contracts/runtime",
+        "php/Contracts/services",
+        "php/Contracts/structures",
+        "php/Contracts/values"
+      ]
     },
     "files": [
-      "src/constants.php",
-      "src/functions.php",
-      "src/functions/normalize.php"
+      "php/Contracts/constants/global.php",
+      "php/Contracts/constants/html.php",
+      "php/Contracts/constants/logger.php",
+      "php/Contracts/constants/primitives.php",
+      "php/Contracts/functions/global.php",
+      "php/Contracts/functions/hashes.php",
+      "php/Contracts/functions/temp_path.php"
     ]
   },
   "autoload-dev": {
     "psr-4": {
       "Northrook\\Contracts\\Tests\\": "tests/"
-    },
-    "classmap": [
-      "tests/TraitsForAnalysis.php"
-    ]
+    }
   },
   "minimum-stability": "dev",
   "prefer-stable": true,
   "require": {
-    "php": ">=8.4",
+    "php": ">=8.5",
     "ext-hash": "*",
     "composer-runtime-api": "^2.2",
     "psr/log": "@stable",
     "psr/cache": "@stable",
     "psr/container": "@stable",
     "psr/event-dispatcher": "@stable",
-    "symfony/http-client-contracts": "^3.7"
+    "symfony/http-client-contracts": "^3.7",
+    "ext-uri": "*",
+    "ext-fileinfo": "*",
+    "ext-intl": "*"
   },
   "require-dev": {
     "northrook/php-cs": "dev-main",
     "northrook/php-debug": "dev-main",
     "phpunit/phpunit": "^11.5",
-    "phpstan/phpstan": "^2.2"
+    "phpstan/phpstan": "^2.2",
+    "symfony/http-client": "^8.1"
   },
   "scripts": {
     "phpstan": "vendor/bin/phpstan analyse",

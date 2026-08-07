@@ -4,142 +4,396 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
+use Northrook\Contracts\AssetType;
+use Northrook\Contracts\Secret;
 use Northrook\Contracts\Snapshot;
+use Northrook\Contracts\System;
+use Northrook\Contracts\Tests\Support\MixedArray;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class SnapshotTest extends TestCase
 {
-    public function testFreezeBreaksSelfReferentialArrayCycle(): void
-    {
-        $array         = ['label' => 'root'];
-        $array['self'] = &$array;
+    /**
+     * @param resource $value
+     */
+    #[DataProvider('provideScalarTypes')]
+    public function testFromReportsPhpType(
+        mixed  $value,
+        string $expectedType,
+    ): void {
+        $snapshot = Snapshot::from($value);
 
-        $frozen = Snapshot::freeze($array);
-
-        if (! \is_array($frozen)) {
-            self::fail('Expected frozen array.');
-        }
-        self::assertSame('root', $frozen['label']);
-        self::assertSame('[Recursion]', $frozen['self']);
-        self::assertSame('root', $array['label']);
-        self::assertSame($array, $array['self']);
+        self::assertSame($expectedType, $snapshot->type);
+        self::assertSame($value, $snapshot->value);
     }
 
-    public function testFreezeBreaksMutualArrayReferenceCycle(): void
+    /**
+     * @return \Generator<string, array{0: mixed, 1: string}>
+     */
+    public static function provideScalarTypes(): \Generator
     {
-        $alpha         = ['label' => 'alpha'];
-        $beta          = ['label' => 'beta'];
-        $alpha['peer'] = &$beta;
-        $beta['peer']  = &$alpha;
+        yield 'string' => ['abc', 'string'];
+        yield 'integer' => [42, 'integer'];
+        yield 'double' => [1.5, 'double'];
+        yield 'boolean' => [true, 'boolean'];
+        yield 'null' => [null, 'NULL'];
+        yield 'array' => [[1], 'array'];
+    }
+    public function testFromPreservesScalarsAndDetachesArrays(): void
+    {
+        $source = ['a' => 1, 'b' => ['c' => true]];
+        $snap   = Snapshot::from($source);
 
-        $frozen = Snapshot::freeze(['graph' => &$alpha]);
+        self::assertSame('array', $snap->type);
+        self::assertSame($source, $snap->value);
 
-        if (! \is_array($frozen) || ! \is_array($frozen['graph'])) {
-            self::fail('Expected frozen graph array.');
-        }
-        $graph = $frozen['graph'];
-        self::assertSame('alpha', $graph['label']);
-        if (! \is_array($graph['peer'])) {
-            self::fail('Expected peer array.');
-        }
-        self::assertSame('beta', $graph['peer']['label']);
-        self::assertSame('[Recursion]', $graph['peer']['peer']);
-        self::assertSame('alpha', $alpha['label']);
-        self::assertSame('beta', $beta['label']);
-        self::assertSame($beta, $alpha['peer']);
-        self::assertSame($alpha, $beta['peer']);
+        $source['b']['c'] = false;
+        self::assertTrue($snap->value['b']['c']);
     }
 
-    public function testFreezeDoesNotFalsePositiveOnEqualDistinctArrays(): void
+    public function testArrayCycleBroken(): void
     {
-        $leaf    = ['a' => 1];
-        $payload = [
-            'one'    => ['a' => 1],
-            'two'    => ['a' => 1],
-            'nested' => [
-                'inner' => $leaf,
-            ],
+        $a         = ['label' => 'a'];
+        $b         = ['label' => 'b', 'peer' => &$a];
+        $a['peer'] = &$b;
+
+        $value = MixedArray::from(Snapshot::value($a));
+        $peer  = MixedArray::at($value, 'peer');
+
+        self::assertSame('a', $value['label']);
+        self::assertSame('b', $peer['label']);
+        self::assertSame('[Recursion]', $peer['peer']);
+    }
+
+    public function testDepthBudgetTruncatesNesting(): void
+    {
+        $nested = ['l1' => ['l2' => ['l3' => ['l4' => 'deep']]]];
+
+        $value = Snapshot::value($nested, maxDepth: 1, maxNodes: 1_000);
+
+        self::assertSame(
+            ['l1' => ['l2' => '[Snapshot: max depth]']],
+            $value,
+        );
+    }
+
+    public function testNodeBudgetTruncatesWideArrays(): void
+    {
+        $wide = \range(1, 20);
+
+        $value = Snapshot::value($wide, maxDepth: 8, maxNodes: 5);
+
+        self::assertIsArray($value);
+        self::assertContains('[Snapshot: budget exhausted]', $value);
+        self::assertLessThan(20, \count($value));
+    }
+
+    public function testContextSharesOneBudget(): void
+    {
+        $context = [
+            'a' => \range(1, 10),
+            'b' => \range(1, 10),
         ];
 
-        $frozen = Snapshot::freeze($payload);
+        $frozen = Snapshot::context($context, maxDepth: 4, maxNodes: 8);
 
-        if (! \is_array($frozen)) {
-            self::fail('Expected frozen array.');
+        $flat = [];
+        \array_walk_recursive($frozen, static function(
+            mixed $v,
+        ) use (&$flat): void {
+            $flat[] = $v;
+        });
+
+        self::assertContains('[Snapshot: budget exhausted]', $flat);
+    }
+
+    public function testThrowableIsSummarized(): void
+    {
+        $value = MixedArray::from(Snapshot::value(new \RuntimeException('boom', 7)));
+
+        self::assertSame(\RuntimeException::class, $value['class']);
+        self::assertSame('boom', $value['message']);
+        self::assertSame(7, $value['code']);
+    }
+
+    public function testEnumBecomesCaseName(): void
+    {
+        $snapshot = Snapshot::from(AssetType::Script);
+
+        self::assertSame('object', $snapshot->type);
+        self::assertSame('Script', $snapshot->value);
+    }
+
+    public function testClosureIsDescribed(): void
+    {
+        $value = Snapshot::value(static fn(): int => 1);
+
+        self::assertIsString($value);
+        self::assertStringStartsWith('{closure:', $value);
+        self::assertStringContainsString(self::class . '::testClosureIsDescribed()', $value);
+        self::assertStringNotContainsString('@', $value);
+    }
+
+    public function testFirstClassCallableClosureIsDescribedByName(): void
+    {
+        $value = Snapshot::value(strlen(...));
+
+        self::assertSame('strlen', $value);
+    }
+
+    public function testResourceIsDescribed(): void
+    {
+        $handle = \fopen('php://memory', 'rb');
+
+        if ($handle === false) {
+            self::fail('Failed to open php://memory.');
         }
-        self::assertSame(['a' => 1], $frozen['one']);
-        self::assertSame(['a' => 1], $frozen['two']);
-        if (! \is_array($frozen['nested'])) {
-            self::fail('Expected nested array.');
-        }
-        self::assertSame(['a' => 1], $frozen['nested']['inner']);
-        self::assertSame($frozen['one'], $frozen['two']);
+
+        self::assertSame('[resource: stream]', Snapshot::value($handle));
+        self::assertSame('resource', Snapshot::from($handle)->type);
+
+        \fclose($handle);
+
+        self::assertSame('[resource: closed]', Snapshot::value($handle));
     }
 
-    public function testFreezePreservesObjectCyclesViaWeakMap(): void
+    public function testDateTimeIsCopiedNotShared(): void
     {
-        $root                = new \stdClass();
-        $root->id            = 'root';
-        $root->child         = new \stdClass();
-        $root->child->id     = 'child';
-        $root->child->parent = $root;
+        $original = new \DateTimeImmutable('2020-01-01 12:00:00');
 
-        $frozen = Snapshot::freeze($root);
+        $value = Snapshot::value($original);
 
-        self::assertInstanceOf(\stdClass::class, $frozen);
-        self::assertSame('root', $frozen->id);
-        self::assertSame('child', $frozen->child->id);
-        self::assertSame($frozen, $frozen->child->parent);
+        self::assertInstanceOf(\DateTimeImmutable::class, $value);
+        self::assertNotSame($original, $value);
+        self::assertSame('2020-01-01 12:00:00', $value->format('Y-m-d H:i:s'));
     }
 
-    public function testContextFreezesNestedArrayCycles(): void
+    public function testObjectCycleUsesRecursionMarker(): void
     {
-        $cycle         = ['n' => 1];
-        $cycle['self'] = &$cycle;
+        $parent        = new \stdClass;
+        $child         = new \stdClass;
+        $parent->child = $child;
+        $child->parent = $parent;
 
-        $context = Snapshot::context([
-            'id'    => 'req-1',
-            'cycle' => $cycle,
-        ]);
+        $value      = MixedArray::from(Snapshot::value($parent));
+        $properties = MixedArray::at($value, 'properties');
+        $child      = MixedArray::at($properties, 'child');
+        $childProps = MixedArray::at($child, 'properties');
 
-        self::assertSame('req-1', $context['id']);
-        if (! \is_array($context['cycle'])) {
-            self::fail('Expected cycle array in context.');
-        }
-        self::assertSame(1, $context['cycle']['n']);
-        self::assertSame('[Recursion]', $context['cycle']['self']);
-    }
-
-    public function testFreezeFallsBackToCloneWhenSerializeFails(): void
-    {
-        $original = new SnapshotUnserializableCloneable();
-
-        $frozen = Snapshot::freeze($original);
-
-        self::assertInstanceOf(SnapshotUnserializableCloneable::class, $frozen);
-        self::assertNotSame($original, $frozen);
-        self::assertSame('ok', $frozen->label);
-    }
-
-    public function testFreezeReturnsUncloneableMarkerWhenCopyImpossible(): void
-    {
-        $frozen = Snapshot::freeze(new SnapshotUncopyable());
-
-        self::assertSame('[Uncloneable: ' . SnapshotUncopyable::class . ']', $frozen);
-    }
-
-    public function testContextSurvivesUnserializableValues(): void
-    {
-        $context = Snapshot::context([
-            'id'         => 'req-1',
-            'cloneable'  => new SnapshotUnserializableCloneable(),
-            'uncopyable' => new SnapshotUncopyable(),
-        ]);
-
-        self::assertSame('req-1', $context['id']);
-        self::assertInstanceOf(SnapshotUnserializableCloneable::class, $context['cloneable']);
+        self::assertSame(\stdClass::class, $value['class']);
+        self::assertSame(\stdClass::class, $child['class']);
         self::assertSame(
-            '[Uncloneable: ' . SnapshotUncopyable::class . ']',
-            $context['uncopyable'],
+            '[Recursion: ' . \stdClass::class . ']',
+            $childProps['parent'],
         );
+    }
+
+    public function testObjectIsDescribedReflectively(): void
+    {
+        $original = new SnapshotCloneOnlyFixture('payload');
+
+        $value      = MixedArray::from(Snapshot::value($original));
+        $properties = MixedArray::at($value, 'properties');
+
+        self::assertSame(SnapshotCloneOnlyFixture::class, $value['class']);
+        self::assertSame('payload', $properties['label']);
+        self::assertIsString($properties['fn']);
+        self::assertStringStartsWith('{closure:', $properties['fn']);
+    }
+
+    public function testObjectWithThrowingSerializeIsStillDescribed(): void
+    {
+        $value = Snapshot::value(new SnapshotUncopyableFixture);
+
+        self::assertSame(
+            [
+                'class'      => SnapshotUncopyableFixture::class,
+                'properties' => [],
+            ],
+            $value,
+        );
+    }
+
+    public function testSecretInstanceIsRedacted(): void
+    {
+        $value = Snapshot::value(new Secret('hunter2'));
+
+        self::assertSame('[Secret::string]', $value);
+    }
+
+    public function testSecretAttributeOnPropertyIsRedacted(): void
+    {
+        $value = Snapshot::value(new SnapshotSecretPropertyFixture('top-secret', 'visible'));
+
+        self::assertSame(
+            [
+                'class'      => SnapshotSecretPropertyFixture::class,
+                'properties' => [
+                    'token' => '[Secret::string]',
+                    'label' => 'visible',
+                ],
+            ],
+            $value,
+        );
+    }
+
+    public function testSecretInContextIsRedacted(): void
+    {
+        $frozen = Snapshot::context([
+            'password' => new Secret('hunter2'),
+            'user'     => new SnapshotSecretPropertyFixture('abc', 'ada'),
+        ]);
+
+        $userProps = MixedArray::at(MixedArray::at($frozen, 'user'), 'properties');
+
+        self::assertSame('[Secret::string]', $frozen['password']);
+        self::assertSame('[Secret::string]', $userProps['token']);
+        self::assertSame('ada', $userProps['label']);
+    }
+
+    public function testCommitOnDestructIsNotInvokedDuringSnapshot(): void
+    {
+        SnapshotDestructFixture::$destructCount = 0;
+
+        $service = new SnapshotDestructFixture;
+        Snapshot::value($service);
+
+        self::assertSame(0, SnapshotDestructFixture::$destructCount);
+
+        unset($service);
+
+        self::assertSame(1, SnapshotDestructFixture::$destructCount);
+    }
+
+    public function testDistinctEqualArraysNotMarkedRecursive(): void
+    {
+        $value = Snapshot::value(['a' => [1, 2], 'b' => [1, 2]]);
+
+        self::assertSame(['a' => [1, 2], 'b' => [1, 2]], $value);
+    }
+
+    public function testContextNullAndEmptyReturnEmptyArray(): void
+    {
+        self::assertSame([], Snapshot::context(null));
+        self::assertSame([], Snapshot::context([]));
+    }
+
+    public function testFreezeReturnsFrozenValue(): void
+    {
+        self::assertSame(['x' => 1], Snapshot::freeze(['x' => 1]));
+        self::assertSame('raw', Snapshot::freeze('raw'));
+    }
+
+    public function testParseSnapshotsEachValue(): void
+    {
+        $snapshots = Snapshot::parse([1, 'a', null]);
+
+        self::assertCount(3, $snapshots);
+        self::assertContainsOnlyInstancesOf(Snapshot::class, $snapshots);
+        self::assertSame('integer', $snapshots[0]->type);
+        self::assertSame('string', $snapshots[1]->type);
+        self::assertSame('NULL', $snapshots[2]->type);
+    }
+
+    public function testJsonSerializeAndToString(): void
+    {
+        $stringSnapshot = Snapshot::from('hi');
+        self::assertSame('hi', (string) $stringSnapshot);
+
+        $intSnapshot = Snapshot::from(123);
+
+        self::assertSame(
+            ['type' => 'integer', 'value' => 123],
+            $intSnapshot->jsonSerialize(),
+        );
+        self::assertSame('{"type":"integer","value":123}', (string) $intSnapshot);
+    }
+
+    #[DataProvider('provideIniBytes')]
+    public function testParseIniBytes(
+        string $raw,
+        int    $expected,
+    ): void {
+        self::assertSame($expected, System::parseIniBytes($raw));
+    }
+
+    /**
+     * @return iterable<string, array{0: string, 1: int}>
+     */
+    public static function provideIniBytes(): iterable
+    {
+        yield 'unlimited' => ['-1', -1];
+        yield 'bytes' => ['1024', 1024];
+        yield 'kilobytes' => ['2K', 2048];
+        yield 'megabytes' => ['128M', 128 * 1024 * 1024];
+        yield 'gigabytes' => ['1G', 1024 * 1024 * 1024];
+        yield 'lowercase' => ['16m', 16 * 1024 * 1024];
+    }
+
+    public function testMemoryRemainingAgreesWithLimit(): void
+    {
+        $limit = System::memoryLimit();
+
+        if ($limit === null) {
+            self::assertNull(System::memoryRemaining());
+            self::assertGreaterThan(0, System::memoryUsage());
+
+            return;
+        }
+
+        $remaining = System::memoryRemaining();
+
+        self::assertNotNull($remaining);
+        self::assertSame($limit - System::memoryUsage(), $remaining);
+    }
+}
+
+/**
+ * Closure property — previously forced serialize failure / clone fallback.
+ */
+final class SnapshotCloneOnlyFixture
+{
+    public \Closure $fn;
+
+    public function __construct(
+        public string $label,
+    ) {
+        $this->fn = fn(): string => $this->label;
+    }
+}
+
+/**
+ * Throwing `__serialize` must not block reflective description.
+ */
+final class SnapshotUncopyableFixture
+{
+    public function __serialize(): array
+    {
+        throw new \LogicException('Cannot serialize.');
+    }
+
+    private function __clone() {}
+}
+
+final class SnapshotSecretPropertyFixture
+{
+    public function __construct(
+        #[Secret]
+        public string $token,
+        public string $label,
+    ) {}
+}
+
+/**
+ * Simulates a persistence layer that commits on destruction.
+ */
+final class SnapshotDestructFixture
+{
+    public static int $destructCount = 0;
+
+    public function __destruct()
+    {
+        self::$destructCount++;
     }
 }

@@ -4,106 +4,181 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts;
-use Northrook\Contracts\Exceptions\RuntimeException;
+use Northrook\Contracts\LogicException;
+use Northrook\Contracts\RuntimeException;
 use Northrook\Contracts\Singleton;
+use Northrook\Contracts\Timestamp;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\NullLogger;
-
-use function Northrook\Contracts\get_checksum;
 
 final class SingletonTest extends TestCase
 {
     protected function setUp(): void
     {
-        $this->resetSingleton(Contracts::class);
-        $this->resetSingleton(SingletonTestClock::class);
+        self::resetRegistry();
     }
 
     protected function tearDown(): void
     {
-        $this->resetSingleton(Contracts::class);
-        $this->resetSingleton(SingletonTestClock::class);
+        self::resetRegistry();
     }
 
-    public function testZeroArgSubclassLazyGetsOnce(): void
+    public function testGetLazilyCreatesAndMemoizesInstance(): void
     {
         self::assertFalse(SingletonTestClock::isRegistered());
 
-        $first  = SingletonTestClock::get();
-        $second = SingletonTestClock::get();
+        $first = SingletonTestClock::get();
 
         self::assertTrue(SingletonTestClock::isRegistered());
-        self::assertSame($first, $second);
-        self::assertTrue(
-            new \ReflectionProperty(Singleton::class, '__selfInstantiated')->getValue($first),
-        );
+        self::assertTrue($first->selfInstantiated());
+        self::assertInstanceOf(Timestamp::class, $first->timestamp());
+        self::assertSame($first, SingletonTestClock::get());
     }
 
-    public function testContractsRegisterThenGet(): void
+    public function testRegisterThenGetReturnsRegisteredInstance(): void
     {
-        $logger     = new NullLogger();
-        $registered = Contracts::register(logger: $logger);
+        $registered = SingletonTestGreeting::register('hello');
 
-        self::assertTrue(Contracts::isRegistered());
-        self::assertSame($registered, Contracts::get());
-        self::assertSame($logger, Contracts::log());
-        self::assertSame('UTC', Contracts::timezone()->getName());
-        self::assertDirectoryExists(Contracts::root());
-        self::assertSame(
-            \realpath(\sys_get_temp_dir()) . \DIR_SEP . get_checksum(Contracts::root()),
-            Contracts::cache(),
-        );
-    }
-
-    public function testContractsGetAutoRegisters(): void
-    {
-        self::assertFalse(Contracts::isRegistered());
-
-        $logger = Contracts::log();
-
-        self::assertTrue(Contracts::isRegistered());
-        self::assertInstanceOf(NullLogger::class, $logger);
+        self::assertFalse($registered->selfInstantiated());
+        self::assertSame('hello', $registered->greeting);
+        self::assertSame($registered, SingletonTestGreeting::get());
     }
 
     public function testSecondConstructThrows(): void
     {
-        Contracts::register();
+        SingletonTestGreeting::register('first');
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('already registered');
+        $this->expectExceptionMessage('is already registered and cannot be instantiated twice.');
 
-        Contracts::register();
+        SingletonTestGreeting::register('second');
     }
 
     public function testCloneThrows(): void
     {
-        $clock = SingletonTestClock::get();
+        $instance = SingletonTestClock::get();
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('cannot be cloned');
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('is a singleton and cannot be cloned.');
 
-        $unused = clone $clock;
-        unset($unused);
+        // @phpstan-ignore-next-line Testing clone rejection.
+        clone $instance;
     }
 
-    /**
-     * @param class-string<Singleton> $class
-     */
-    private function resetSingleton(
-        string $class,
-    ): void {
-        $property  = new \ReflectionProperty(Singleton::class, '__instance');
-        $instances = $property->getValue();
-        if (! \is_array($instances)) {
-            self::fail('Expected singleton registry array.');
+    public function testGetWrapsCreateFailure(): void
+    {
+        try {
+            SingletonTestGreeting::get();
+            self::fail('Expected RuntimeException was not thrown.');
+        } catch (RuntimeException $exception) {
+            self::assertStringContainsString('failed to initialize via get().', $exception->getMessage());
+            self::assertInstanceOf(\LogicException::class, $exception->getPrevious());
         }
-        unset($instances[$class]);
-        $property->setValue(null, $instances);
+    }
+
+    public function testResettableUnregisterVacatesSlot(): void
+    {
+        $first = SingletonTestClock::get();
+        $first->release(resettable: true);
+
+        self::assertFalse(SingletonTestClock::isRegistered());
+
+        $second = SingletonTestClock::get();
+
+        self::assertNotSame($first, $second);
+    }
+
+    public function testPermanentUnregisterBurnsSlot(): void
+    {
+        $instance = SingletonTestClock::get();
+        $instance->release(resettable: false);
+
+        self::assertFalse(SingletonTestClock::isRegistered());
+
+        try {
+            SingletonTestClock::get();
+            self::fail('Expected RuntimeException was not thrown.');
+        } catch (RuntimeException $exception) {
+            self::assertStringContainsString(
+                'was permanently unregistered and cannot be retrieved.',
+                $exception->getMessage(),
+            );
+        }
+    }
+
+    public function testPermanentUnregisterBlocksNewConstruction(): void
+    {
+        SingletonTestGreeting::register('first')->release(resettable: false);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('was permanently unregistered and cannot be instantiated again.');
+
+        SingletonTestGreeting::register('second');
+    }
+
+    public function testSubclassesHaveIndependentSlots(): void
+    {
+        $clock    = SingletonTestClock::get();
+        $greeting = SingletonTestGreeting::register('hi');
+
+        self::assertTrue(SingletonTestClock::isRegistered());
+        self::assertTrue(SingletonTestGreeting::isRegistered());
+        self::assertNotSame($clock, $greeting);
+    }
+
+    private static function resetRegistry(): void
+    {
+        $registry = new \ReflectionProperty(Singleton::class, '__instance');
+        $registry->setValue(null, []);
     }
 }
 
-/**
- * @internal
- */
-final class SingletonTestClock extends Singleton {}
+final class SingletonTestClock extends Singleton
+{
+    public function release(
+        bool $resettable,
+    ): void {
+        $this->unregisterSingletonInstance($resettable);
+    }
+
+    public function selfInstantiated(): bool
+    {
+        return $this->__selfInstantiated;
+    }
+
+    public function timestamp(): Timestamp
+    {
+        return $this->__timestamp;
+    }
+}
+
+final class SingletonTestGreeting extends Singleton
+{
+    private function __construct(
+        public readonly string $greeting,
+        bool                   $__selfInstantiated = false,
+    ) {
+        parent::__construct($__selfInstantiated);
+    }
+
+    public static function register(
+        string $greeting,
+    ): static {
+        return new self($greeting);
+    }
+
+    public function release(
+        bool $resettable,
+    ): void {
+        $this->unregisterSingletonInstance($resettable);
+    }
+
+    public function selfInstantiated(): bool
+    {
+        return $this->__selfInstantiated;
+    }
+
+    protected static function create(): static
+    {
+        throw new \LogicException(self::class . ' must be register()ed before get()');
+    }
+}

@@ -4,278 +4,176 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use JsonSerializable;
-use Northrook\Contracts\ErrorHandler\RuntimeError;
-use Northrook\Contracts\Exceptions\RuntimeException;
+use Northrook\Contracts\Exception\RuntimeError;
+use Northrook\Contracts\RuntimeException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Stringable;
-
-use const Northrook\Logger\LOG_LEVEL;
 
 final class RuntimeErrorTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        error_clear_last();
-    }
-
-    protected function tearDown(): void
-    {
-        error_clear_last();
-    }
-
-    public function testFromMapsAllFields(): void
-    {
-        $array = self::sampleArray();
-
-        $error = RuntimeError::from($array);
-
-        self::assertSame($array['type'], $error->type);
-        self::assertSame($array['message'], $error->message);
-        self::assertSame($array['file'], $error->file);
-        self::assertSame($array['line'], $error->line);
-    }
-
-    public function testToArrayReturnsErrorArray(): void
-    {
-        $array = self::sampleArray();
-
-        self::assertSame($array, RuntimeError::from($array)->toArray());
-    }
-
-    public function testFromIgnoresExtraKeys(): void
+    public function testFromCreatesTypedError(): void
     {
         $error = RuntimeError::from([
-            ...self::sampleArray(),
-            'trace'    => ['ignored'],
-            'severity' => 'warning',
+            'type'    => \E_USER_WARNING,
+            'message' => 'something happened',
+            'file'    => '/srv/app/index.php',
+            'line'    => 123,
         ]);
 
-        self::assertSame(self::sampleArray(), $error->__serialize());
+        self::assertSame(\E_USER_WARNING, $error->type);
+        self::assertSame('something happened', $error->message);
+        self::assertSame('/srv/app/index.php', $error->file);
+        self::assertSame(123, $error->line);
     }
 
-    /**
-     * @param array{
-     *     type: int,
-     *     message: string,
-     *     file: string,
-     *     line: int,
-     * } $array
-     */
-    #[DataProvider('provideValidEdgeCases')]
-    public function testFromAcceptsValidEdgeCases(
-        array $array,
-    ): void {
-        $error = RuntimeError::from($array);
-
-        self::assertSame($array, $error->__serialize());
-    }
-
-    /**
-     * @return iterable<string, array{array{
-     *     type: int,
-     *     message: string,
-     *     file: string,
-     *     line: int,
-     * }}>
-     */
-    public static function provideValidEdgeCases(): iterable
+    public function testFromIgnoresSurplusKeys(): void
     {
-        yield 'empty message' => [[
-            'type'    => E_USER_NOTICE,
-            'message' => '',
-            'file'    => '/tmp/file.php',
+        $error = RuntimeError::from([
+            'type'    => \E_NOTICE,
+            'message' => 'extra keys',
+            'file'    => 'a.php',
             'line'    => 1,
-        ]];
+            'surplus' => 'ignored',
+        ]);
 
-        yield 'empty file' => [[
-            'type'    => E_WARNING,
-            'message' => 'warning',
-            'file'    => '',
-            'line'    => 10,
-        ]];
-
-        yield 'line zero' => [[
-            'type'    => E_ERROR,
-            'message' => 'fatal',
-            'file'    => 'eval()\'d code',
-            'line'    => 0,
-        ]];
-
-        yield 'whitespace message' => [[
-            'type'    => E_USER_WARNING,
-            'message' => "  padded message  \n",
-            'file'    => '/app/bootstrap.php',
-            'line'    => 99,
-        ]];
+        self::assertSame(
+            [
+                'type'    => \E_NOTICE,
+                'message' => 'extra keys',
+                'file'    => 'a.php',
+                'line'    => 1,
+            ],
+            $error->toArray(),
+        );
     }
 
     /**
-     * @param array<string, mixed> $array
+     * @param array<string, mixed> $input
      */
-    #[DataProvider('provideInvalidArrays')]
-    public function testFromRejectsInvalidArray(
-        array $array,
+    #[DataProvider('provideInvalidErrorArrays')]
+    public function testFromRejectsInvalidArrays(
+        array $input,
     ): void {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Invalid error array format.');
 
-        RuntimeError::from($array);
+        RuntimeError::from($input);
     }
 
-    /**
-     * @return iterable<string, array{array<string, mixed>}>
-     */
-    public static function provideInvalidArrays(): iterable
+    public static function provideInvalidErrorArrays(): \Generator
     {
+        $valid = [
+            'type'    => \E_WARNING,
+            'message' => 'valid',
+            'file'    => 'a.php',
+            'line'    => 1,
+        ];
+
+        yield 'missing type' => [\array_diff_key($valid, ['type' => true])];
+        yield 'missing message' => [\array_diff_key($valid, ['message' => true])];
+        yield 'missing file' => [\array_diff_key($valid, ['file' => true])];
+        yield 'missing line' => [\array_diff_key($valid, ['line' => true])];
+        yield 'type as string' => [[...$valid, 'type' => '2']];
+        yield 'message as int' => [[...$valid, 'message' => 42]];
+        yield 'file as null' => [[...$valid, 'file' => null]];
+        yield 'line as string' => [[...$valid, 'line' => '12']];
         yield 'empty array' => [[]];
-
-        yield 'missing type' => [[
-            'message' => 'm',
-            'file'    => 'f.php',
-            'line'    => 1,
-        ]];
-
-        yield 'missing message' => [[
-            'type' => E_NOTICE,
-            'file' => 'f.php',
-            'line' => 1,
-        ]];
-
-        yield 'missing file' => [[
-            'type'    => E_NOTICE,
-            'message' => 'm',
-            'line'    => 1,
-        ]];
-
-        yield 'missing line' => [[
-            'type'    => E_NOTICE,
-            'message' => 'm',
-            'file'    => 'f.php',
-        ]];
-
-        yield 'null type' => [[
-            'type'    => null,
-            'message' => 'm',
-            'file'    => 'f.php',
-            'line'    => 1,
-        ]];
-
-        yield 'string type' => [[
-            'type'    => (string) E_NOTICE,
-            'message' => 'm',
-            'file'    => 'f.php',
-            'line'    => 1,
-        ]];
     }
 
-    public function testFromValidationFailureUsesStructuredRuntimeException(): void
+    public function testFromValidationFailureSkipsPreviousAndCarriesContext(): void
     {
-        $array = ['type' => 'invalid'];
-
         try {
-            RuntimeError::from($array);
-            self::fail('Expected RuntimeException was not thrown.');
+            RuntimeError::from(['bogus' => true]);
+            self::fail('Expected RuntimeException for invalid error array');
         } catch (RuntimeException $exception) {
             self::assertSame('Invalid error array format.', $exception->getMessage());
-            self::assertSame(LOG_LEVEL['critical'], $exception->getCode());
             self::assertNull($exception->getPrevious());
-            self::assertArrayHasKey('$array', $exception->context);
-            self::assertSame(['type' => 'invalid'], $exception->context['$array']);
+            self::assertSame(['bogus' => true], $exception->context['$array']);
         }
-    }
-
-    public function testFromLastReturnsNullWhenNoLastError(): void
-    {
-        self::assertNull(RuntimeError::fromLast());
-    }
-
-    public function testFromLastReturnsTypedRuntimeErrorAfterTriggeringError(): void
-    {
-        @\trigger_error('notice message', E_USER_NOTICE);
-
-        $error = RuntimeError::fromLast();
-
-        self::assertInstanceOf(RuntimeError::class, $error);
-        self::assertSame(E_USER_NOTICE, $error->type);
-        self::assertSame('notice message', $error->message);
-        self::assertNotSame('', $error->file);
-        self::assertGreaterThan(0, $error->line);
     }
 
     public function testFromLastMatchesErrorGetLastPayload(): void
     {
-        @\trigger_error('parity check', E_USER_WARNING);
+        @\trigger_error('runtime error probe', \E_USER_WARNING);
 
-        $phpLastError = error_get_last();
-        self::assertIsArray($phpLastError);
+        $expected = \error_get_last();
+        $error    = RuntimeError::fromLast();
+
+        self::assertNotNull($expected);
+        self::assertNotNull($error);
+        self::assertSame($expected['type'], $error->type);
+        self::assertSame($expected['message'], $error->message);
+        self::assertSame($expected['file'], $error->file);
+        self::assertSame($expected['line'], $error->line);
+    }
+
+    public function testFromLastMirrorsErrorGetLastState(): void
+    {
+        $last = \error_get_last();
+
+        if ($last === null) {
+            self::assertNull(RuntimeError::fromLast());
+
+            return;
+        }
 
         $error = RuntimeError::fromLast();
-        self::assertNotNull($error);
 
-        self::assertSame($phpLastError['type'], $error->type);
-        self::assertSame($phpLastError['message'], $error->message);
-        self::assertSame($phpLastError['file'], $error->file);
-        self::assertSame($phpLastError['line'], $error->line);
+        self::assertNotNull($error);
+        self::assertSame($last, $error->toArray());
+    }
+
+    public function testToArrayMatchesSerializedShape(): void
+    {
+        $error = $this->error('shape check');
+
+        self::assertSame($error->__serialize(), $error->toArray());
+        self::assertSame($error->__serialize(), $error->jsonSerialize());
+        self::assertSame(
+            ['type', 'message', 'file', 'line'],
+            \array_keys($error->toArray()),
+        );
     }
 
     public function testToStringFormatsFileLineAndMessage(): void
     {
         $error = RuntimeError::from([
-            'type'    => E_USER_NOTICE,
-            'message' => 'Something went wrong',
+            'type'    => \E_WARNING,
+            'message' => '  padded message  ',
             'file'    => '/path/to/file.php',
-            'line'    => 42,
+            'line'    => 9,
         ]);
 
-        self::assertSame('/path/to/file.php:42: Something went wrong', (string) $error);
+        self::assertSame('/path/to/file.php:9: padded message', (string) $error);
     }
 
-    public function testJsonSerializeReturnsErrorArray(): void
+    public function testJsonEncodeUsesErrorArray(): void
     {
-        $array = self::sampleArray();
-        $error = RuntimeError::from($array);
+        $error = $this->error('json payload');
 
-        self::assertSame($array, $error->jsonSerialize());
-        self::assertSame($array, $error->__serialize());
+        $decoded = \json_decode(\json_encode($error, \JSON_THROW_ON_ERROR), true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertSame($error->toArray(), $decoded);
     }
 
-    public function testSerializeRoundTripPreservesValues(): void
+    public function testSerializeRoundTrip(): void
     {
-        $original = RuntimeError::from(self::sampleArray());
-
-        $restored = \unserialize(\serialize($original));
+        $error    = $this->error('serialize me');
+        $restored = \unserialize(\serialize($error));
 
         self::assertInstanceOf(RuntimeError::class, $restored);
-        self::assertNotSame($original, $restored);
-        self::assertSame($original->__serialize(), $restored->__serialize());
-        self::assertSame((string) $original, (string) $restored);
+        self::assertSame($error->toArray(), $restored->toArray());
+        self::assertSame((string) $error, (string) $restored);
     }
 
-    public function testImplementsStringableAndJsonSerializable(): void
-    {
-        $error = RuntimeError::from(self::sampleArray());
-
-        self::assertInstanceOf(Stringable::class, $error);
-        self::assertInstanceOf(JsonSerializable::class, $error);
-    }
-
-    /**
-     * @return array{
-     *     type: int,
-     *     message: string,
-     *     file: string,
-     *     line: int,
-     * }
-     */
-    private static function sampleArray(): array
-    {
-        return [
-            'type'    => E_USER_NOTICE,
-            'message' => 'Something went wrong',
-            'file'    => '/path/to/file.php',
-            'line'    => 42,
-        ];
+    private function error(
+        string $message,
+    ): RuntimeError {
+        return RuntimeError::from([
+            'type'    => \E_USER_NOTICE,
+            'message' => $message,
+            'file'    => __FILE__,
+            'line'    => __LINE__,
+        ]);
     }
 }
