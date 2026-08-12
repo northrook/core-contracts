@@ -6,11 +6,11 @@ namespace Northrook\Contracts\Tests;
 
 use Northrook\Contracts\AssetType;
 use Northrook\Contracts\Secret;
-use Northrook\Contracts\Value;
-use Northrook\Contracts\Value\Secret as SecretPolicy;
 use Northrook\Contracts\Snapshot;
 use Northrook\Contracts\System;
 use Northrook\Contracts\Tests\Support\MixedArray;
+use Northrook\Contracts\Value;
+use Northrook\Contracts\Value\Secret as SecretPolicy;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 

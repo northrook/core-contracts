@@ -37,7 +37,7 @@ final class ParameterTypeTest extends TestCase
     #[DataProvider('provideScalarResolutions')]
     public function testFromResolvesScalars(
         mixed $value,
-        Type $expected,
+        Type  $expected,
     ): void {
         self::assertSame($expected, Type::from($value));
         self::assertSame($expected, Type::tryFrom($value));
@@ -104,6 +104,9 @@ final class ParameterTypeTest extends TestCase
         self::assertNotSame(Type::List, Type::from([]));
     }
 
+    /**
+     * @param array<mixed> $value
+     */
     #[DataProvider('provideLists')]
     public function testListShapes(
         array $value,
@@ -123,6 +126,9 @@ final class ParameterTypeTest extends TestCase
         yield 'numeric string keys' => [['0' => 'a', '1' => 'b']];
     }
 
+    /**
+     * @param array<mixed> $value
+     */
     #[DataProvider('provideKeyedArrays')]
     public function testKeyedArrayShapes(
         array $value,
@@ -142,7 +148,7 @@ final class ParameterTypeTest extends TestCase
 
     public function testNestedUnsupportedRejectsWholeArray(): void
     {
-        $value = [1, new \stdClass()];
+        $value = [1, new \stdClass];
 
         self::assertNull(Type::tryFrom($value));
         self::assertFalse(Type::validate($value));
@@ -177,7 +183,7 @@ final class ParameterTypeTest extends TestCase
 
     #[DataProvider('provideUnsupportedObjects')]
     public function testUnsupportedObjectsTryFromAndValidate(
-        mixed $value,
+        mixed  $value,
         string $messageFragment,
     ): void {
         unset($messageFragment);
@@ -187,7 +193,7 @@ final class ParameterTypeTest extends TestCase
 
     #[DataProvider('provideUnsupportedObjects')]
     public function testUnsupportedObjectsFromThrowsTypeException(
-        mixed $value,
+        mixed  $value,
         string $messageFragment,
     ): void {
         try {
@@ -205,9 +211,9 @@ final class ParameterTypeTest extends TestCase
 
     public static function provideUnsupportedObjects(): \Generator
     {
-        yield 'stdClass' => [new \stdClass(), 'object:stdClass#'];
+        yield 'stdClass' => [new \stdClass, 'object:stdClass#'];
         yield 'closure' => [static fn() => null, 'object:Closure#'];
-        yield 'DateTimeImmutable' => [new \DateTimeImmutable(), 'object:DateTimeImmutable#'];
+        yield 'DateTimeImmutable' => [new \DateTimeImmutable, 'object:DateTimeImmutable#'];
     }
 
     public function testOpenResourceIsUnsupported(): void
@@ -303,7 +309,7 @@ final class ParameterTypeTest extends TestCase
 
     public function testCircularArrayReferenceHitsDepthLimit(): void
     {
-        $value = [];
+        $value   = [];
         $value[] = &$value;
 
         self::assertNull(Type::tryFrom($value));
@@ -321,18 +327,19 @@ final class ParameterTypeTest extends TestCase
      * Wrap `$leaf` in `$depth` single-element list layers.
      *
      * The leaf is resolved at recursion depth `$depth`.
+     *
+     * @return array<mixed>
      */
     private static function nest(
-        int $depth,
+        int   $depth,
         mixed $leaf,
     ): array {
-        $value = $leaf;
+        $value = [$leaf];
 
-        for ($i = 0; $i < $depth; $i++) {
+        for ($i = 1; $i < $depth; $i++) {
             $value = [$value];
         }
 
-        /** @var array $value */
         return $value;
     }
 }

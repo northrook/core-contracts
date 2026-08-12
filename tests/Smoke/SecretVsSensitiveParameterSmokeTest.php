@@ -52,23 +52,25 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
     // ─── helpers ───────────────────────────────────────────────────────────
 
     /**
-     * @param callable(): void $callback
+     * @param callable(): mixed $callback
      */
-    private static function capture(callable $callback): string
-    {
+    private static function capture(
+        callable $callback,
+    ): string {
         \ob_start();
         try {
             $callback();
-        }
-        catch (\Throwable $e) {
+        } catch (\Throwable $e) {
             echo \get_class($e) . ': ' . $e->getMessage();
         }
 
         return (string) \ob_get_clean();
     }
 
-    private static function leaks(string $haystack, string $needle = self::MARKER): bool
-    {
+    private static function leaks(
+        string $haystack,
+        string $needle = self::MARKER,
+    ): bool {
         return \str_contains($haystack, $needle);
     }
 
@@ -157,14 +159,14 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
     public function testSensitiveParameterValueHidesInPrintR(): void
     {
         $spv = new \SensitiveParameterValue(self::MARKER);
-        $out = self::capture(static fn() => \print_r($spv, true));
+        $out = \print_r($spv, true);
 
         self::assertFalse(self::leaks($out));
     }
 
     public function testSensitiveParameterValueJsonEncodesEmptyObject(): void
     {
-        $spv = new \SensitiveParameterValue(self::MARKER);
+        $spv  = new \SensitiveParameterValue(self::MARKER);
         $json = \json_encode($spv);
 
         self::assertSame('{}', $json);
@@ -198,8 +200,10 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
 
     public function testSensitiveParameterValueLeaksViaSprintfGetValue(): void
     {
-        $spv = new \SensitiveParameterValue(self::MARKER);
-        $out = \sprintf('pw=%s', $spv->getValue());
+        $spv   = new \SensitiveParameterValue(self::MARKER);
+        $value = $spv->getValue();
+        self::assertIsString($value);
+        $out = \sprintf('pw=%s', $value);
 
         self::assertTrue(self::leaks($out));
     }
@@ -222,8 +226,7 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
 
             try {
                 $throw('ada', self::MARKER);
-            }
-            catch (\Throwable $e) {
+            } catch (\Throwable $e) {
                 $args = $e->getTrace()[0]['args'] ?? [];
                 self::assertCount(2, $args);
                 self::assertSame('ada', $args[0]);
@@ -237,8 +240,7 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
                 );
                 self::assertStringContainsString('SensitiveParameterValue', $asString);
             }
-        }
-        finally {
+        } finally {
             \ini_set('zend.exception_ignore_args', (string) $previous);
         }
     }
@@ -260,13 +262,11 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
 
             try {
                 $throw('ada', self::MARKER);
-            }
-            catch (\Throwable $e) {
+            } catch (\Throwable $e) {
                 self::assertArrayNotHasKey('args', $e->getTrace()[0] ?? []);
                 self::assertFalse(self::leaks((string) $e));
             }
-        }
-        finally {
+        } finally {
             \ini_set('zend.exception_ignore_args', (string) $previous);
         }
     }
@@ -288,8 +288,7 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
             $args = $probe(self::MARKER);
             self::assertInstanceOf(\SensitiveParameterValue::class, $args[0] ?? null);
             self::assertSame(self::MARKER, $args[0]->getValue());
-        }
-        finally {
+        } finally {
             \ini_set('zend.exception_ignore_args', (string) $previous);
         }
     }
@@ -314,19 +313,21 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
         // standard: never interpolate secrets into messages — attribute only wraps args
         $throw = static function(
             #[\SensitiveParameter]
-                string $password,
-        ): never {
+            string $password,
+        ): void {
             throw new \RuntimeException("bad password {$password}");
         };
 
+        $thrown = false;
         try {
             $throw(self::MARKER);
-            self::fail('expected throw');
-        }
-        catch (\Throwable $e) {
+        } catch (\Throwable $e) {
+            $thrown = true;
             self::assertTrue(self::leaks($e->getMessage()));
             self::assertTrue(self::leaks((string) $e));
         }
+
+        self::assertTrue($thrown, 'expected throw');
     }
 
     // ─── Native: arrays / closures / non-promoted ──────────────────────────
@@ -343,7 +344,7 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
     public function testArrayWithSpvSiblingStillLeaksPlainLeaves(): void
     {
         $sibling = 'VISIBLE_SIBLING_TOKEN_xyz';
-        $data = [
+        $data    = [
             'password' => new \SensitiveParameterValue(self::MARKER),
             'token'    => $sibling,
         ];
@@ -359,7 +360,7 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
         $ref = new \ReflectionProperty(NativeAssignedAfterConstruct::class, 'password');
         self::assertSame([], $ref->getAttributes(\SensitiveParameter::class));
 
-        $obj = new NativeAssignedAfterConstruct();
+        $obj           = new NativeAssignedAfterConstruct;
         $obj->password = self::MARKER;
         self::assertTrue(self::leaks(self::capture(static fn() => \var_dump($obj))));
     }
@@ -399,10 +400,8 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
     {
         // engine detail: TARGET_PARAMETER — ReflectionProperty sees nothing; Serializer still
         // resolves via PropertyAttributes constructor-parameter lookup.
-        $property = new \ReflectionProperty(NativePromotedSensitive::class, 'password');
-        $parameter = ( new \ReflectionClass(NativePromotedSensitive::class) )
-            ->getConstructor()
-            ?->getParameters()[0];
+        $property  = new \ReflectionProperty(NativePromotedSensitive::class, 'password');
+        $parameter = new \ReflectionClass(NativePromotedSensitive::class)->getConstructor()?->getParameters()[0];
 
         self::assertSame([], $property->getAttributes(\SensitiveParameter::class));
         self::assertNotNull($parameter);
@@ -430,15 +429,13 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
 
             try {
                 $throw(['token' => self::MARKER]);
-            }
-            catch (\Throwable $e) {
+            } catch (\Throwable $e) {
                 $arg = $e->getTrace()[0]['args'][0] ?? null;
                 self::assertInstanceOf(\SensitiveParameterValue::class, $arg);
                 self::assertSame(['token' => self::MARKER], $arg->getValue());
                 self::assertFalse(self::leaks((string) $e));
             }
-        }
-        finally {
+        } finally {
             \ini_set('zend.exception_ignore_args', (string) $previous);
         }
     }
@@ -446,7 +443,7 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
     public function testMethodParameterAttributeDoesNotProtectStoredProperty(): void
     {
         // standard: attribute protects the call frame, not subsequent storage
-        $obj = new MethodParamThenStore();
+        $obj = new MethodParamThenStore;
         $obj->set(self::MARKER);
 
         self::assertTrue(self::leaks(self::capture(static fn() => \var_dump($obj))));
@@ -463,7 +460,10 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
             return \debug_backtrace()[0]['args'] ?? [];
         };
 
-        $args = $fn(password: self::MARKER, user: 'ada');
+        $args = $fn(
+            password: self::MARKER,
+            user    : 'ada',
+        );
         // Order follows declaration, not call order
         self::assertSame('ada', $args[0]);
         self::assertInstanceOf(\SensitiveParameterValue::class, $args[1]);
@@ -506,7 +506,7 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
     public function testSerializerPrintRHonoursDebugInfo(): void
     {
         $obj = SerializedDual::make();
-        $out = self::capture(static fn() => \print_r($obj, true));
+        $out = \print_r($obj, true);
 
         self::assertFalse(self::leaks($out));
     }
@@ -579,7 +579,7 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
 
     public function testSerializerMapsNativeSensitiveParameterToSensitiveTier(): void
     {
-        $obj = SerializedNativeSensitive::make();
+        $obj  = SerializedNativeSensitive::make();
         $info = $obj->__debugInfo();
 
         self::assertSame(
@@ -593,7 +593,7 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
     {
         // #[Secret(CREDENTIAL)] on property + #[SensitiveParameter] on param — merge, not first-match
         $credentialFirst = SerializedBothAttributesSecretFirst::make();
-        $info = $credentialFirst->__debugInfo();
+        $info            = $credentialFirst->__debugInfo();
 
         self::assertSame('[credential::' . \SensitiveParameter::class . ']', $info['token']);
         self::assertSame(self::MARKER, $credentialFirst->__serialize()['token'], 'credential OK when trusted');
@@ -630,7 +630,7 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
     public function testValueNestedInPlainObjectJsonLeaksWithoutJsonSerializableParent(): void
     {
         // engine-limit / standard: wrappers must implement JsonSerializable (Serializable does)
-        $bag = new \stdClass();
+        $bag         = new \stdClass;
         $bag->secret = new Value(self::MARKER, SecretPolicy::SENSITIVE);
 
         // stdClass json_encode walks public props; nested Value IS JsonSerializable
@@ -642,9 +642,14 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
     {
         $this->becomePublic();
 
-        $bag = new class (new Value(self::MARKER, SecretPolicy::CREDENTIAL)) implements \JsonSerializable {
-            public function __construct(public Value $secret) {}
+        $bag = new class(new Value(self::MARKER, SecretPolicy::CREDENTIAL)) implements \JsonSerializable {
+            public function __construct(
+                public Value $secret,
+            ) {}
 
+            /**
+             * @return array{secret: Value}
+             */
             public function jsonSerialize(): array
             {
                 return ['secret' => $this->secret];
@@ -660,7 +665,7 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
     public function testSnapshotRedactsAttributedSecretsWithoutSerializer(): void
     {
         // blocked-by-package: Snapshot uses PropertyAttributes, not the trait
-        $obj = new AttributeOnlySecret(self::MARKER);
+        $obj  = new AttributeOnlySecret(self::MARKER);
         $snap = Snapshot::value($obj);
 
         $export = \var_export($snap, true);
@@ -669,8 +674,8 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
 
     public function testSnapshotRedactsNativeSensitiveParameter(): void
     {
-        $obj = new NativePromotedSensitive(self::MARKER);
-        $snap = Snapshot::value($obj);
+        $obj    = new NativePromotedSensitive(self::MARKER);
+        $snap   = Snapshot::value($obj);
         $export = \var_export($snap, true);
 
         self::assertFalse(self::leaks($export));
@@ -698,11 +703,12 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
 
     public function testParentPrivateSecretIsRedacted(): void
     {
-        $obj = ChildWithParentSecret::make();
+        $obj  = ChildWithParentSecret::make();
         $info = $obj->__debugInfo();
 
         self::assertSame('[sensitive::string]', $info['parentSecret']);
         self::assertSame('visible', $info['childPlain']);
+        self::assertSame(self::MARKER, $obj->parentSecret());
     }
 
     public function testUninitializedSecretPropertyShowsPlaceholder(): void
@@ -720,7 +726,7 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
 
     public function testNonPromotedSecretOnPropertyResolved(): void
     {
-        $obj = new NonPromotedSecretProperty();
+        $obj           = new NonPromotedSecretProperty;
         $obj->password = self::MARKER;
 
         self::assertSame('[sensitive::string]', $obj->__debugInfo()['password']);
@@ -774,7 +780,7 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
 
     public function testClonePreservesPlaintextAndPolicy(): void
     {
-        $obj = SerializedSensitiveOnly::make();
+        $obj   = SerializedSensitiveOnly::make();
         $clone = clone $obj;
 
         self::assertSame(self::MARKER, $clone->password);
@@ -868,7 +874,7 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
     public function testVarExporterNestedSerializerStillExportsSensitiveInner(): void
     {
         $outer = new NestedOuter(SerializedSensitiveOnly::make());
-        $code = VarExporter::export($outer);
+        $code  = VarExporter::export($outer);
 
         self::assertTrue(self::leaks($code));
     }
@@ -901,8 +907,10 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
             true,
         ];
         yield 'SPV var_dump' => [
-            static fn() => new class (new \SensitiveParameterValue(self::MARKER)) {
-                public function __construct(public \SensitiveParameterValue $password) {}
+            static fn() => new class(new \SensitiveParameterValue(self::MARKER)) {
+                public function __construct(
+                    public \SensitiveParameterValue $password,
+                ) {}
             },
             'var_dump',
             false,
@@ -910,10 +918,13 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
     }
 
     #[DataProvider('dumpChannelMatrix')]
-    public function testDumpChannelMatrix(callable $factory, string $channel, bool $expectLeak): void
-    {
+    public function testDumpChannelMatrix(
+        callable $factory,
+        string   $channel,
+        bool     $expectLeak,
+    ): void {
         $subject = $factory();
-        $out = match ($channel) {
+        $out     = match ($channel) {
             'var_dump'   => self::capture(static fn() => \var_dump($subject)),
             'var_export' => self::capture(static fn() => \var_export($subject)),
             default      => self::fail("unknown channel {$channel}"),
@@ -1068,12 +1079,17 @@ class ParentWithSecret implements Serializable
         #[Secret]
         private string $parentSecret,
     ) {}
+
+    public function parentSecret(): string
+    {
+        return $this->parentSecret;
+    }
 }
 
 final class ChildWithParentSecret extends ParentWithSecret
 {
     public function __construct(
-        string $parentSecret,
+        string        $parentSecret,
         public string $childPlain,
     ) {
         parent::__construct($parentSecret);

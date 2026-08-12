@@ -17,7 +17,7 @@ final class ParameterTagsTest extends TestCase
 
     public function testDefaultConstructorIsEmpty(): void
     {
-        $tags = new Tags();
+        $tags = new Tags;
 
         self::assertCount(0, $tags);
         self::assertSame([], $tags->value);
@@ -59,7 +59,7 @@ final class ParameterTagsTest extends TestCase
 
     public function testAddIsFluentAndPreservesFirstCasing(): void
     {
-        $tags = new Tags();
+        $tags = new Tags;
         $same = $tags->add('Foo', 'bar', 'FOO', 'Bar', 'foo');
 
         self::assertSame($tags, $same);
@@ -84,7 +84,7 @@ final class ParameterTagsTest extends TestCase
 
     public function testAddAcceptsInternalWhitespaceAndPunctuation(): void
     {
-        $tags = new Tags();
+        $tags = new Tags;
         $tags->add('a b', 'a-b_c.1', 'x/y');
 
         self::assertTrue($tags->has('a b', 'a-b_c.1', 'x/y'));
@@ -95,7 +95,7 @@ final class ParameterTagsTest extends TestCase
     public function testAddRejectsEmptyOrBracketWhitespace(
         string $tag,
     ): void {
-        $tags = new Tags();
+        $tags = new Tags;
 
         try {
             $tags->add($tag);
@@ -129,7 +129,7 @@ final class ParameterTagsTest extends TestCase
 
     public function testAddRejectsLaterInvalidWithoutKeepingPriorInSameCall(): void
     {
-        $tags = new Tags();
+        $tags = new Tags;
 
         try {
             $tags->add('ok', ' bad');
@@ -171,8 +171,8 @@ final class ParameterTagsTest extends TestCase
     public function testHasWithNoArgumentsIsVacuousTrue(): void
     {
         // array_all([]) === true
-        self::assertTrue(( new Tags() )->has());
-        self::assertTrue(( new Tags('x') )->has());
+        self::assertTrue(new Tags()->has());
+        self::assertTrue(new Tags('x')->has());
     }
 
     public function testHasDoesNotTrimLookup(): void
@@ -273,7 +273,7 @@ final class ParameterTagsTest extends TestCase
 
     public function testValueHookReflectsMutations(): void
     {
-        $tags = new Tags();
+        $tags = new Tags;
         self::assertSame([], $tags->value);
 
         $tags->add('X');
@@ -285,7 +285,7 @@ final class ParameterTagsTest extends TestCase
 
     public function testIterationOrderFollowsInsertion(): void
     {
-        $tags = new Tags();
+        $tags = new Tags;
         $tags->add('c', 'a', 'b');
 
         self::assertSame(['c', 'a', 'b'], \array_keys($tags->value));

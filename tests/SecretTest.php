@@ -73,11 +73,16 @@ final class SecretTest extends TestCase
         self::assertSame([Secret::SENSITIVE, Secret::CREDENTIAL], Secret::TYPES);
     }
 
+    /**
+     * @param non-empty-string         $input
+     * @param 'sensitive'|'credential' $expected
+     */
     #[DataProvider('provideValidTypesCaseInsensitive')]
     public function testConstructNormalizesTypeCase(
         string $input,
         string $expected,
     ): void {
+        // @phpstan-ignore-next-line Constructor normalizes type case.
         $secret = new Secret($input);
 
         self::assertSame($expected, $secret->type);
@@ -140,7 +145,7 @@ final class SecretTest extends TestCase
 
     public function testFromInstanceMergesConditionsIntoNewInstance(): void
     {
-        $base = new Secret(Secret::CREDENTIAL, ['db-dsn']);
+        $base   = new Secret(Secret::CREDENTIAL, ['db-dsn']);
         $merged = Secret::from($base, 'oauth-token');
 
         self::assertNotNull($merged);
@@ -202,7 +207,7 @@ final class SecretTest extends TestCase
 
     public function testFromMergesConditionArray(): void
     {
-        $base = new Secret(Secret::SENSITIVE, 'a');
+        $base   = new Secret(Secret::SENSITIVE, 'a');
         $merged = Secret::from($base, ['b', 'c']);
 
         self::assertNotNull($merged);
@@ -255,6 +260,7 @@ final class SecretTest extends TestCase
         $secret = new Secret(Secret::SENSITIVE);
 
         $this->expectException(InvalidArgumentException::class);
+        // @phpstan-ignore-next-line Testing invalid input.
         $secret->addCondition($condition);
     }
 
@@ -275,6 +281,7 @@ final class SecretTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
+        // @phpstan-ignore-next-line Testing invalid input.
         new Secret(Secret::SENSITIVE, ['ok', '']);
     }
 
@@ -283,6 +290,7 @@ final class SecretTest extends TestCase
     public function testSetTypeChangesAndNormalizes(): void
     {
         $secret = new Secret(Secret::SENSITIVE);
+        // @phpstan-ignore-next-line setType normalizes type case.
         $secret->setType('CREDENTIAL');
 
         self::assertSame(Secret::CREDENTIAL, $secret->type);
@@ -313,7 +321,7 @@ final class SecretTest extends TestCase
 
     public function testFrozenRejectsSetType(): void
     {
-        $secret = ( new Secret(Secret::SENSITIVE) )->freeze();
+        $secret = new Secret(Secret::SENSITIVE)->freeze();
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Secret is immutable.');
@@ -322,7 +330,7 @@ final class SecretTest extends TestCase
 
     public function testFrozenRejectsAddCondition(): void
     {
-        $secret = ( new Secret(Secret::SENSITIVE) )->freeze();
+        $secret = new Secret(Secret::SENSITIVE)->freeze();
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Secret is immutable.');
@@ -414,7 +422,7 @@ final class SecretTest extends TestCase
 
     public function testUnserializeDefaultsTypeAndUnfrozen(): void
     {
-        $secret = ( new \ReflectionClass(Secret::class) )->newInstanceWithoutConstructor();
+        $secret = new \ReflectionClass(Secret::class)->newInstanceWithoutConstructor();
         $secret->__unserialize([]);
 
         self::assertSame(Secret::SENSITIVE, $secret->type);
@@ -424,7 +432,7 @@ final class SecretTest extends TestCase
 
     public function testUnserializeRestoresFrozenLock(): void
     {
-        $secret = ( new \ReflectionClass(Secret::class) )->newInstanceWithoutConstructor();
+        $secret = new \ReflectionClass(Secret::class)->newInstanceWithoutConstructor();
         $secret->__unserialize([
             'type'       => Secret::CREDENTIAL,
             'conditions' => ['a' => 'a'],
@@ -440,7 +448,7 @@ final class SecretTest extends TestCase
 
     public function testUnserializeNullImmutableBecomesUnfrozen(): void
     {
-        $secret = ( new \ReflectionClass(Secret::class) )->newInstanceWithoutConstructor();
+        $secret = new \ReflectionClass(Secret::class)->newInstanceWithoutConstructor();
         $secret->__unserialize([
             'type'       => Secret::SENSITIVE,
             'conditions' => [],

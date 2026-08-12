@@ -9,9 +9,9 @@ use Northrook\Contracts\Directory;
 use Northrook\Contracts\LogicException;
 use Northrook\Contracts\RuntimeException;
 use Northrook\Contracts\Singleton;
+use Northrook\Contracts\Timezone;
 use Northrook\Contracts\Value\Redactor;
 use Northrook\Contracts\Value\Secret as SecretPolicy;
-use Northrook\Contracts\Timezone;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -152,10 +152,7 @@ final class ContractsTest extends TestCase
             protected function redact(
                 mixed $value,
             ): mixed {
-                if (
-                    $this->secret->hasCondition('special-case')
-                    && $this->secret->type === SecretPolicy::CREDENTIAL
-                ) {
+                if ($this->secret->hasCondition('special-case') && $this->secret->type === SecretPolicy::CREDENTIAL) {
                     return '[special-credential]';
                 }
 

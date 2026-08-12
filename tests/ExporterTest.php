@@ -32,9 +32,9 @@ final class ExporterTest extends TestCase
         $this->becomePublic();
 
         $fixture = new ExporterNestedCredentialFixture(
-            dsn   : new Value('postgres://dsn', SecretPolicy::CREDENTIAL),
-            plain : 'visible',
-            token : 'param-secret',
+            dsn  : new Value('postgres://dsn', SecretPolicy::CREDENTIAL),
+            plain: 'visible',
+            token: 'param-secret',
         );
 
         $payload  = Exporter::serialize($fixture);
@@ -51,9 +51,9 @@ final class ExporterTest extends TestCase
         $this->becomePublic();
 
         $fixture = new ExporterNestedCredentialFixture(
-            dsn   : new Value('postgres://dsn', SecretPolicy::CREDENTIAL),
-            plain : 'visible',
-            token : 'param-secret',
+            dsn  : new Value('postgres://dsn', SecretPolicy::CREDENTIAL),
+            plain: 'visible',
+            token: 'param-secret',
         );
 
         Exporter::serialize($fixture);
@@ -69,9 +69,9 @@ final class ExporterTest extends TestCase
         $this->becomePublic();
 
         $fixture = new ExporterNestedCredentialFixture(
-            dsn   : new Value('postgres://dsn', SecretPolicy::CREDENTIAL),
-            plain : 'visible',
-            token : 'param-secret',
+            dsn  : new Value('postgres://dsn', SecretPolicy::CREDENTIAL),
+            plain: 'visible',
+            token: 'param-secret',
         );
 
         try {
@@ -107,9 +107,9 @@ final class ExporterTest extends TestCase
         $this->becomePublic();
 
         $fixture = new ExporterNestedCredentialFixture(
-            dsn   : new Value('postgres://dsn', SecretPolicy::CREDENTIAL),
-            plain : 'visible',
-            token : 'param-secret',
+            dsn  : new Value('postgres://dsn', SecretPolicy::CREDENTIAL),
+            plain: 'visible',
+            token: 'param-secret',
         );
 
         $json = Exporter::json($fixture, \JSON_THROW_ON_ERROR);
@@ -125,9 +125,9 @@ final class ExporterTest extends TestCase
         $this->becomePublic();
 
         $fixture = new ExporterNestedCredentialFixture(
-            dsn   : new Value('postgres://dsn', SecretPolicy::CREDENTIAL),
-            plain : 'visible',
-            token : 'param-secret',
+            dsn  : new Value('postgres://dsn', SecretPolicy::CREDENTIAL),
+            plain: 'visible',
+            token: 'param-secret',
         );
 
         $export = Exporter::var($fixture);
@@ -192,8 +192,9 @@ final class ExporterReentrantTrigger
     /**
      * @param array{nested: Value} $data
      */
-    public function __unserialize(array $data): void
-    {
+    public function __unserialize(
+        array $data,
+    ): void {
         $this->nested = $data['nested'];
     }
 }

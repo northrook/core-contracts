@@ -38,7 +38,7 @@ final class ValueSecretTest extends TestCase
     public function testValueFromSecretInstance(): void
     {
         $policy = new SecretPolicy(SecretPolicy::CREDENTIAL, 'db-dsn');
-        $value = new Value('postgres://…', $policy);
+        $value  = new Value('postgres://…', $policy);
 
         self::assertTrue($value->isSecret(SecretPolicy::CREDENTIAL));
         self::assertTrue($value->secret?->hasCondition('db-dsn'));
@@ -63,7 +63,7 @@ final class ValueSecretTest extends TestCase
 
     public function testParameterAcceptsSecretPolicyInstance(): void
     {
-        $secret = new SecretPolicy(SecretPolicy::CREDENTIAL, ['db-dsn']);
+        $secret    = new SecretPolicy(SecretPolicy::CREDENTIAL, ['db-dsn']);
         $parameter = new TestParameter(
             key   : 'db.dsn',
             value : 'postgres://…',
@@ -113,7 +113,7 @@ final class ValueSecretTest extends TestCase
             self::assertTrue(AppEnv::isDebug());
 
             $redactor = new Redactor;
-            $policy = new SecretPolicy(SecretPolicy::SENSITIVE);
+            $policy   = new SecretPolicy(SecretPolicy::SENSITIVE);
 
             self::assertSame('[sensitive::integer:6]', $redactor(123_456, $policy));
             self::assertSame('[sensitive::float:4]', $redactor(3.14, $policy));

@@ -25,7 +25,7 @@ class Value implements Serializable
      * @param null|string|Value\Secret          $secret
      */
     public function __construct(
-        mixed                        $value = null,
+        mixed                    $value = null,
         null|string|Value\Secret $secret = null,
     ) {
         $this->value  = $value;
@@ -53,10 +53,10 @@ class Value implements Serializable
         mixed               $value,
         \ReflectionProperty $property,
     ): null|Value\Secret {
-        if ( $name === 'value' ) {
+        if ($name === 'value') {
             return $this->secret;
         }
 
-        return $this->resolveAttributedSecret( $name, $value, $property );
+        return $this->resolveAttributedSecret($name, $value, $property);
     }
 }

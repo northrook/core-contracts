@@ -80,6 +80,7 @@ final class AttributesTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
 
         // First argument is `$type`, not a condition name.
+        // @phpstan-ignore-next-line Testing invalid input.
         new Secret('db-dsn');
     }
 
@@ -94,12 +95,13 @@ final class AttributesTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
+        // @phpstan-ignore-next-line Testing invalid input.
         new Secret(SecretPolicy::SENSITIVE, '');
     }
 
     public function testSecretAttributeFromReflection(): void
     {
-        $property = new \ReflectionProperty(SecretAttributeFixture::class, 'token');
+        $property   = new \ReflectionProperty(SecretAttributeFixture::class, 'token');
         $attributes = $property->getAttributes(Secret::class);
 
         self::assertCount(1, $attributes);
@@ -178,7 +180,7 @@ final class AttributesTest extends TestCase
     {
         self::assertSame(
             '[credential::string]',
-            new SecretPolicy(SecretPolicy::CREDENTIAL)( 'token'),
+            ( new SecretPolicy(SecretPolicy::CREDENTIAL) )('token'),
         );
     }
 

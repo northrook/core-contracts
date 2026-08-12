@@ -71,8 +71,9 @@ trait Serializer
      *
      * @param array<string, mixed> $data
      */
-    final public function __unserialize(array $data): void
-    {
+    final public function __unserialize(
+        array $data,
+    ): void {
         foreach (self::propertyMap($this) as $name => $property) {
             if (! \array_key_exists($name, $data)) {
                 continue;
@@ -175,8 +176,9 @@ trait Serializer
     /**
      * Value casts applied in every channel, after redaction checks.
      */
-    protected function castValue(mixed $value): mixed
-    {
+    protected function castValue(
+        mixed $value,
+    ): mixed {
         if ($value instanceof Timestamp) {
             return $value->string;
         }
@@ -195,8 +197,9 @@ trait Serializer
      *
      * @return iterable<string, array{mixed, \ReflectionProperty}>
      */
-    private function walkProperties(bool $includeUninitialized = false): iterable
-    {
+    private function walkProperties(
+        bool $includeUninitialized = false,
+    ): iterable {
         foreach (self::propertyMap($this) as $name => $property) {
             if (! $property->isInitialized($this)) {
                 if ($includeUninitialized) {
@@ -212,8 +215,9 @@ trait Serializer
     /**
      * @return array<string, \ReflectionProperty> Non-static properties, child-first
      */
-    private static function propertyMap(object $subject): array
-    {
+    private static function propertyMap(
+        object $subject,
+    ): array {
         $map        = [];
         $reflection = new \ReflectionClass($subject);
 

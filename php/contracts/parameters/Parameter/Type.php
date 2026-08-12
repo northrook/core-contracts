@@ -1,6 +1,6 @@
 <?php
 
-declare( strict_types = 1 );
+declare(strict_types=1);
 
 namespace Northrook\Contracts\Parameter;
 
@@ -54,31 +54,29 @@ enum Type
      * @throws TypeException if `$value` is unsupported
      */
     public static function from(
-            mixed $value,
-    ) : self
-    {
+        mixed $value,
+    ): self {
         $exception = null;
 
         try {
-            $type = self::resolve( $value, 0, true );
-        }
-        catch ( OverflowException $exception ) {
+            $type = self::resolve($value, 0, true);
+        } catch (OverflowException $exception) {
             $type = null;
         }
 
-        if ( $type !== null ) {
+        if ($type !== null) {
             return $type;
         }
 
-        $debug = \debug_value_type( $value );
+        $debug = \debug_value_type($value);
 
         throw new TypeException(
-                message  : 'Unsupported Parameter type: ' . $debug . '.',
-                context  : [
-                                   'value' => $value,
-                                   'type'  => $debug,
-                           ],
-                previous : $exception,
+            message : 'Unsupported Parameter type: ' . $debug . '.',
+            context : [
+                'value' => $value,
+                'type'  => $debug,
+            ],
+            previous: $exception,
         );
     }
 
@@ -88,10 +86,9 @@ enum Type
      * Never throws: nesting beyond {@see Type::MAX_DEPTH} yields `null`.
      */
     public static function tryFrom(
-            mixed $value,
-    ) : null | self
-    {
-        return self::resolve( $value, 0, false );
+        mixed $value,
+    ): null|self {
+        return self::resolve($value, 0, false);
     }
 
     /**
@@ -100,10 +97,9 @@ enum Type
      * Soft check via {@see tryFrom()}; does not throw.
      */
     public static function validate(
-            mixed $value,
-    ) : bool
-    {
-        return self::tryFrom( $value ) !== null;
+        mixed $value,
+    ): bool {
+        return self::tryFrom($value) !== null;
     }
 
     /**
@@ -114,33 +110,32 @@ enum Type
      * @throws OverflowException if depth exceeds {@see Type::MAX_DEPTH}
      */
     private static function resolve(
-            mixed $value,
-            int   $depth,
-            bool  $throw,
-    ) : null | self
-    {
-        if ( $depth > self::MAX_DEPTH ) {
-            if ( !$throw ) {
+        mixed $value,
+        int   $depth,
+        bool  $throw,
+    ): null|self {
+        if ($depth > self::MAX_DEPTH) {
+            if (! $throw) {
                 return null;
             }
 
             throw new OverflowException(
-                    message : 'Maximum recursion depth exceeded.',
-                    context : [
-                                      'depth' => $depth,
-                                      'value' => $value,
-                              ],
+                message: 'Maximum recursion depth exceeded.',
+                context: [
+                    'depth' => $depth,
+                    'value' => $value,
+                ],
             );
         }
 
-        return match ( gettype( $value ) ) {
+        return match (gettype($value)) {
             'string'  => self::String,
             'integer' => self::Integer,
             'double'  => self::Float,
             'boolean' => self::Boolean,
             'NULL'    => self::Null,
-            'array'   => self::resolveArray( $value, $depth, $throw ),
-            'object'  => self::resolveObject( $value ),
+            'array'   => self::resolveArray($value, $depth, $throw),
+            'object'  => self::resolveObject($value),
             default   => null,
         };
     }
@@ -151,13 +146,12 @@ enum Type
      * @return null|self::UnitEnum|self::BackedEnum
      */
     private static function resolveObject(
-            object $value,
-    ) : null | self
-    {
-        return match ( true ) {
+        object $value,
+    ): null|self {
+        return match (true) {
             $value instanceof \BackedEnum => self::BackedEnum,
-            $value instanceof \UnitEnum   => self::UnitEnum,
-            default                       => null,
+            $value instanceof \UnitEnum => self::UnitEnum,
+            default => null,
         };
     }
 
@@ -174,24 +168,23 @@ enum Type
      * @param array<array-key, mixed>  $value
      */
     private static function resolveArray(
-            array $value,
-            int   $depth,
-            bool  $throw,
-    ) : null | self
-    {
-        if ( $value === [] ) {
+        array $value,
+        int   $depth,
+        bool  $throw,
+    ): null|self {
+        if ($value === []) {
             return self::Array;
         }
 
-        if ( \array_any(
-                array    : $value,
-                callback : static fn( $item ) => !self::resolve( $item, $depth + 1, $throw ),
-        ) ) {
+        if (\array_any(
+            array   : $value,
+            callback: static fn($item) => ! self::resolve($item, $depth + 1, $throw),
+        )) {
             return null;
         }
 
-        return \array_is_list( $value )
-                ? self::List
-                : self::Array;
+        return \array_is_list($value)
+            ? self::List
+            : self::Array;
     }
 }

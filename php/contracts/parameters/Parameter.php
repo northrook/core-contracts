@@ -1,6 +1,6 @@
 <?php
 
-declare( strict_types = 1 );
+declare(strict_types=1);
 
 namespace Northrook\Contracts;
 
@@ -8,6 +8,8 @@ namespace Northrook\Contracts;
  * The base class for all parameter types.
  *
  * Runtime value shape is enforced by {@see Parameter\Type::from()} on assignment.
+ *
+ * @phpstan-type ParameterValue bool|float|int|string|\UnitEnum|null|array<array-key, mixed>
  */
 abstract class Parameter extends Value
 {
@@ -16,25 +18,28 @@ abstract class Parameter extends Value
      *
      * @var Parameter\Tags
      */
-    protected readonly Parameter\Tags $tagged;
+    final protected readonly Parameter\Tags $tagged;
 
-    private(set) Parameter\Type $type;
+    final private(set) Parameter\Type $type;
 
-    protected(set) string $key {
+    /**
+     * @var non-empty-string
+     */
+    final protected(set) string $key {
         get => $this->key;
-        set( string $key ) {
+        set(string $key) {
             Assert::validKey(
-                    value  : $key,
-                    source : __METHOD__,
+                value : $key,
+                source: __METHOD__,
             );
-            $this->key = \strtolower( $key );
+            $this->key = \strtolower($key);
         }
     }
 
-    protected(set) mixed $value {
+    final protected(set) mixed $value {
         get => $this->value;
-        set( mixed $value ) {
-            $this->type  = Parameter\Type::from( $value );
+        set(mixed $value) {
+            $this->type  = Parameter\Type::from($value);
             $this->value = $value;
         }
     }
@@ -47,28 +52,26 @@ abstract class Parameter extends Value
     }
 
     /**
-     * @param non-empty-string                                             $key
-     * @param null|bool|float|int|string|\UnitEnum|array<array-key, mixed> $value
-     * @param null|string|Value\Secret                                     $secret
-     * @param string|list<string>                                          $tags
+     * @param non-empty-string          $key
+     * @param ParameterValue            $value
+     * @param null|string|Value\Secret  $secret
+     * @param string|list<string>       $tags
      */
     public function __construct(
-            string                                                 $key,
-            bool | float | int | string | null | \UnitEnum | array $value,
-            null | string | Value\Secret                           $secret = null,
-            string | array                                         $tags = [],
-    )
-    {
-        parent::__construct( secret : $secret );
+        string                                     $key,
+        bool|float|int|string|null|\UnitEnum|array $value,
+        null|string|Value\Secret                   $secret = null,
+        string|array                               $tags = [],
+    ) {
+        parent::__construct(secret: $secret);
         $this->key    = $key;
         $this->value  = $value;
-        $this->tagged = new Parameter\Tags( $tags );
+        $this->tagged = new Parameter\Tags($tags);
     }
 
     final public function isTagged(
-            string ...$value
-    ) : bool
-    {
-        return $this->tagged->has( ...$value );
+        string ...$value,
+    ): bool {
+        return $this->tagged->has(...$value);
     }
 }

@@ -122,9 +122,10 @@ final class PropertyAttributes implements Resettable
                 $instance = $attribute->newInstance();
                 $policy   = $instance->secret;
 
-                $type = $type === Value\Secret::CREDENTIAL || $policy->type === Value\Secret::CREDENTIAL
-                    ? Value\Secret::CREDENTIAL
-                    : Value\Secret::SENSITIVE;
+                $type =
+                    $type === Value\Secret::CREDENTIAL || $policy->type === Value\Secret::CREDENTIAL
+                        ? Value\Secret::CREDENTIAL
+                        : Value\Secret::SENSITIVE;
 
                 foreach ($policy->conditions as $condition) {
                     $conditions[$condition] = $condition;
@@ -134,7 +135,7 @@ final class PropertyAttributes implements Resettable
             }
 
             if ($name === \SensitiveParameter::class) {
-                $type ??= Value\Secret::SENSITIVE;
+                $type                                   ??= Value\Secret::SENSITIVE;
                 $conditions[\SensitiveParameter::class] = \SensitiveParameter::class;
             }
         }

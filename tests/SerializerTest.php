@@ -134,7 +134,7 @@ final class SerializerTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Cannot serialize credential property $value');
 
-        ( new Value('runtime-only', SecretPolicy::CREDENTIAL) )->__serialize();
+        new Value('runtime-only', SecretPolicy::CREDENTIAL)->__serialize();
     }
 
     public function testValueCredentialPhpSerializeThrowsWhenPublic(): void
@@ -319,15 +319,17 @@ class SerializerRoundTripFixture extends SerializerRoundTripParentFixture implem
     #[Secret]
     public string $apiKey = '';
 
-    public static function roundTrip(string $plain, string $apiKey): self
-    {
-        $fixture         = new self();
+    public static function roundTrip(
+        string $plain,
+        string $apiKey,
+    ): self {
+        $fixture         = new self;
         $fixture->plain  = $plain;
         $fixture->apiKey = $apiKey;
 
         $restored = \unserialize(\serialize($fixture));
 
-        if ( ! $restored instanceof self ) {
+        if (! $restored instanceof self) {
             throw new \LogicException('Round-trip failed to restore ' . self::class);
         }
 

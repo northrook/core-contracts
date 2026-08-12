@@ -46,13 +46,13 @@ final class Contracts extends Singleton
      * @param null|Redactor                                             $secretRedactor Optional dump redactor
      */
     public static function register(
-        null|string|\Stringable                                      $rootDirectory = null,
-        null|string|\Stringable                                      $varDirectory = null,
-        null|LoggerInterface                                           $logger = null,
+        null|string|\Stringable                                  $rootDirectory = null,
+        null|string|\Stringable                                  $varDirectory = null,
+        null|LoggerInterface                                     $logger = null,
         null|string|\Stringable|\DateTimeZone|\DateTimeInterface $timezone = null,
-        null|CurlInterface                                             $curl = null,
-        null|FilesystemInterface                                       $filesystem = null,
-        null|Redactor                                                  $secretRedactor = null,
+        null|CurlInterface                                       $curl = null,
+        null|FilesystemInterface                                 $filesystem = null,
+        null|Redactor                                            $secretRedactor = null,
     ): static {
         $rootDirectory = System::resolveRootDirectory($rootDirectory);
         $varDirectory  = System::resolveVarDirectory($rootDirectory, $varDirectory);

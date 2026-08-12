@@ -11,7 +11,7 @@ namespace Northrook\Contracts;
  * - {@see $reference} — container lookup key:
  *   - `class-string` — service id / alias (traits use the softest contract
  *     interface, e.g. {@see \Psr\Log\LoggerInterface}, {@see PathfinderInterface})
- *   - dotted parameter key — {@see ParameterMapInterface} value (`app.token`, …)
+ *   - dotted parameter key — {@see Parameter} from {@see ParameterMapInterface} (`app.token`, …)
  * - {@see $resolve} — callable invoked on injection
  *
  * Attribute arguments must be constant expressions: use a string callable or
