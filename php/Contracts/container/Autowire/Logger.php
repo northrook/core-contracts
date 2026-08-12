@@ -6,18 +6,17 @@ namespace Northrook\Contracts\Autowire;
 
 use Northrook\Contracts\Autowire;
 use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 
 use const Northrook\Contracts\LOG_LEVEL;
 
 /**
  * Autowires a PSR-3 logger and provides exception logging helpers.
  *
- * When no logger is bound, the assignment is skipped unless `$assignNull` is true, in which case a {@see NullLogger} is used.
+ * When no logger is bound, the assignment is skipped unless `$assignNull` is true.
  */
 trait Logger
 {
-    protected LoggerInterface $logger;
+    protected null|LoggerInterface $logger = null;
 
     /**
      * @param null|LoggerInterface $logger
@@ -34,7 +33,7 @@ trait Logger
             return;
         }
 
-        $this->logger = $logger ?? new NullLogger;
+        $this->logger = $logger;
     }
 
     /**
