@@ -9,7 +9,7 @@ namespace Northrook\Contracts;
  *
  * - {@see $immutable} allows for a togglable soft-lock at compile-time.
  *
- * @phpstan-import-type ParameterValue from Parameter
+ *  @phpstan-import-type ParameterValue from ParameterInterface
  */
 interface ParameterStoreInterface extends ParameterMapInterface
 {
@@ -21,7 +21,7 @@ interface ParameterStoreInterface extends ParameterMapInterface
     public bool $immutable { get; }
 
     /**
-     * @param array<non-empty-string, ParameterValue|Parameter>  $parameters
+     * @param array<non-empty-string, ParameterValue|ParameterInterface>  $parameters
      */
     public function assign(
         array $parameters,
@@ -31,9 +31,9 @@ interface ParameterStoreInterface extends ParameterMapInterface
     /**
      * Will not override existing parameters.
      *
-     * @param non-empty-string                     $key
-     * @param ParameterValue|Parameter             $value
-     * @param null|string|Value\Secret             $secret  type string or policy
+     * @param non-empty-string                   $key
+     * @param ParameterValue|ParameterInterface  $value
+     * @param null|string|Value\Secret           $secret  type string or policy
      */
     public function add(
         string                   $key,
@@ -46,10 +46,10 @@ interface ParameterStoreInterface extends ParameterMapInterface
      *
      * - `$tag` is a freeform non-empty hint: `path`, `Fully\Qualified\Classname`, etc
      *
-     * @param non-empty-string                     $key
-     * @param ParameterValue|Parameter             $value
-     * @param null|string|Value\Secret             $secret  type string or policy
-     * @param null|non-empty-string                $tag
+     * @param non-empty-string                   $key
+     * @param ParameterValue|ParameterInterface  $value
+     * @param null|string|Value\Secret           $secret  type string or policy
+     * @param null|non-empty-string              $tag
      */
     public function set(
         string                   $key,

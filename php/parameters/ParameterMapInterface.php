@@ -19,16 +19,16 @@ interface ParameterMapInterface
     /**
      * @param non-empty-string  $key
      *
-     * @return Parameter
+     * @return ParameterInterface
      *
      * @throws NotFoundException when `$key` does not exist
      */
     public function get(
         string $key,
-    ): Parameter;
+    ): ParameterInterface;
 
     /**
-     * @return array<non-empty-string, Parameter>
+     * @return array<non-empty-string, ParameterInterface>
      */
     public function all(): array;
 }

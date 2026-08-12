@@ -4,23 +4,30 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts;
 
+use Northrook\Contracts\Parameter\Tags;
+use Northrook\Contracts\Parameter\Type;
+
 /**
  * The base class for all parameter types.
  *
- * Runtime value shape is enforced by {@see Parameter\Type::from()} on assignment.
+ * Runtime value shape is enforced by {@see \Northrook\Contracts\Parameter\Type::from()} on assignment.
  *
- * @phpstan-type ParameterValue bool|float|int|string|\UnitEnum|null|array<array-key, mixed>
+ * @phpstan-import-type ParameterValue from ParameterInterface
  */
-abstract class Parameter extends Value
+
+abstract class Parameter extends Value implements ParameterInterface
 {
     /**
      * Internal tag collection.
      *
-     * @var Parameter\Tags
+     * @var \Northrook\Contracts\Parameter\Tags
      */
-    final protected readonly Parameter\Tags $tagged;
+    final protected readonly Tags $tagged;
 
-    final private(set) Parameter\Type $type;
+    /**
+     * @var \Northrook\Contracts\Parameter\Type
+     */
+    final private(set) Type $type;
 
     /**
      * @var non-empty-string
@@ -39,7 +46,7 @@ abstract class Parameter extends Value
     final protected(set) mixed $value {
         get => $this->value;
         set(mixed $value) {
-            $this->type  = Parameter\Type::from($value);
+            $this->type  = Type::from($value);
             $this->value = $value;
         }
     }
