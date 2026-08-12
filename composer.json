@@ -17,9 +17,9 @@
         "php/src"
       ],
       "Northrook\\Contracts\\": [
+        "php/parameters",
         "php/contracts/assets",
         "php/contracts/handlers",
-        "php/contracts/parameters",
         "php/contracts/value",
         "php/Contracts",
         "php/Contracts/application",
