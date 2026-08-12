@@ -203,15 +203,7 @@ final class EmailTest extends TestCase
     public function testDomainTooLongUsesWireForm(): void
     {
         // 4×63-char labels + ".com" = 259 > MAX_DOMAIN (255); each label still ≤ 63.
-        $domain =
-            \str_repeat('a', 63)
-            . '.'
-            . \str_repeat('b', 63)
-            . '.'
-            . \str_repeat('c', 63)
-            . '.'
-            . \str_repeat('d', 63)
-            . '.com';
+        $domain = \str_repeat('a', 63) . '.' . \str_repeat('b', 63) . '.' . \str_repeat('c', 63) . '.' . \str_repeat('d', 63) . '.com';
 
         self::assertGreaterThan(255, \strlen($domain));
         self::assertContains(EmailIssue::DomainTooLong, Email::issues('user@' . $domain));

@@ -110,8 +110,7 @@ final class ErrorAccumulator implements \Countable, \Stringable
             return false;
         }
 
-        $message ??=
-            $accumulator->message ?? "ErrorAccumulator: $reference encountered {$accumulator->count()} errors:";
+        $message ??= $accumulator->message ?? "ErrorAccumulator: $reference encountered {$accumulator->count()} errors:";
 
         foreach ($accumulator->getErrors() as $error) {
             $message .= "\n" . $error->getMessage();

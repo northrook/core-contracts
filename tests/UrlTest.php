@@ -202,11 +202,7 @@ final class UrlTest extends TestCase
     public function testProbeDelegatesToHttpClient(): void
     {
         $curl = $this->createMock(CurlInterface::class);
-        $curl
-            ->expects(self::once())
-            ->method('probeUrl')
-            ->with('https://example.com/', false, true, [])
-            ->willReturn(true);
+        $curl->expects(self::once())->method('probeUrl')->with('https://example.com/', false, true, [])->willReturn(true);
 
         $url = new Url('https://example.com', http: $curl);
 

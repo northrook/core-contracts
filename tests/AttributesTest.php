@@ -1,4 +1,6 @@
-<?php
+<?php /** @noinspection PhpToStringImplementationInspection */
+
+/** @noinspection PhpExpressionResultUnusedInspection */
 
 declare(strict_types=1);
 
@@ -11,9 +13,11 @@ use Northrook\Contracts\DependencyException;
 use Northrook\Contracts\InvalidArgumentException;
 use Northrook\Contracts\Path;
 use Northrook\Contracts\PathfinderInterface;
-use Northrook\Contracts\Redactor;
+use Northrook\Contracts\RuntimeException;
 use Northrook\Contracts\Secret;
 use Northrook\Contracts\Url;
+use Northrook\Contracts\Value\Redactor;
+use Northrook\Contracts\Value\Secret as SecretPolicy;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
@@ -22,69 +26,119 @@ use Psr\Log\NullLogger;
 
 final class AttributesTest extends TestCase
 {
-    // ── Secret ───────────────────────────────────────────────────
+    // ── Secret attribute ─────────────────────────────────────────
 
-    public function testSecretDefaultsToSensitive(): void
+    public function testSecretAttributeDefaultsToFrozenSensitive(): void
     {
-        $secret = new Secret('hunter2');
+        $attribute = new Secret;
 
-        self::assertSame('hunter2', $secret->value);
-        self::assertSame(Secret::SENSITIVE, $secret->type);
-        self::assertNull($secret->condition);
+        self::assertSame(SecretPolicy::SENSITIVE, $attribute->secret->type);
+        self::assertSame([], $attribute->secret->conditions);
+        self::assertTrue($attribute->secret->isFrozen());
     }
 
-    public function testSecretDefaultsToNullValue(): void
+    public function testSecretAttributeAcceptsCredentialType(): void
     {
-        $secret = new Secret;
+        $attribute = new Secret(type: SecretPolicy::CREDENTIAL);
 
-        self::assertNull($secret->value);
-        self::assertSame(Secret::SENSITIVE, $secret->type);
-        self::assertNull($secret->condition);
+        self::assertSame(SecretPolicy::CREDENTIAL, $attribute->secret->type);
+        self::assertTrue($attribute->secret->isFrozen());
     }
 
-    public function testSecretAcceptsCredentialType(): void
+    public function testSecretAttributeAcceptsCondition(): void
     {
-        $secret = new Secret('token', Secret::CREDENTIAL);
+        $attribute = new Secret(SecretPolicy::CREDENTIAL, 'db-dsn');
 
-        self::assertSame('token', $secret->value);
-        self::assertSame(Secret::CREDENTIAL, $secret->type);
+        self::assertSame(SecretPolicy::CREDENTIAL, $attribute->secret->type);
+        self::assertTrue($attribute->secret->hasCondition('db-dsn'));
+        self::assertTrue($attribute->secret->isFrozen());
     }
 
-    public function testSecretAcceptsCondition(): void
+    public function testSecretAttributeAcceptsMultipleConditions(): void
     {
-        $secret = new Secret('dsn', Secret::CREDENTIAL, 'db-dsn');
+        $attribute = new Secret(SecretPolicy::SENSITIVE, 'oauth-token', 'api-key');
 
-        self::assertSame('dsn', $secret->value);
-        self::assertSame(Secret::CREDENTIAL, $secret->type);
-        self::assertSame('db-dsn', $secret->condition);
+        self::assertTrue($attribute->secret->hasCondition('oauth-token'));
+        self::assertTrue($attribute->secret->hasCondition('api-key'));
+        self::assertSame(
+            ['oauth-token', 'api-key'],
+            \array_keys($attribute->secret->conditions),
+        );
     }
 
-    public function testSecretRejectsInvalidType(): void
+    public function testSecretAttributeFreezesPolicyAgainstMutation(): void
+    {
+        $attribute = new Secret(SecretPolicy::SENSITIVE, 'x');
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Secret is immutable.');
+        $attribute->secret->addCondition('y');
+    }
+
+    public function testSecretAttributeConditionRequiresTypeSlot(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        // First argument is `$type`, not a condition name.
+        new Secret('db-dsn');
+    }
+
+    public function testSecretAttributeRejectsInvalidType(): void
     {
         $this->expectException(InvalidArgumentException::class);
         // @phpstan-ignore-next-line Testing invalid input.
-        new Secret('token', 'bogus');
+        new Secret(type: 'bogus');
     }
 
-    public function testSecretTypeConstants(): void
+    public function testSecretAttributeRejectsInvalidCondition(): void
     {
-        self::assertSame('sensitive', Secret::SENSITIVE);
-        self::assertSame('credential', Secret::CREDENTIAL);
+        $this->expectException(InvalidArgumentException::class);
+
+        new Secret(SecretPolicy::SENSITIVE, '');
     }
 
-    public function testDefaultRedactorDistinguishesTypeAndSensitiveParameter(): void
+    public function testSecretAttributeFromReflection(): void
+    {
+        $property = new \ReflectionProperty(SecretAttributeFixture::class, 'token');
+        $attributes = $property->getAttributes(Secret::class);
+
+        self::assertCount(1, $attributes);
+
+        $attribute = $attributes[0]->newInstance();
+
+        self::assertSame(SecretPolicy::CREDENTIAL, $attribute->secret->type);
+        self::assertTrue($attribute->secret->hasCondition('oauth-token'));
+        self::assertTrue($attribute->secret->isFrozen());
+    }
+
+    public function testSecretPolicyTypeConstants(): void
+    {
+        self::assertSame('sensitive', SecretPolicy::SENSITIVE);
+        self::assertSame('credential', SecretPolicy::CREDENTIAL);
+    }
+
+    public function testRedactorDistinguishesTypeAndSensitiveParameter(): void
     {
         $redactor = new Redactor;
 
-        self::assertSame('[Secret::string]', $redactor('x', Secret::SENSITIVE));
-        self::assertSame('[Credential::string]', $redactor('x', Secret::CREDENTIAL));
         self::assertSame(
-            '***',
-            $redactor('abc', Secret::SENSITIVE, Secret::CONDITION_SENSITIVE_PARAMETER),
+            '[sensitive::string]',
+            $redactor('x', new SecretPolicy(SecretPolicy::SENSITIVE)),
         );
         self::assertSame(
-            '[Secret::string]',
-            Secret::defaultRedactor('x', Secret::SENSITIVE),
+            '[credential::string]',
+            $redactor('x', new SecretPolicy(SecretPolicy::CREDENTIAL)),
+        );
+        self::assertSame(
+            '[sensitive::' . \SensitiveParameter::class . ']',
+            $redactor(
+                'abc',
+                new SecretPolicy(SecretPolicy::SENSITIVE, [\SensitiveParameter::class]),
+            ),
+        );
+        self::assertSame(
+            '[sensitive::string]',
+            ( new SecretPolicy(SecretPolicy::SENSITIVE) )('x'),
         );
     }
 
@@ -92,31 +146,24 @@ final class AttributesTest extends TestCase
     {
         $redactor = new class() extends Redactor {
             protected function redact(
-                mixed       $value,
-                string      $type,
-                null|string $condition = null,
-            ): string {
-                if ($condition === 'db-dsn') {
+                mixed $value,
+            ): mixed {
+                if ($this->secret->hasCondition('db-dsn')) {
                     return '[dsn]';
                 }
 
-                return parent::redact($value, $type, $condition);
+                return parent::redact($value);
             }
         };
 
-        self::assertSame('[dsn]', $redactor('postgres://…', Secret::CREDENTIAL, 'db-dsn'));
-        self::assertSame('[Secret::string]', $redactor('x', Secret::SENSITIVE));
-    }
-
-    public function testRedactorDisallowsCloneAndToStringViaPhpDoc(): void
-    {
-        $reflection = new \ReflectionClass(Redactor::class);
-        $doc        = $reflection->getDocComment();
-
-        self::assertFalse($reflection->hasMethod('__clone'));
-        self::assertFalse($reflection->hasMethod('__toString'));
-        self::assertNotFalse($doc);
-        self::assertStringContainsString('@disallows __clone(), __toString()', $doc);
+        self::assertSame(
+            '[dsn]',
+            $redactor('postgres://…', new SecretPolicy(SecretPolicy::CREDENTIAL, ['db-dsn'])),
+        );
+        self::assertSame(
+            '[sensitive::string]',
+            $redactor('x', new SecretPolicy(SecretPolicy::SENSITIVE)),
+        );
     }
 
     public function testRedactorStringCastFailsAtEngine(): void
@@ -127,17 +174,20 @@ final class AttributesTest extends TestCase
         (string) new Redactor;
     }
 
-    public function testRedactUsesInstanceTypeAndHint(): void
+    public function testSecretInvokeUsesPolicyType(): void
     {
         self::assertSame(
-            '[Credential::string]',
-            Secret::redact(new Secret('token', Secret::CREDENTIAL)),
+            '[credential::string]',
+            new SecretPolicy(SecretPolicy::CREDENTIAL)( 'token'),
         );
     }
 
-    public function testSecretAttributeTargetsAll(): void
+    public function testSecretAttributeTargetsPropertyAndParameter(): void
     {
-        self::assertSame(\Attribute::TARGET_ALL, self::attributeFlags(Secret::class));
+        self::assertSame(
+            \Attribute::TARGET_PROPERTY | \Attribute::TARGET_PARAMETER,
+            self::attributeFlags(Secret::class),
+        );
     }
 
     // ── Autowire ─────────────────────────────────────────────────
@@ -304,6 +354,14 @@ final class AttributesTest extends TestCase
 
         return $attributes[0]->newInstance()->flags;
     }
+}
+
+final class SecretAttributeFixture
+{
+    public function __construct(
+        #[Secret(SecretPolicy::CREDENTIAL, 'oauth-token')]
+        public string $token = 'x',
+    ) {}
 }
 
 final class AttributesLoggerFixture

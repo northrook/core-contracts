@@ -6,6 +6,8 @@ namespace Northrook\Contracts\Tests;
 
 use Northrook\Contracts\AssetType;
 use Northrook\Contracts\Secret;
+use Northrook\Contracts\Value;
+use Northrook\Contracts\Value\Secret as SecretPolicy;
 use Northrook\Contracts\Snapshot;
 use Northrook\Contracts\System;
 use Northrook\Contracts\Tests\Support\MixedArray;
@@ -217,9 +219,9 @@ final class SnapshotTest extends TestCase
 
     public function testSecretInstanceIsRedacted(): void
     {
-        $value = Snapshot::value(new Secret('hunter2'));
+        $value = Snapshot::value(new Value('hunter2', SecretPolicy::SENSITIVE));
 
-        self::assertSame('[Secret::string]', $value);
+        self::assertSame('[sensitive::string]', $value);
     }
 
     public function testSecretAttributeOnPropertyIsRedacted(): void
@@ -230,7 +232,7 @@ final class SnapshotTest extends TestCase
             [
                 'class'      => SnapshotSecretPropertyFixture::class,
                 'properties' => [
-                    'token' => '[Secret::string]',
+                    'token' => '[sensitive::string]',
                     'label' => 'visible',
                 ],
             ],
@@ -241,14 +243,14 @@ final class SnapshotTest extends TestCase
     public function testSecretInContextIsRedacted(): void
     {
         $frozen = Snapshot::context([
-            'password' => new Secret('hunter2'),
+            'password' => new Value('hunter2', SecretPolicy::SENSITIVE),
             'user'     => new SnapshotSecretPropertyFixture('abc', 'ada'),
         ]);
 
         $userProps = MixedArray::at(MixedArray::at($frozen, 'user'), 'properties');
 
-        self::assertSame('[Secret::string]', $frozen['password']);
-        self::assertSame('[Secret::string]', $userProps['token']);
+        self::assertSame('[sensitive::string]', $frozen['password']);
+        self::assertSame('[sensitive::string]', $userProps['token']);
         self::assertSame('ada', $userProps['label']);
     }
 

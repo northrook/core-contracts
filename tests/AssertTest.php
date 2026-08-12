@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpUnitAssertTrueWithIncompatibleTypeArgumentInspection */
 
 declare(strict_types=1);
 
@@ -357,6 +357,14 @@ final class AssertTest extends TestCase
         yield 'xdigit' => ['xdigit', 'deadBEEF0123', 'deadbeefg'];
     }
 
+    public static function provideCharsetKindMethods(): \Generator
+    {
+        yield 'alpha' => ['alpha'];
+        yield 'alnum' => ['alnum'];
+        yield 'digit' => ['digit'];
+        yield 'xdigit' => ['xdigit'];
+    }
+
     #[DataProvider('provideCharsetKinds')]
     public function testCharsetKindAcceptsValid(
         string $method,
@@ -376,7 +384,7 @@ final class AssertTest extends TestCase
         Assert::{$method}($invalid);
     }
 
-    #[DataProvider('provideCharsetKinds')]
+    #[DataProvider('provideCharsetKindMethods')]
     public function testCharsetKindRejectsEmptyString(
         string $method,
     ): void {
@@ -384,7 +392,7 @@ final class AssertTest extends TestCase
         Assert::{$method}('');
     }
 
-    #[DataProvider('provideCharsetKinds')]
+    #[DataProvider('provideCharsetKindMethods')]
     public function testCharsetKindRejectsNonString(
         string $method,
     ): void {

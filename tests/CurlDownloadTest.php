@@ -47,12 +47,7 @@ final class CurlDownloadTest extends TestCase
             [
                 'http_code'        => 206,
                 'response_headers' => [
-                    'Content-Range: bytes '
-                        . $resumeSize
-                        . '-'
-                        . ( \strlen(self::PAYLOAD) - 1 )
-                        . '/'
-                        . \strlen(self::PAYLOAD),
+                    'Content-Range: bytes ' . $resumeSize . '-' . ( \strlen(self::PAYLOAD) - 1 ) . '/' . \strlen(self::PAYLOAD),
                 ],
             ],
         ));
@@ -84,12 +79,7 @@ final class CurlDownloadTest extends TestCase
                     [
                         'http_code'        => 206,
                         'response_headers' => [
-                            'Content-Range: bytes '
-                                . $resumeSize
-                                . '-'
-                                . ( \strlen(self::PAYLOAD) - 1 )
-                                . '/'
-                                . \strlen(self::PAYLOAD),
+                            'Content-Range: bytes ' . $resumeSize . '-' . ( \strlen(self::PAYLOAD) - 1 ) . '/' . \strlen(self::PAYLOAD),
                         ],
                     ],
                 );
@@ -218,12 +208,7 @@ final class CurlDownloadTest extends TestCase
             [
                 'http_code'        => 206,
                 'response_headers' => [
-                    'Content-Range: bytes '
-                        . $resumeSize
-                        . '-'
-                        . ( \strlen(self::PAYLOAD) - 1 )
-                        . '/'
-                        . \strlen(self::PAYLOAD),
+                    'Content-Range: bytes ' . $resumeSize . '-' . ( \strlen(self::PAYLOAD) - 1 ) . '/' . \strlen(self::PAYLOAD),
                 ],
             ],
         ));

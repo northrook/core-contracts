@@ -470,13 +470,9 @@ readonly class Path implements Reference
         }
 
         // Re-index after array_filter — absolute paths leave a hole at key 0.
-        $fromParts = \rtrim($fromPath, \DIR_SEP)
-            |> ( fn($x) => \explode(\DIR_SEP, $x) )
-            |> ( fn($x) => \array_values(\array_filter($x, static fn(string $p): bool => $p !== '')) );
+        $fromParts = \rtrim($fromPath, \DIR_SEP) |> ( fn($x) => \explode(\DIR_SEP, $x) ) |> ( fn($x) => \array_values(\array_filter($x, static fn(string $p): bool => $p !== '')) );
 
-        $toParts = \rtrim($toPath, \DIR_SEP)
-            |> ( fn($x) => \explode(\DIR_SEP, $x) )
-            |> ( fn($x) => \array_values(\array_filter($x, static fn(string $p): bool => $p !== '')) );
+        $toParts = \rtrim($toPath, \DIR_SEP) |> ( fn($x) => \explode(\DIR_SEP, $x) ) |> ( fn($x) => \array_values(\array_filter($x, static fn(string $p): bool => $p !== '')) );
 
         $shared = 0;
         $limit  = \min(\count($fromParts), \count($toParts));
@@ -623,11 +619,7 @@ readonly class Path implements Reference
                 $alwaysOverwrite,
             ),
             fallback: function() use ($destination, $alwaysOverwrite): void {
-                if (
-                    ! $alwaysOverwrite
-                    && \is_file($destination)
-                    && \filemtime($destination) >= \filemtime($this->value)
-                ) {
+                if (! $alwaysOverwrite && \is_file($destination) && \filemtime($destination) >= \filemtime($this->value)) {
                     return;
                 }
 

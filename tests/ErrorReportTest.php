@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Northrook\Contracts\Tests;
 
 use Northrook\AppEnv;
-use Northrook\AppEnvironment;
+use Northrook\Contracts\AppEnvironment;
 use Northrook\Contracts\ErrorReport;
 use Northrook\Contracts\Exception\ErrorSnapshot;
 use Northrook\Contracts\Exception\RuntimeError;

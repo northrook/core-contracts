@@ -280,12 +280,7 @@ readonly class Href implements Reference
      */
     public function scheme(): null|string
     {
-        if (
-            $this->isRelative()
-            || $this->isAnchor()
-            || $this->isProtocolRelative()
-            || \str_starts_with($this->value, '?')
-        ) {
+        if ($this->isRelative() || $this->isAnchor() || $this->isProtocolRelative() || \str_starts_with($this->value, '?')) {
             return null;
         }
 

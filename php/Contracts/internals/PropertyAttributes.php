@@ -85,8 +85,7 @@ final class PropertyAttributes implements Resettable
         if ($duplicates !== [] && ! $property->isPromoted()) {
             $names = \implode(', ', \array_keys($duplicates));
             throw new RuntimeException(
-                message: "Attribute [{$names}] declared on both {$className}::\${$propertyName}"
-                . ' and its constructor parameter.',
+                message: "Attribute [{$names}] declared on both {$className}::\${$propertyName}" . ' and its constructor parameter.',
             );
         }
 
@@ -95,38 +94,60 @@ final class PropertyAttributes implements Resettable
     }
 
     /**
-     * Redaction context for the first {@see Secret} / {@see \SensitiveParameter} attribute.
+     * Combined secret policy from every {@see Secret} / {@see \SensitiveParameter}.
+     *
+     * Multiple hits merge defensively:
+     * - type: {@see Value\Secret::CREDENTIAL} wins over {@see Value\Secret::SENSITIVE}
+     * - conditions: union (order of first appearance)
+     * - result is always frozen
+     *
+     * Duplicate {@see Secret} is unlikely (attribute is not repeatable; dual-site
+     * same-FQCN already conflicts in {@see resolve()}), but when present the same
+     * merge applies rather than throwing.
      *
      * @param \ReflectionClass<covariant object> $class
-     *
-     * @return null|array{type: Secret::SENSITIVE|Secret::CREDENTIAL, condition: null|string}
      */
     public static function redaction(
         \ReflectionClass    $class,
         \ReflectionProperty $property,
-    ): null|array {
+    ): null|Value\Secret {
+        $type       = null;
+        $conditions = [];
+
         foreach (self::resolve($class, $property) as $attribute) {
             $name = $attribute->getName();
 
             if ($name === Secret::class) {
-                /** @var Secret $secret */
-                $secret = $attribute->newInstance();
+                /** @var Secret $instance */
+                $instance = $attribute->newInstance();
+                $policy   = $instance->secret;
 
-                return [
-                    'type'      => $secret->type,
-                    'condition' => $secret->condition,
-                ];
+                $type = $type === Value\Secret::CREDENTIAL || $policy->type === Value\Secret::CREDENTIAL
+                    ? Value\Secret::CREDENTIAL
+                    : Value\Secret::SENSITIVE;
+
+                foreach ($policy->conditions as $condition) {
+                    $conditions[$condition] = $condition;
+                }
+
+                continue;
             }
 
             if ($name === \SensitiveParameter::class) {
-                return [
-                    'type'      => Secret::SENSITIVE,
-                    'condition' => Secret::CONDITION_SENSITIVE_PARAMETER,
-                ];
+                $type ??= Value\Secret::SENSITIVE;
+                $conditions[\SensitiveParameter::class] = \SensitiveParameter::class;
             }
         }
 
-        return null;
+        if ($type === null) {
+            return null;
+        }
+
+        return new Value\Secret(
+            type      : $type,
+            conditions: \array_values($conditions),
+            immutable : true,
+        );
     }
 
     /**

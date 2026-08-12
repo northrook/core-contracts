@@ -11,7 +11,7 @@ use Northrook\Contracts;
  *
  * Does not create directories or files; returns a path string only.
  *
- * - Root is `{Contracts::cacheDirectory}/tmp` when {@see \Northrook\Contracts} is registered,
+ * - Root is `{Contracts::varDirectory}/tmp` when {@see \Northrook\Contracts} is registered,
  *   otherwise {@see \sys_get_temp_dir()}
  * - `$relativePath` defaults to `tmp` when `null` or empty; trailing `!` characters are stripped
  * - Nested segments are allowed (e.g. `namespace/cache`)
@@ -31,10 +31,10 @@ function get_temp_path(
 ): string {
     $relativePath = $relativePath === null || $relativePath === '' ? 'tmp' : \rtrim($relativePath, '!');
 
-    $cacheDirectory = Contracts::tryGet()?->cacheDirectory->value;
-    $base           = $cacheDirectory === null
+    $varDirectory = Contracts::tryGet()?->varDirectory->value;
+    $base         = $varDirectory === null
         ? \sys_get_temp_dir()
-        : $cacheDirectory . \DIR_SEP . 'tmp';
+        : $varDirectory . \DIR_SEP . 'tmp';
 
     $absolutePath   = $base . \DIR_SEP . $relativePath;
     $normalizedPath = \strtr($absolutePath, '\\', \DIR_SEP);

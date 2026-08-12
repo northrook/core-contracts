@@ -104,10 +104,10 @@ final class GetTempPathTest extends TestCase
         $this->assertBangHashSuffix($path);
     }
 
-    public function testRegisteredUsesCacheTmpSegment(): void
+    public function testRegisteredUsesVarTmpSegment(): void
     {
         $contracts = Contracts::register(rootDirectory: self::ROOT);
-        $prefix    = $contracts->cacheDirectory->value . \DIR_SEP . 'tmp' . \DIR_SEP . 'download!';
+        $prefix    = $contracts->varDirectory->value . \DIR_SEP . 'tmp' . \DIR_SEP . 'download!';
 
         $path = get_temp_path('download');
 

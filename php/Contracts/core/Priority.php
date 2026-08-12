@@ -350,11 +350,7 @@ final class Priority implements \Stringable, Resettable
     ): int {
         if ($value < self::MIN || $value > self::MAX) {
             throw new InvalidArgumentException(
-                message: "Invalid priority: `{$value}`, it must be between `"
-                . self::MIN
-                . '` and `'
-                . self::MAX
-                . '`.',
+                message: "Invalid priority: `{$value}`, it must be between `" . self::MIN . '` and `' . self::MAX . '`.',
                 context: ['value' => $value, 'min' => self::MIN, 'max' => self::MAX],
             );
         }

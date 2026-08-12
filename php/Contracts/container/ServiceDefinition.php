@@ -488,10 +488,7 @@ final class ServiceDefinition
     ): bool {
         return \array_any(
             array   : $this->callbacks,
-            callback: static fn($existing) => (
-                $existing === $callback
-                || $existing->__serialize() === $callback->__serialize()
-            ),
+            callback: static fn($existing) => $existing === $callback || $existing->__serialize() === $callback->__serialize(),
         );
     }
 

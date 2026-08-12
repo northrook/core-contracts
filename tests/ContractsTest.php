@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpExpressionResultUnusedInspection */
 
 declare(strict_types=1);
 
@@ -7,16 +7,14 @@ namespace Northrook\Contracts\Tests;
 use Northrook\Contracts;
 use Northrook\Contracts\Directory;
 use Northrook\Contracts\LogicException;
-use Northrook\Contracts\Redactor;
 use Northrook\Contracts\RuntimeException;
-use Northrook\Contracts\Secret;
 use Northrook\Contracts\Singleton;
+use Northrook\Contracts\Value\Redactor;
+use Northrook\Contracts\Value\Secret as SecretPolicy;
 use Northrook\Contracts\Timezone;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-
-use function Northrook\Contracts\get_checksum;
 
 final class ContractsTest extends TestCase
 {
@@ -67,27 +65,28 @@ final class ContractsTest extends TestCase
         );
     }
 
-    public function testExplicitCacheDirectoryResolution(): void
+    public function testExplicitVarDirectoryResolution(): void
     {
-        $cache     = \sys_get_temp_dir();
+        $var       = \sys_get_temp_dir();
         $contracts = Contracts::register(
-            rootDirectory : self::ROOT,
-            cacheDirectory: $cache,
+            rootDirectory: self::ROOT,
+            varDirectory : $var,
         );
 
         self::assertSame(
-            \realpath($cache),
-            $contracts->cacheDirectory->value,
+            \realpath($var),
+            $contracts->varDirectory->value,
         );
     }
 
-    public function testDefaultCacheDirectoryIsTempChecksumOfRoot(): void
+    public function testDefaultVarDirectoryIsRootVar(): void
     {
         $contracts = Contracts::register(rootDirectory: self::ROOT);
 
-        $expected = \realpath(\sys_get_temp_dir()) . \DIR_SEP . get_checksum((string) \realpath(self::ROOT));
+        $expected = \realpath(self::ROOT) . \DIR_SEP . 'var';
 
-        self::assertSame($expected, $contracts->cacheDirectory->value);
+        self::assertSame($expected, $contracts->varDirectory->value);
+        self::assertDirectoryExists($contracts->varDirectory->value);
     }
 
     public function testEnvRootOverride(): void
@@ -151,15 +150,16 @@ final class ContractsTest extends TestCase
     {
         $redactor = new class() extends Redactor {
             protected function redact(
-                mixed       $value,
-                string      $type,
-                null|string $condition = null,
-            ): string {
-                if ($condition === 'special-case' && $type === Secret::CREDENTIAL) {
+                mixed $value,
+            ): mixed {
+                if (
+                    $this->secret->hasCondition('special-case')
+                    && $this->secret->type === SecretPolicy::CREDENTIAL
+                ) {
                     return '[special-credential]';
                 }
 
-                return parent::redact($value, $type, $condition);
+                return parent::redact($value);
             }
         };
 
@@ -171,11 +171,11 @@ final class ContractsTest extends TestCase
         self::assertSame($redactor, $contracts->secretRedactor);
         self::assertSame(
             '[special-credential]',
-            Secret::redact('postgres://…', Secret::CREDENTIAL, 'special-case'),
+            ( new SecretPolicy(SecretPolicy::CREDENTIAL, ['special-case']) )('postgres://…'),
         );
         self::assertSame(
-            '[Secret::string]',
-            Secret::redact('hunter2', Secret::SENSITIVE),
+            '[sensitive::string]',
+            ( new SecretPolicy(SecretPolicy::SENSITIVE) )('hunter2'),
         );
     }
 

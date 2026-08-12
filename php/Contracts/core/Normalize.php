@@ -378,11 +378,7 @@ final class Normalize
             $scheme = \substr($path, 0, $schemeEnd);
 
             // Leading ALPHA, then scheme charset — same bar as URI helpers.
-            if (
-                $scheme !== ''
-                && \strspn($scheme[0], \CHARSET_ALPHA) === 1
-                && \strspn($scheme, \CHARSET_URI_SCHEME) === \strlen($scheme)
-            ) {
+            if ($scheme !== '' && \strspn($scheme[0], \CHARSET_ALPHA) === 1 && \strspn($scheme, \CHARSET_URI_SCHEME) === \strlen($scheme)) {
                 $wrapper = \substr($path, 0, $schemeEnd + 3);
                 [$nested, $body] = self::pathRoot(\substr($path, $schemeEnd + 3));
 

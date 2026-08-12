@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Northrook\Contracts\Tests;
 
 use Northrook\AppEnv;
-use Northrook\AppEnvironment;
+use Northrook\Contracts\AppEnvironment;
 use Northrook\Contracts\RuntimeException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -126,7 +126,7 @@ final class AppEnvTest extends TestCase
     public function testExplicitNullEnvironmentResolvesUnderTestRunner(): void
     {
         // Under PHPUnit, `null` resolves to Testing before APP_ENV is consulted.
-        $_ENV['APP_ENV'] = 'production';
+        $_ENV[AppEnv::APP_ENV] = 'production';
 
         $appEnv = new AppEnv;
 
@@ -211,12 +211,21 @@ final class AppEnvTest extends TestCase
         self::assertFalse(AppEnv::isDebug());
     }
 
+    public function testFailsafeForcesPublicOn(): void
+    {
+        $appEnv = new AppEnv(AppEnvironment::Failsafe, public: false);
+
+        self::assertTrue($appEnv->public);
+        self::assertTrue(AppEnv::isPublic());
+        self::assertFalse($appEnv->debug);
+    }
+
     #[DataProvider('provideStringDebugValues')]
     public function testResolvesDebugFromStringEnv(
         string $value,
         bool   $expected,
     ): void {
-        $_ENV['APP_DEBUG'] = $value;
+        $_ENV[AppEnv::APP_DEBUG] = $value;
 
         $appEnv = new AppEnv(AppEnvironment::Development);
 
@@ -226,8 +235,8 @@ final class AppEnvTest extends TestCase
 
     public function testEnvZeroDisablesDebugViaGetenvAlone(): void
     {
-        unset($_ENV['APP_DEBUG']);
-        \putenv('APP_DEBUG=0');
+        unset($_ENV[AppEnv::APP_DEBUG]);
+        \putenv(AppEnv::APP_DEBUG . '=0');
 
         $appEnv = new AppEnv(AppEnvironment::Development);
 
@@ -249,7 +258,7 @@ final class AppEnvTest extends TestCase
                 define('APP_DEBUG', true);
                 \$_ENV['APP_DEBUG'] = '0';
                 require {$autoload};
-                \$app = new Northrook\\AppEnv(Northrook\\AppEnvironment::Development);
+                \$app = new Northrook\\AppEnv(Northrook\\Contracts\\AppEnvironment::Development);
                 echo \$app->debug ? '1' : '0';
                 PHP);
 
@@ -274,6 +283,83 @@ final class AppEnvTest extends TestCase
         yield 'no' => ['no', false];
     }
 
+    // -------------------------------------------------------------------------
+    // Public resolution
+    // -------------------------------------------------------------------------
+
+    public function testExplicitPublicFlag(): void
+    {
+        $appEnv = new AppEnv(AppEnvironment::Development, public: true);
+
+        self::assertTrue($appEnv->public);
+        self::assertTrue(AppEnv::isPublic());
+    }
+
+    public function testExplicitPublicFlagOff(): void
+    {
+        $appEnv = new AppEnv(AppEnvironment::Development, public: false);
+
+        self::assertFalse($appEnv->public);
+        self::assertFalse(AppEnv::isPublic());
+    }
+
+    public function testPublicDefaultsToFalseWithoutEnv(): void
+    {
+        $appEnv = new AppEnv(AppEnvironment::Production);
+
+        self::assertFalse($appEnv->public);
+    }
+
+    #[DataProvider('provideStringDebugValues')]
+    public function testResolvesPublicFromStringEnv(
+        string $value,
+        bool   $expected,
+    ): void {
+        $_ENV[AppEnv::APP_PUBLIC] = $value;
+
+        $appEnv = new AppEnv(AppEnvironment::Development);
+
+        self::assertSame($expected, $appEnv->public);
+        self::assertSame($expected, AppEnv::isPublic());
+    }
+
+    public function testEnvZeroDisablesPublicViaGetenvAlone(): void
+    {
+        unset($_ENV[AppEnv::APP_PUBLIC]);
+        \putenv(AppEnv::APP_PUBLIC . '=0');
+
+        $appEnv = new AppEnv(AppEnvironment::Development);
+
+        self::assertFalse($appEnv->public);
+    }
+
+    public function testEnvZeroOverridesTrueAppPublicConstant(): void
+    {
+        $script = \tempnam(\sys_get_temp_dir(), 'appenv-');
+        self::assertNotFalse($script);
+
+        try {
+            $autoload = \var_export(\dirname(__DIR__) . '/vendor/autoload.php', true);
+            \file_put_contents($script, <<<PHP
+                <?php
+
+                declare(strict_types=1);
+
+                define('APP_PUBLIC', true);
+                \$_ENV['APP_PUBLIC'] = '0';
+                require {$autoload};
+                \$app = new Northrook\\AppEnv(Northrook\\Contracts\\AppEnvironment::Development);
+                echo \$app->public ? '1' : '0';
+                PHP);
+
+            $result = \shell_exec(\escapeshellarg(\PHP_BINARY) . ' ' . \escapeshellarg($script));
+
+            self::assertSame('0', $result);
+        } finally {
+            @\unlink($script);
+        }
+    }
+
     private function resetAppEnv(): void
     {
         $property = new \ReflectionProperty(AppEnv::class, 'instance');
@@ -282,8 +368,9 @@ final class AppEnvTest extends TestCase
 
     private function clearEnvVars(): void
     {
-        unset($_ENV['APP_ENV'], $_ENV['APP_DEBUG']);
-        \putenv('APP_ENV');
-        \putenv('APP_DEBUG');
+        unset($_ENV[AppEnv::APP_ENV], $_ENV[AppEnv::APP_DEBUG], $_ENV[AppEnv::APP_PUBLIC]);
+        \putenv(AppEnv::APP_ENV);
+        \putenv(AppEnv::APP_DEBUG);
+        \putenv(AppEnv::APP_PUBLIC);
     }
 }

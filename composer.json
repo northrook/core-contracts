@@ -12,8 +12,15 @@
   ],
   "autoload": {
     "psr-4": {
-      "Northrook\\": "php",
+      "Northrook\\": [
+        "php/app",
+        "php/src"
+      ],
       "Northrook\\Contracts\\": [
+        "php/contracts/assets",
+        "php/contracts/handlers",
+        "php/contracts/parameters",
+        "php/contracts/value",
         "php/Contracts",
         "php/Contracts/application",
         "php/Contracts/assets",
@@ -31,6 +38,7 @@
       ]
     },
     "files": [
+      "php/functions/debug.php",
       "php/Contracts/constants/global.php",
       "php/Contracts/constants/html.php",
       "php/Contracts/constants/logger.php",
@@ -63,9 +71,11 @@
   "require-dev": {
     "northrook/php-cs": "dev-main",
     "northrook/php-debug": "dev-main",
-    "phpunit/phpunit": "^11.5",
+    "phpunit/phpunit": "^13",
     "phpstan/phpstan": "^2.2",
-    "symfony/http-client": "^8.1"
+    "symfony/http-client": "^8.1",
+    "symfony/var-exporter": "^8.1",
+    "tempest/highlight": "^2.27"
   },
   "scripts": {
     "phpstan": "vendor/bin/phpstan analyse",

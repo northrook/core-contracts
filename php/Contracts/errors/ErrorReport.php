@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Northrook\Contracts;
 
 use Northrook\AppEnv;
-use Northrook\AppEnvironment;
 use Northrook\Contracts\Exception\ErrorSnapshot;
 use Northrook\Contracts\Exception\RuntimeError;
 use Northrook\Contracts\Exception\StackFrame;

@@ -15,8 +15,8 @@ use UnitEnum;
  * Values that cannot be copied are replaced with a descriptive string.
  *
  * Objects are walked reflectively (no `serialize` / `clone`) so dumps never rehydrate
- * service graphs or run magic methods. {@see Secret} instances and `#[Secret]` /
- * `#[\SensitiveParameter]` properties are redacted via {@see Secret::redact()}
+ * service graphs or run magic methods. {@see Value} instances with a secret, `#[Secret]`,
+ * and `#[\SensitiveParameter]` properties are redacted via {@see Value\Secret::__invoke()}
  * (honours {@see \Northrook\Contracts::$secretRedactor}).
  *
  * Array reference cycles are broken by comparing each nested array against an ancestor
@@ -341,8 +341,11 @@ final class Snapshot implements JsonSerializable, Stringable
             return self::TRUNCATED_DEPTH;
         }
 
-        if ($value instanceof Secret) {
-            return Secret::redact($value);
+        if ($value instanceof Value) {
+            $secret = $value->secret;
+            if ($secret !== null) {
+                return $secret($value->value);
+            }
         }
 
         if (\is_array($value)) {
@@ -553,11 +556,7 @@ final class Snapshot implements JsonSerializable, Stringable
                 $redaction = PropertyAttributes::redaction($reflection, $property);
 
                 if ($redaction !== null) {
-                    $properties[$name] = Secret::redact(
-                        $propValue,
-                        $redaction['type'],
-                        $redaction['condition'],
-                    );
+                    $properties[$name] = $redaction($propValue);
                     continue;
                 }
 

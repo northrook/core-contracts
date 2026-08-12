@@ -212,28 +212,32 @@ final class System
     }
 
     /**
-     * Resolve a cache directory for a project root.
+     * Resolve the app-private `var/` directory for a project root (Symfony-style).
      *
-     * Explicit `$cache` (non-blank) must already exist. When omitted or blank,
-     * returns `{sys_temp}/{checksum(root)}` without creating it.
+     * Not a shared misc cache path — cache/tmp/log are expected *children* of this tree.
+     *
+     * - Explicit `$var` (non-blank) must already exist.
+     * - When omitted or blank: `{realpath(root)}/var` if `$root` is an on-disk directory.
+     * - Last-resort bootstrap when `$root` is not on disk: `{sys_temp}/{checksum(root)}`.
+     *   Does not create the directory (callers such as {@see \Northrook\Contracts::register()} may).
      *
      * @param string|\Stringable       $root
-     * @param null|string|\Stringable  $cache
+     * @param null|string|\Stringable  $var
      *
      * @return non-empty-string
      */
-    public static function resolveCacheDirectory(
+    public static function resolveVarDirectory(
         string|\Stringable      $root,
-        null|string|\Stringable $cache = null,
+        null|string|\Stringable $var = null,
     ): string {
-        $rootString  = (string) $root;
-        $cacheString = $cache === null ? null : (string) $cache;
-        $key         = 'cache:' . $rootString . "\0" . ( $cacheString ?? '' );
+        $rootString = (string) $root;
+        $varString  = $var === null ? null : (string) $var;
+        $key        = 'var:' . $rootString . "\0" . ( $varString ?? '' );
 
         /** @var non-empty-string */
         return self::remember(
             $key,
-            static fn(): string => self::computeCacheDirectory($rootString, $cacheString),
+            static fn(): string => self::computeVarDirectory($rootString, $varString),
         );
     }
 
@@ -328,10 +332,7 @@ final class System
             $dir = $cwd;
 
             while (true) {
-                if (
-                    \is_file($dir . \DIR_SEP . 'composer.json')
-                    && \is_file($dir . \DIR_SEP . 'vendor' . \DIR_SEP . 'autoload.php')
-                ) {
+                if (\is_file($dir . \DIR_SEP . 'composer.json') && \is_file($dir . \DIR_SEP . 'vendor' . \DIR_SEP . 'autoload.php')) {
                     return self::directory($dir, 'root');
                 }
 
@@ -356,25 +357,30 @@ final class System
 
     /**
      * @param string       $root
-     * @param null|string  $cache
+     * @param null|string  $var
      *
      * @return non-empty-string
      */
-    private static function computeCacheDirectory(
+    private static function computeVarDirectory(
         string      $root,
-        null|string $cache,
+        null|string $var,
     ): string {
-        if ($cache !== null) {
-            $explicit = \trim($cache);
+        if ($var !== null) {
+            $explicit = \trim($var);
 
             if ($explicit !== '') {
-                return self::directory($explicit, 'cache');
+                return self::directory($explicit, 'var');
             }
         }
 
-        $systemTemp = self::systemTempDirectory();
+        $resolvedRoot = \realpath($root);
 
-        return $systemTemp . \DIR_SEP . get_checksum($root);
+        if ($resolvedRoot !== false && \is_dir($resolvedRoot)) {
+            return $resolvedRoot . \DIR_SEP . 'var';
+        }
+
+        // Last-resort bootstrap: no usable project root on disk.
+        return self::systemTempDirectory() . \DIR_SEP . get_checksum($root);
     }
 
     /**
@@ -388,7 +394,7 @@ final class System
 
             if ($systemTemp === false) {
                 throw new RuntimeException(
-                    message: 'Unable to resolve system temporary directory for cache root.',
+                    message: 'Unable to resolve system temporary directory for var bootstrap.',
                     context: [
                         'sys_get_temp_dir' => \sys_get_temp_dir(),
                     ],

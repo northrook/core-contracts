@@ -10,7 +10,6 @@ namespace Northrook\Contracts;
  * {@see get()} throws {@see NotFoundException} when missing.
  * {@see isSecret()} is false when the key is absent (does not throw).
  *
- * @phpstan-import-type Type from Secret
  * @phpstan-type ParameterValue array<array-key, mixed>|bool|float|int|string|\UnitEnum|null
  */
 interface ParameterMapInterface
@@ -36,12 +35,12 @@ interface ParameterMapInterface
     /**
      * True when the parameter exists and its secret type exactly matches {@code $type}.
      *
-     * @param non-empty-string  $key
-     * @param Type              $type
+     * @param non-empty-string               $key
+     * @param 'sensitive'|'credential'       $type
      */
     public function isSecret(
         string $key,
-        string $type = Secret::SENSITIVE,
+        string $type = Value\Secret::SENSITIVE,
     ): bool;
 
     /**

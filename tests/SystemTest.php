@@ -236,47 +236,57 @@ final class SystemTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
-    // resolveCacheDirectory
+    // resolveVarDirectory
     // -------------------------------------------------------------------------
 
-    public function testResolveCacheDirectoryWithExplicitCache(): void
+    public function testResolveVarDirectoryWithExplicitVar(): void
     {
         $temp = \sys_get_temp_dir();
 
         self::assertSame(
             \realpath($temp),
-            System::resolveCacheDirectory('/any/root', $temp),
+            System::resolveVarDirectory('/any/root', $temp),
         );
     }
 
-    public function testResolveCacheDirectoryRejectsMissingExplicitCache(): void
+    public function testResolveVarDirectoryRejectsMissingExplicitVar(): void
     {
         $this->expectException(RuntimeException::class);
-        System::resolveCacheDirectory('/any/root', '/nonexistent/northrook-cache-' . \uniqid());
+        System::resolveVarDirectory('/any/root', '/nonexistent/northrook-var-' . \uniqid());
     }
 
-    public function testResolveCacheDirectoryDefaultIsChecksumNamespaced(): void
+    public function testResolveVarDirectoryDefaultIsRootVarWhenRootExists(): void
+    {
+        $root = \sys_get_temp_dir();
+
+        self::assertSame(
+            \realpath($root) . \DIR_SEP . 'var',
+            System::resolveVarDirectory($root, null),
+        );
+    }
+
+    public function testResolveVarDirectoryLastResortIsChecksumNamespacedWhenRootMissing(): void
     {
         $root     = '/some/project/root';
         $expected = \realpath(\sys_get_temp_dir()) . \DIR_SEP . get_checksum($root);
 
-        self::assertSame($expected, System::resolveCacheDirectory($root, null));
+        self::assertSame($expected, System::resolveVarDirectory($root, null));
     }
 
-    public function testResolveCacheDirectoryDefaultVariesPerRoot(): void
+    public function testResolveVarDirectoryLastResortVariesPerRoot(): void
     {
-        $cacheA = System::resolveCacheDirectory('/root/a', null);
-        $cacheB = System::resolveCacheDirectory('/root/b', null);
+        $varA = System::resolveVarDirectory('/root/a', null);
+        $varB = System::resolveVarDirectory('/root/b', null);
 
-        self::assertNotSame($cacheA, $cacheB);
+        self::assertNotSame($varA, $varB);
     }
 
-    public function testResolveCacheDirectoryBlankExplicitCacheFallsThrough(): void
+    public function testResolveVarDirectoryBlankExplicitFallsThrough(): void
     {
         $root     = '/some/project/root';
         $expected = \realpath(\sys_get_temp_dir()) . \DIR_SEP . get_checksum($root);
 
-        self::assertSame($expected, System::resolveCacheDirectory($root, '  '));
+        self::assertSame($expected, System::resolveVarDirectory($root, '  '));
     }
 
     // -------------------------------------------------------------------------
@@ -291,11 +301,11 @@ final class SystemTest extends TestCase
         self::assertSame($first, $second);
     }
 
-    public function testResolveCacheDirectoryMemoizesDefaultNamespace(): void
+    public function testResolveVarDirectoryMemoizesDefaultNamespace(): void
     {
         $root   = '/memo/project/root';
-        $first  = System::resolveCacheDirectory($root, null);
-        $second = System::resolveCacheDirectory($root, null);
+        $first  = System::resolveVarDirectory($root, null);
+        $second = System::resolveVarDirectory($root, null);
 
         self::assertSame($first, $second);
     }

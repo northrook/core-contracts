@@ -929,12 +929,7 @@ final class CURL implements CurlInterface
             : false;
         $pathBasename = \strrchr($location, '/');
 
-        if (
-            $urlBasename !== false
-            && $pathBasename !== false
-            && $urlBasename !== $pathBasename
-            && ! \str_contains($pathBasename, '.')
-        ) {
+        if ($urlBasename !== false && $pathBasename !== false && $urlBasename !== $pathBasename && ! \str_contains($pathBasename, '.')) {
             $location .= '/' . \ltrim($urlBasename, '/');
         }
 

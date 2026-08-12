@@ -5,6 +5,7 @@
 *.code-workspace
 
 ### Dev
+/var/
 /vendor
 /.*.php
 !/.*.dist.php

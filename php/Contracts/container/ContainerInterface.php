@@ -88,5 +88,5 @@ interface ContainerInterface extends \Psr\Container\ContainerInterface
 
     public function getParameter(
         string $key,
-    ): ParameterInterface;
+    ): Parameter;
 }

@@ -119,7 +119,7 @@ interface CompilerInterface
     /**
      * All registered parameters, in a flat, merged array.
      *
-     * @return array<non-empty-string, ParameterInterface>
+     * @return array<non-empty-string, Parameter>
      */
     public function parameters(): array;
 }

@@ -4,20 +4,34 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
+use Northrook\AppEnv;
 use Northrook\Contracts;
+use Northrook\Contracts\AppEnvironment;
 use Northrook\Contracts\AssetType;
 use Northrook\Contracts\DataObject;
-use Northrook\Contracts\Redactor;
 use Northrook\Contracts\RuntimeException;
 use Northrook\Contracts\Secret;
 use Northrook\Contracts\Singleton;
 use Northrook\Contracts\Tests\Support\DataObjectSecretFixture;
 use Northrook\Contracts\Timestamp;
+use Northrook\Contracts\Value;
+use Northrook\Contracts\Value\Redactor;
+use Northrook\Contracts\Value\Secret as SecretPolicy;
 use PHPUnit\Framework\TestCase;
 
 final class DataObjectTest extends TestCase
 {
-    public function testJsonSerializeKeepsSecretMaskOverTimestampAndEnum(): void
+    protected function setUp(): void
+    {
+        $this->resetAppEnv();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->resetAppEnv();
+    }
+
+    public function testJsonSerializeCastsSensitivePropertiesToPlaintext(): void
     {
         $dto = new DataObjectSecretFixture(
             secretTimestamp : new Timestamp(1_700_000_000_005),
@@ -26,15 +40,22 @@ final class DataObjectTest extends TestCase
             visibleEnum     : AssetType::Script,
         );
 
+        // Serialize / JSON channel: sensitive is allowed — plaintext with casts.
         $json = $dto->jsonSerialize();
 
-        self::assertSame('[Secret::object]', $json['secretTimestamp']);
-        self::assertSame('[Secret::object]', $json['secretEnum']);
+        self::assertSame('1700000000005', $json['secretTimestamp']);
+        self::assertSame('style', $json['secretEnum']);
         self::assertSame('1700000000005', $json['visibleTimestamp']);
         self::assertSame('script', $json['visibleEnum']);
+
+        // Debug channel: any secret tier is masked.
+        $debug = $dto->__debugInfo();
+
+        self::assertSame('[sensitive::object]', $debug['secretTimestamp']);
+        self::assertSame('[sensitive::object]', $debug['secretEnum']);
     }
 
-    public function testSecretMaskDescribesValueType(): void
+    public function testSensitivePropertySerializesPlaintextDebugMasks(): void
     {
         $dto = new DataObjectSecretTypesFixture(
             apiKey : 'secret123',
@@ -43,15 +64,17 @@ final class DataObjectTest extends TestCase
 
         $json = $dto->jsonSerialize();
 
-        self::assertSame('[Secret::string]', $json['apiKey']);
+        self::assertSame('secret123', $json['apiKey']);
         self::assertSame(3, $json['retries']);
+        self::assertSame('[sensitive::string]', $dto->__debugInfo()['apiKey']);
     }
 
-    public function testSecretMaskDescribesIntegerType(): void
+    public function testSensitiveIntegerDebugMaskDescribesType(): void
     {
         $dto = new DataObjectSecretTokenFixture(token: 123_456);
 
-        self::assertSame('[Secret::integer]', $dto->jsonSerialize()['token']);
+        self::assertSame(123_456, $dto->jsonSerialize()['token']);
+        self::assertSame('[sensitive::integer]', $dto->__debugInfo()['token']);
     }
 
     public function testToStringMatchesCompactJsonString(): void
@@ -63,9 +86,7 @@ final class DataObjectTest extends TestCase
             visibleEnum     : AssetType::Script,
         );
 
-        $expected =
-            '{"secretTimestamp":"[Secret::object]","secretEnum":"[Secret::object]",'
-            . '"visibleTimestamp":"1700000000005","visibleEnum":"script"}';
+        $expected = '{"secretTimestamp":"1700000000005","secretEnum":"style",' . '"visibleTimestamp":"1700000000005","visibleEnum":"script"}';
 
         self::assertSame($expected, $dto->jsonString());
         self::assertSame($expected, (string) $dto);
@@ -87,15 +108,7 @@ final class DataObjectTest extends TestCase
         );
     }
 
-    public function testNonFinalDataObjectThrowsOnSerialize(): void
-    {
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('must be `final`');
-
-        new DataObjectNonFinalFixture()->jsonSerialize();
-    }
-
-    public function testSensitiveParameterOnPromotedMasksStrings(): void
+    public function testSensitiveParameterOnPromotedMasksStringsInDebug(): void
     {
         $dto = new DataObjectSensitiveFixture(
             password: 'hunter2',
@@ -104,15 +117,17 @@ final class DataObjectTest extends TestCase
 
         $json = $dto->jsonSerialize();
 
-        self::assertSame('*******', $json['password']);
+        self::assertSame('hunter2', $json['password']);
         self::assertSame('ok', $json['label']);
+        self::assertSame('[sensitive::' . \SensitiveParameter::class . ']', $dto->__debugInfo()['password']);
     }
 
-    public function testSecretOnConstructorParameterMasksProperty(): void
+    public function testSecretOnConstructorParameterMasksPropertyInDebug(): void
     {
         $dto = new DataObjectParamSecretFixture(token: 'abc');
 
-        self::assertSame('[Secret::string]', $dto->jsonSerialize()['token']);
+        self::assertSame('abc', $dto->jsonSerialize()['token']);
+        self::assertSame('[sensitive::string]', $dto->__debugInfo()['token']);
     }
 
     public function testDuplicateAttributeOnPropertyAndParameterThrows(): void
@@ -123,11 +138,26 @@ final class DataObjectTest extends TestCase
         new DataObjectDuplicateSecretFixture(token: 'x')->jsonSerialize();
     }
 
-    public function testCredentialAttributeUsesCredentialPlaceholder(): void
+    public function testCredentialAttributeSerializesWhenNotPublic(): void
     {
         $dto = new DataObjectCredentialFixture(dsn: 'postgres://secret');
 
-        self::assertSame('[Credential::string]', $dto->jsonSerialize()['dsn']);
+        self::assertSame('[credential::string]', $dto->__debugInfo()['dsn']);
+        self::assertSame('postgres://secret', $dto->jsonSerialize()['dsn']);
+    }
+
+    public function testCredentialAttributeThrowsOnSerializeWhenPublic(): void
+    {
+        $this->becomePublic();
+
+        $dto = new DataObjectCredentialFixture(dsn: 'postgres://secret');
+
+        self::assertSame('[credential::string]', $dto->__debugInfo()['dsn']);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Cannot serialize credential property $dsn');
+
+        $dto->jsonSerialize();
     }
 
     public function testCustomRedactorReceivesConditionFromAttribute(): void
@@ -139,45 +169,99 @@ final class DataObjectTest extends TestCase
                 rootDirectory: __DIR__ . '/..',
                 secretRedactor: new class() extends Redactor {
                     protected function redact(
-                        mixed       $value,
-                        string      $type,
-                        null|string $condition = null,
-                    ): string {
-                        return "{$type}:{$condition}:" . \gettype($value);
+                        mixed $value,
+                    ): mixed {
+                        $condition = \array_values($this->secret->conditions)[0] ?? null;
+
+                        return "{$this->secret->type}:{$condition}:" . \gettype($value);
                     }
                 },
             );
 
             $dto = new DataObjectConditionSecretFixture(token: 'abc');
 
-            self::assertSame('credential:oauth-token:string', $dto->jsonSerialize()['token']);
+            // Custom redactor drives the debug channel; public wire refuses credentials.
+            self::assertSame('credential:oauth-token:string', $dto->__debugInfo()['token']);
+
+            $this->becomePublic();
+
+            try {
+                $dto->jsonSerialize();
+                self::fail('Expected RuntimeException for credential serialize');
+            } catch (RuntimeException $exception) {
+                self::assertStringContainsString(
+                    'Cannot serialize credential property $token',
+                    $exception->getMessage(),
+                );
+            }
         } finally {
             $this->resetContracts();
         }
     }
 
-    public function testSecretInstancePropertyIsRedacted(): void
+    public function testSensitiveValuePropertySerializesPlaintextDebugMasks(): void
     {
         $dto = new DataObjectSecretInstanceFixture(
-            token: new Secret('LEAKED'),
+            token: new Value('LEAKED', SecretPolicy::SENSITIVE),
             label: 'ok',
         );
 
         $json = $dto->jsonSerialize();
 
-        self::assertSame('[Secret::string]', $json['token']);
+        // Nested Value self-serializes; sensitive payloads may leave via JSON by policy.
+        self::assertInstanceOf(Value::class, $json['token']);
         self::assertSame('ok', $json['label']);
-        self::assertStringNotContainsString('LEAKED', $dto->jsonString());
+        self::assertStringContainsString('LEAKED', $dto->jsonString());
+
+        // Debug channel masks through the nested Value's own __debugInfo.
+        $debug = $dto->__debugInfo();
+        self::assertInstanceOf(Value::class, $debug['token']);
+        self::assertSame('[sensitive::string]', $debug['token']->__debugInfo()['value']);
     }
 
-    public function testCredentialSecretInstanceUsesCredentialPlaceholder(): void
+    public function testCredentialValuePropertySerializesWhenNotPublic(): void
     {
         $dto = new DataObjectSecretInstanceFixture(
-            token: new Secret('LEAKED', type: Secret::CREDENTIAL),
+            token: new Value('LEAKED', SecretPolicy::CREDENTIAL),
             label: 'ok',
         );
 
-        self::assertSame('[Credential::string]', $dto->jsonSerialize()['token']);
+        $json = $dto->jsonSerialize();
+        self::assertInstanceOf(Value::class, $json['token']);
+        self::assertStringContainsString('LEAKED', $dto->jsonString());
+        self::assertSame('[credential::string]', $json['token']->__debugInfo()['value']);
+    }
+
+    public function testCredentialValuePropertyThrowsOnSerializeWhenPublic(): void
+    {
+        $this->becomePublic();
+
+        $dto = new DataObjectSecretInstanceFixture(
+            token: new Value('LEAKED', SecretPolicy::CREDENTIAL),
+            label: 'ok',
+        );
+
+        // Parent walk returns the nested Value as-is; nested jsonSerialize throws when public.
+        $json = $dto->jsonSerialize();
+        self::assertInstanceOf(Value::class, $json['token']);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Cannot serialize credential property $value');
+
+        $dto->jsonString();
+    }
+
+    private function becomePublic(): void
+    {
+        $this->resetAppEnv();
+        new AppEnv(AppEnvironment::Production, public: true);
+        self::assertTrue(AppEnv::isPublic());
+    }
+
+    private function resetAppEnv(): void
+    {
+        $property = new \ReflectionProperty(AppEnv::class, 'instance');
+        $property->setValue(null, null);
     }
 
     private function resetContracts(): void
@@ -203,15 +287,6 @@ final readonly class DataObjectSecretTokenFixture extends DataObject
     public function __construct(
         #[Secret]
         public int $token,
-    ) {
-        parent::__construct();
-    }
-}
-
-readonly class DataObjectNonFinalFixture extends DataObject
-{
-    public function __construct(
-        public string $name = 'x',
     ) {
         parent::__construct();
     }
@@ -258,7 +333,7 @@ final readonly class DataObjectDuplicateSecretFixture extends DataObject
 final readonly class DataObjectCredentialFixture extends DataObject
 {
     public function __construct(
-        #[Secret(type: Secret::CREDENTIAL)]
+        #[Secret(type: SecretPolicy::CREDENTIAL)]
         public string $dsn,
     ) {
         parent::__construct();
@@ -268,10 +343,7 @@ final readonly class DataObjectCredentialFixture extends DataObject
 final readonly class DataObjectConditionSecretFixture extends DataObject
 {
     public function __construct(
-        #[Secret(
-            type     : Secret::CREDENTIAL,
-            condition: 'oauth-token',
-        )]
+        #[Secret(SecretPolicy::CREDENTIAL, 'oauth-token')]
         public string $token,
     ) {
         parent::__construct();
@@ -281,7 +353,7 @@ final readonly class DataObjectConditionSecretFixture extends DataObject
 final readonly class DataObjectSecretInstanceFixture extends DataObject
 {
     public function __construct(
-        public Secret $token,
+        public Value  $token,
         public string $label,
     ) {
         parent::__construct();

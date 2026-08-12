@@ -77,9 +77,7 @@ final class Assert
 
         $type    = \get_debug_type($value);
         $message = $source !== null
-            ? "Expected non-empty string for `{$source}`, got "
-            . ( \is_string($value) ? 'empty string' : "`{$type}`" )
-            . '.'
+            ? "Expected non-empty string for `{$source}`, got " . ( \is_string($value) ? 'empty string' : "`{$type}`" ) . '.'
             : 'Expected non-empty string, got ' . ( \is_string($value) ? 'empty string' : "`{$type}`" ) . '.';
 
         return self::fail(

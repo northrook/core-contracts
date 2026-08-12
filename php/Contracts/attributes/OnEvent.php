@@ -100,8 +100,7 @@ final class OnEvent
             $reflection = new \ReflectionMethod($class, $method);
         } catch (\ReflectionException) {
             throw new InvalidArgumentException(
-                message: $this::class
-                . " cannot register '{$this->event}' on '{$class}::{$method}', method does not exist.",
+                message: $this::class . " cannot register '{$this->event}' on '{$class}::{$method}', method does not exist.",
                 context: [
                     'event'  => $this->event,
                     'class'  => $class,
@@ -112,8 +111,7 @@ final class OnEvent
 
         if (! $reflection->isPublic() || $reflection->isStatic()) {
             throw new InvalidArgumentException(
-                message: $this::class
-                . " cannot register '{$this->event}' on '{$class}::{$method}', listener must be a public instance method.",
+                message: $this::class . " cannot register '{$this->event}' on '{$class}::{$method}', listener must be a public instance method.",
                 context: [
                     'event'  => $this->event,
                     'class'  => $class,
@@ -160,9 +158,7 @@ final class OnEvent
                 : (string) $type;
 
             throw new InvalidArgumentException(
-                message: $this::class
-                . " listener '{$class}::{$method}' parameter 0 must accept '{$this->event}'"
-                . ( $label !== '' ? ", got '{$label}'." : '.' ),
+                message: $this::class . " listener '{$class}::{$method}' parameter 0 must accept '{$this->event}'" . ( $label !== '' ? ", got '{$label}'." : '.' ),
                 context: [
                     'event'     => $this->event,
                     'class'     => $class,

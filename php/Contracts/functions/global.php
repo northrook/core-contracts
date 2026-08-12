@@ -37,6 +37,7 @@ function match_charset(
 
     return \strspn($string, $characters) === \strlen($string);
 }
+
 /**
  * Recursively normalizes array key order for stable fingerprints.
  *
@@ -89,6 +90,7 @@ function sort_values(
 
     return $value;
 }
+
 /**
  * Whether `$scheme` is a plausible URI / stream-wrapper scheme token.
  *
@@ -97,9 +99,5 @@ function sort_values(
 function is_path_scheme(
     string $scheme,
 ): bool {
-    return (
-        $scheme !== ''
-        && \strspn($scheme[0], \CHARSET_ALPHA) === 1
-        && \strspn($scheme, \CHARSET_URI_SCHEME) === \strlen($scheme)
-    );
+    return $scheme !== '' && \strspn($scheme[0], \CHARSET_ALPHA) === 1 && \strspn($scheme, \CHARSET_URI_SCHEME) === \strlen($scheme);
 }
