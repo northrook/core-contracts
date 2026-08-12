@@ -6,7 +6,12 @@ namespace Northrook\Contracts;
 
 final class Assert
 {
-    public const string KEY_CHARSET = \CHARSET_ALNUM . '._\\/';
+    /**
+     * Service / parameter key body.
+     *
+     * Allows alnum, `.`, `/`, `_`, `-`, `\`, and FQCN (`SomeClass::class`).
+     */
+    public const string KEY_CHARSET = \CHARSET_ALNUM . '._\\/-';
 
     public const string CACHE_KEY_CHARSET = \CHARSET_ALNUM . '.-:';
 

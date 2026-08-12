@@ -143,6 +143,8 @@ final class AssertTest extends TestCase
     {
         self::assertTrue(Assert::validKey('service'));
         self::assertTrue(Assert::validKey('a.b/c_d'));
+        self::assertTrue(Assert::validKey('app.my-token'));
+        self::assertTrue(Assert::validKey('Northrook\\Contracts\\Assert'));
         self::assertTrue(Assert::validKey(' key '));
         self::assertTrue(Assert::validKey('a:b', separator: ':'));
     }
