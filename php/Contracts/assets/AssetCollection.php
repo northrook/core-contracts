@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts;
 
+use Northrook\RuntimeException;
+
 /**
  * @implements \IteratorAggregate<string, AssetInterface>
  */
@@ -23,6 +25,7 @@ final readonly class AssetCollection extends DataObject implements \Countable, \
 
     /**
      * @template T of AssetInterface
+     *
      * @param class-string<T>  $assetClass
      *
      * @return T[]
@@ -44,6 +47,9 @@ final readonly class AssetCollection extends DataObject implements \Countable, \
         yield from $this->assets;
     }
 
+    /**
+     * @return int<0, max>
+     */
     public function count(): int
     {
         return \count($this->assets);
@@ -52,11 +58,12 @@ final readonly class AssetCollection extends DataObject implements \Countable, \
     /**
      * @param AssetInterface[] $assets
      *
-     * @return array<string, AssetInterface>
+     * @return array<non-empty-string, AssetInterface>
      */
     private function resolve(
         array $assets,
     ): array {
+        /** @var array<non-empty-string, AssetInterface> $array */
         $array = [];
 
         foreach ($assets as $asset) {
