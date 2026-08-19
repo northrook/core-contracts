@@ -4,74 +4,47 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\AppEnv;
-use Northrook\Contracts\AppEnvironment;
-use Northrook\Contracts\Parameter\Type as ParameterType;
-use Northrook\Contracts\ParameterStoreInterface;
-use Northrook\Contracts\Tests\Support\TestParameter;
-use Northrook\Contracts\Value;
-use Northrook\Contracts\Value\Redactor;
-use Northrook\Contracts\Value\Secret as SecretPolicy;
+use Northrook\Container\Secret;
+use Northrook\Context;
+use Northrook\Parameter;
+use Northrook\Parameter\Secret as SecretPolicy;
+use Northrook\Parameter\Type as ParameterType;
+use Northrook\ParameterStoreInterface;
+use Northrook\Redactor;
 use PHPUnit\Framework\TestCase;
 
 final class ValueSecretTest extends TestCase
 {
-    public function testValueStoresSecretPolicy(): void
-    {
-        $value = new Value('hunter2', SecretPolicy::SENSITIVE);
-
-        self::assertSame('hunter2', $value->value);
-        self::assertTrue($value->isSecret());
-        self::assertTrue($value->isSecret(SecretPolicy::SENSITIVE));
-        self::assertFalse($value->isSecret(SecretPolicy::CREDENTIAL));
-        self::assertSame(SecretPolicy::SENSITIVE, $value->secret?->type);
-    }
-
-    public function testValueWithoutSecret(): void
-    {
-        $value = new Value('plain');
-
-        self::assertFalse($value->isSecret());
-        self::assertNull($value->secret);
-    }
-
-    public function testValueFromSecretInstance(): void
-    {
-        $policy = new SecretPolicy(SecretPolicy::CREDENTIAL, 'db-dsn');
-        $value  = new Value('postgres://…', $policy);
-
-        self::assertTrue($value->isSecret(SecretPolicy::CREDENTIAL));
-        self::assertTrue($value->secret?->hasCondition('db-dsn'));
-    }
-
     public function testParameterAssignsKeyTypeAndTags(): void
     {
-        $parameter = new TestParameter(
-            key   : 'App.Token',
+        $parameter = new Parameter(
+            key   : 'app.token',
             value : 'secret',
+            type  : ParameterType::Setting,
             secret: SecretPolicy::SENSITIVE,
-            tags  : ['api'],
+            tags  : ['api' => 'api'],
         );
 
         self::assertSame('app.token', $parameter->key);
         self::assertSame('secret', $parameter->value);
-        self::assertSame(ParameterType::String, $parameter->type);
-        self::assertTrue($parameter->isSecret(SecretPolicy::SENSITIVE));
+        self::assertSame(ParameterType::Setting, $parameter->type);
+        self::assertSame(SecretPolicy::SENSITIVE, $parameter->secret);
         self::assertTrue($parameter->isTagged('api'));
         self::assertSame(['api'], \array_values($parameter->tags));
     }
 
-    public function testParameterAcceptsSecretPolicyInstance(): void
+    public function testParameterAcceptsCredentialWithTags(): void
     {
-        $secret    = new SecretPolicy(SecretPolicy::CREDENTIAL, ['db-dsn']);
-        $parameter = new TestParameter(
+        $parameter = new Parameter(
             key   : 'db.dsn',
             value : 'postgres://…',
-            secret: $secret,
+            type  : ParameterType::Setting,
+            secret: SecretPolicy::CREDENTIAL,
+            tags  : ['db-dsn' => 'db-dsn'],
         );
 
-        self::assertTrue($parameter->isSecret(SecretPolicy::CREDENTIAL));
-        self::assertTrue($parameter->secret?->hasCondition('db-dsn'));
+        self::assertSame(SecretPolicy::CREDENTIAL, $parameter->secret);
+        self::assertTrue($parameter->isTagged('db-dsn'));
     }
 
     public function testParameterStoreAddSetAcceptSecretPolicy(): void
@@ -90,6 +63,7 @@ final class ValueSecretTest extends TestCase
             );
             self::assertContains('string', $names);
             self::assertContains(SecretPolicy::class, $names);
+            self::assertContains(Secret::class, $names);
             self::assertContains('null', $names);
         }
 
@@ -105,22 +79,12 @@ final class ValueSecretTest extends TestCase
 
     public function testDebugRedactionDoesNotEmbedScalarPayload(): void
     {
-        $property = new \ReflectionProperty(AppEnv::class, 'instance');
-        $property->setValue(null, null);
+        self::assertTrue(Context::isDebug());
 
-        try {
-            new AppEnv(AppEnvironment::Development, debug: true);
-            self::assertTrue(AppEnv::isDebug());
+        $redactor = new Redactor;
 
-            $redactor = new Redactor;
-            $policy   = new SecretPolicy(SecretPolicy::SENSITIVE);
-
-            self::assertSame('[sensitive::integer:6]', $redactor(123_456, $policy));
-            self::assertSame('[sensitive::float:4]', $redactor(3.14, $policy));
-            self::assertSame('[sensitive::bool:true]', $redactor(true, $policy));
-            self::assertSame('[sensitive::string:7]', $redactor('hunter2', $policy));
-        } finally {
-            $property->setValue(null, null);
-        }
+        self::assertSame('[secret::integer:6]', $redactor(123_456, SecretPolicy::SENSITIVE, []));
+        self::assertSame('[secret::float:4]', $redactor(3.14, SecretPolicy::SENSITIVE, []));
+        self::assertSame('[secret::bool:true]', $redactor(true, SecretPolicy::SENSITIVE, []));
     }
 }

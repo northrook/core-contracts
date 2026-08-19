@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts\ConfigObject;
-use Northrook\Contracts\RuntimeException;
+use Northrook\ConfigObject;
+use Northrook\RuntimeException;
 use PHPUnit\Framework\TestCase;
 
 /**

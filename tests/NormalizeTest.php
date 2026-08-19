@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts\InvalidArgumentException;
-use Northrook\Contracts\Normalize;
-use Northrook\Contracts\RuntimeException;
+use Northrook\InvalidArgumentException;
+use Northrook\Normalize;
+use Northrook\RuntimeException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Stringable;

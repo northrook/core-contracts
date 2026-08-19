@@ -4,10 +4,25 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts\Assert;
-use Northrook\Contracts\RuntimeException;
+use Northrook\Runtime\Assert;
+use Northrook\RuntimeException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+
+enum AssertParameterUnitFixture
+{
+    case Alpha;
+}
+
+enum AssertParameterIntBackedFixture: int
+{
+    case One = 1;
+}
+
+enum AssertParameterStringBackedFixture: string
+{
+    case Foo = 'foo';
+}
 
 final class AssertTest extends TestCase
 {
@@ -144,7 +159,7 @@ final class AssertTest extends TestCase
         self::assertTrue(Assert::validKey('service'));
         self::assertTrue(Assert::validKey('a.b/c_d'));
         self::assertTrue(Assert::validKey('app.my-token'));
-        self::assertTrue(Assert::validKey('Northrook\\Contracts\\Assert'));
+        self::assertTrue(Assert::validKey('Northrook\\Runtime\\Assert'));
         self::assertTrue(Assert::validKey(' key '));
         self::assertTrue(Assert::validKey('a:b', separator: ':'));
     }
@@ -223,6 +238,141 @@ final class AssertTest extends TestCase
 
         self::assertFalse($result);
         self::assertInstanceOf(RuntimeException::class, $catch);
+    }
+
+    // -------------------------------------------------------------------------
+    // validParameter
+    // -------------------------------------------------------------------------
+
+    #[DataProvider('provideValidParameterValues')]
+    public function testValidParameterAcceptsSupportedValues(
+        mixed $value,
+    ): void {
+        self::assertTrue(Assert::validParameter($value));
+    }
+
+    public static function provideValidParameterValues(): \Generator
+    {
+        yield 'null' => [null];
+        yield 'true' => [true];
+        yield 'false' => [false];
+        yield 'int zero' => [0];
+        yield 'int negative' => [-1];
+        yield 'int max' => [\PHP_INT_MAX];
+        yield 'float' => [1.5];
+        yield 'NAN' => [\NAN];
+        yield 'INF' => [\INF];
+        yield 'empty string' => [''];
+        yield 'string' => ['value'];
+        yield 'numeric string' => ['42'];
+        yield 'empty array' => [[]];
+        yield 'list' => [[1, 2, 3]];
+        yield 'keyed array' => [['a' => 1, 'b' => 2]];
+        yield 'nested' => [['items' => [false, null, 0, '']]];
+        yield 'unit enum' => [AssertParameterUnitFixture::Alpha];
+        yield 'int backed enum' => [AssertParameterIntBackedFixture::One];
+        yield 'string backed enum' => [AssertParameterStringBackedFixture::Foo];
+        yield 'enums in list' => [[AssertParameterUnitFixture::Alpha, AssertParameterIntBackedFixture::One]];
+        yield 'max depth' => [self::nestParameter(32, 'leaf')];
+    }
+
+    #[DataProvider('provideInvalidParameterValues')]
+    public function testValidParameterRejectsUnsupportedValues(
+        mixed $value,
+    ): void {
+        $this->expectException(RuntimeException::class);
+        Assert::validParameter($value);
+    }
+
+    public static function provideInvalidParameterValues(): \Generator
+    {
+        yield 'stdClass' => [new \stdClass];
+        yield 'closure' => [static fn() => null];
+        yield 'DateTimeImmutable' => [new \DateTimeImmutable];
+        yield 'nested object' => [[1, new \stdClass]];
+        yield 'beyond max depth' => [self::nestParameter(33, 'leaf')];
+    }
+
+    public function testValidParameterFailureMessageIncludesSourceAndType(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Invalid parameter value for `payload`: unsupported type object:');
+        Assert::validParameter(new \stdClass, 'payload');
+    }
+
+    public function testValidParameterCatchModeReturnsFalseAndAssignsException(): void
+    {
+        $catch  = true;
+        $result = Assert::validParameter(new \stdClass, null, $catch);
+
+        self::assertFalse($result);
+        self::assertInstanceOf(RuntimeException::class, $catch);
+        self::assertStringStartsWith('Invalid parameter value: unsupported type object:', $catch->getMessage());
+    }
+
+    public function testValidParameterOpenResourceIsUnsupported(): void
+    {
+        $resource = \fopen('php://memory', 'r');
+        self::assertIsResource($resource);
+
+        try {
+            $this->expectException(RuntimeException::class);
+            $this->expectExceptionMessage('Invalid parameter value: unsupported type resource:stream.');
+            Assert::validParameter($resource);
+        } finally {
+            \fclose($resource);
+        }
+    }
+
+    public function testValidParameterClosedResourceIsUnsupported(): void
+    {
+        $resource = \fopen('php://memory', 'r');
+        self::assertIsResource($resource);
+        \fclose($resource);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Invalid parameter value: unsupported type resource:closed.');
+        Assert::validParameter($resource);
+    }
+
+    public function testValidParameterOverflowMessageIncludesSource(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Invalid parameter value for `tree`: maximum nesting depth exceeded.');
+        Assert::validParameter(self::nestParameter(33, 'leaf'), 'tree');
+    }
+
+    public function testValidParameterCircularArrayHitsDepthLimit(): void
+    {
+        $value   = [];
+        $value[] = &$value;
+
+        $catch  = true;
+        $result = Assert::validParameter($value, null, $catch);
+
+        self::assertFalse($result);
+        self::assertInstanceOf(RuntimeException::class, $catch);
+        self::assertSame('Invalid parameter value: maximum nesting depth exceeded.', $catch->getMessage());
+    }
+
+    /**
+     * Wrap `$leaf` in `$depth` single-element list layers.
+     *
+     * The leaf is resolved at recursion depth `$depth`.
+     *
+     * @return array<mixed>
+     */
+    private static function nestParameter(
+        int   $depth,
+        mixed $leaf,
+    ): array {
+        $value = [$leaf];
+
+        for ($i = 1; $i < $depth; $i++) {
+            $value = [$value];
+        }
+
+        return $value;
     }
 
     // -------------------------------------------------------------------------

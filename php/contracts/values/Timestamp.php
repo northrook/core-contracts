@@ -1,0 +1,162 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Northrook;
+
+/**
+ * Unix epoch instant stored with millisecond precision.
+ *
+ * - `$number` is an integer millisecond count, matching JavaScript `Date.now()`
+ * - `$string` is `$number` formatted as a zero-padded 13-digit numeric string
+ * - `$precision` is a monotonic nanosecond offset from {@see \hrtime()}, set only for "now"
+ *
+ * Input values with sub-millisecond precision are truncated toward zero when converted to milliseconds.
+ *
+ * @uses \microtime()
+ * @uses \hrtime()
+ *
+ * @link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/now JavaScript Date.now()
+ */
+final readonly class Timestamp implements \Stringable
+{
+    /**
+     * Monotonic nanoseconds from {@see \hrtime(true)}.
+     *
+     * Set when constructing "now" (`$timestamp === null`); otherwise `null`.
+     * Meaningful only for relative ordering within the same process.
+     */
+    public null|int $precision;
+
+    /**
+     * Milliseconds since the Unix epoch.
+     */
+    public int $number;
+
+    /**
+     * Same instant as {@see $number}, zero-padded to exactly 13 digits.
+     *
+     * @var numeric-string
+     */
+    public string $string;
+
+    /**
+     * @param null|string|int|float $timestamp Accepted representations:
+     *
+     * - `null` current time via {@see \microtime()}, also captures {@see $precision}
+     * - `float` seconds with an optional fractional part ({@see \microtime()})
+     * - `int` milliseconds since epoch ({@see $number})
+     * - `string` either a millisecond string or a decimal second string
+     *
+     * @throws RuntimeException when the input value is invalid
+     */
+    public function __construct(
+        null|string|int|float $timestamp = null,
+    ) {
+        if ($timestamp === null) {
+            $precision       = \hrtime(true);
+            $this->precision = \is_int($precision) ? $precision : (int) $precision;
+        } else {
+            $this->precision = null;
+        }
+
+        $timestamp ??= \microtime(true);
+
+        $number = match (true) {
+            \is_int($timestamp) => $timestamp,
+            \is_float($timestamp) => (int) \floor($timestamp * 1000),
+            \is_string($timestamp) => \str_contains($timestamp, '.')
+                ? (int) \floor((float) $timestamp * 1000)
+                : (int) $timestamp,
+        };
+
+        if ($number < 0 || \intdiv($number, 1000) > 4_102_444_800) {
+            throw new RuntimeException(
+                message: 'Invalid timestamp: ' . $number,
+                context: \func_get_args(),
+            );
+        }
+
+        $this->number = $number;
+        $this->string = \sprintf('%013d', $number);
+    }
+
+    /**
+     * Millisecond epoch count for `$from` (same forms as the constructor);
+     * `null` → current instant.
+     *
+     * @param null|string|int|float $from
+     *
+     * @return int
+     */
+    public static function number(
+        null|string|int|float $from = null,
+    ): int {
+        return new self($from)->number;
+    }
+
+    /**
+     * The current instant, including {@see $precision}.
+     */
+    public static function now(): self
+    {
+        return new self;
+    }
+
+    /**
+     * @return numeric-string 13-digit millisecond string
+     */
+    public function __toString(): string
+    {
+        return $this->string;
+    }
+
+    /**
+     * Converts this timestamp to an immutable date-time value.
+     *
+     * When no timezone is given:
+     * - {@see Context::$timezone} when registered
+     * - otherwise {@see \date_default_timezone_get()}
+     *
+     * @throws RuntimeException when the stored value cannot be represented as a date-time
+     */
+    public function toDateTime(
+        null|\DateTimeZone|Timezone $timezone = null,
+    ): \DateTimeImmutable {
+        try {
+            $timezone ??= Context::isRegistered()
+                ? Context::get()->timezone
+                : new \DateTimeZone(\date_default_timezone_get());
+
+            $seconds      = \intdiv($this->number, 1000);
+            $milliseconds = $this->number % 1000;
+
+            $instance = new \DateTimeImmutable(
+                datetime: '@' . $seconds,
+            );
+
+            if ($milliseconds > 0) {
+                $instance = $instance->modify("+{$milliseconds} milliseconds");
+            }
+
+            return $instance->setTimezone($timezone);
+        } catch (\Throwable $exception) {
+            throw new RuntimeException(
+                message : 'Failed to create DateTimeImmutable from timestamp ' . $this->number,
+                context : \func_get_args(),
+                previous: $exception,
+            );
+        }
+    }
+
+    /**
+     * Formats this timestamp using {@see \DateTimeImmutable::format()}.
+     *
+     * The default pattern is ISO-8601 with millisecond precision (`v`).
+     */
+    public function format(
+        string $format = 'Y-m-d\TH:i:s.vP',
+    ): string {
+        return $this->toDateTime()->format($format);
+    }
+}

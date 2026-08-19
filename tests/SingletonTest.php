@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts\LogicException;
-use Northrook\Contracts\RuntimeException;
-use Northrook\Contracts\Singleton;
-use Northrook\Contracts\Timestamp;
+use Northrook\LogicException;
+use Northrook\RuntimeException;
+use Northrook\Singleton;
 use PHPUnit\Framework\TestCase;
 
 final class SingletonTest extends TestCase
@@ -29,8 +28,7 @@ final class SingletonTest extends TestCase
         $first = SingletonTestClock::get();
 
         self::assertTrue(SingletonTestClock::isRegistered());
-        self::assertTrue($first->selfInstantiated());
-        self::assertInstanceOf(Timestamp::class, $first->timestamp());
+        self::assertNotFalse($first->selfInstantiated());
         self::assertSame($first, SingletonTestClock::get());
     }
 
@@ -53,6 +51,7 @@ final class SingletonTest extends TestCase
         SingletonTestGreeting::register('second');
     }
 
+    /** @noinspection PhpExpressionResultUnusedInspection */
     public function testCloneThrows(): void
     {
         $instance = SingletonTestClock::get();
@@ -127,7 +126,7 @@ final class SingletonTest extends TestCase
 
     private static function resetRegistry(): void
     {
-        $registry = new \ReflectionProperty(Singleton::class, '__instance');
+        $registry = new \ReflectionProperty(Singleton::class, '_instance');
         $registry->setValue(null, []);
     }
 }
@@ -140,14 +139,9 @@ final class SingletonTestClock extends Singleton
         $this->unregisterSingletonInstance($resettable);
     }
 
-    public function selfInstantiated(): bool
+    public function selfInstantiated(): false|string
     {
-        return $this->__selfInstantiated;
-    }
-
-    public function timestamp(): Timestamp
-    {
-        return $this->__timestamp;
+        return $this->_selfInstantiated;
     }
 }
 
@@ -155,9 +149,8 @@ final class SingletonTestGreeting extends Singleton
 {
     private function __construct(
         public readonly string $greeting,
-        bool                   $__selfInstantiated = false,
     ) {
-        parent::__construct($__selfInstantiated);
+        parent::__construct();
     }
 
     public static function register(
@@ -172,9 +165,9 @@ final class SingletonTestGreeting extends Singleton
         $this->unregisterSingletonInstance($resettable);
     }
 
-    public function selfInstantiated(): bool
+    public function selfInstantiated(): false|string
     {
-        return $this->__selfInstantiated;
+        return $this->_selfInstantiated;
     }
 
     protected static function create(): static

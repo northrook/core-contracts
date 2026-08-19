@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts\InvalidArgumentException;
-use Northrook\Contracts\Priority;
+use Northrook\InvalidArgumentException;
+use Northrook\Priority;
 use PHPUnit\Framework\TestCase;
 
 /**

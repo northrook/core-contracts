@@ -4,31 +4,40 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\AppEnv;
-use Northrook\Contracts;
-use Northrook\Contracts\AppEnvironment;
-use Northrook\Contracts\AssetType;
-use Northrook\Contracts\DataObject;
-use Northrook\Contracts\RuntimeException;
-use Northrook\Contracts\Secret;
-use Northrook\Contracts\Singleton;
+use Northrook\Assets\AssetType;
+use Northrook\Container\Secret;
+use Northrook\Context;
+use Northrook\Context\AppEnv;
+use Northrook\Context\ContextManager;
 use Northrook\Contracts\Tests\Support\DataObjectSecretFixture;
-use Northrook\Contracts\Timestamp;
-use Northrook\Contracts\Value;
-use Northrook\Contracts\Value\Redactor;
-use Northrook\Contracts\Value\Secret as SecretPolicy;
+use Northrook\Contracts\Tests\Support\SecretMask;
+use Northrook\DataObject;
+use Northrook\Kernel\KernelContext;
+use Northrook\Parameter\Secret as SecretPolicy;
+use Northrook\Redactor;
+use Northrook\RuntimeException;
+use Northrook\Singleton;
+use Northrook\Timestamp;
 use PHPUnit\Framework\TestCase;
 
 final class DataObjectTest extends TestCase
 {
+    private ContextManager $contextManager;
+
     protected function setUp(): void
     {
-        $this->resetAppEnv();
+        $this->resetSingleton();
+
+        $this->contextManager = new ContextManager;
+        Context::register(
+            appEnv        : AppEnv::Testing,
+            contextManager: $this->contextManager,
+        );
     }
 
     protected function tearDown(): void
     {
-        $this->resetAppEnv();
+        $this->resetSingleton();
     }
 
     public function testJsonSerializeCastsSensitivePropertiesToPlaintext(): void
@@ -51,8 +60,8 @@ final class DataObjectTest extends TestCase
         // Debug channel: any secret tier is masked.
         $debug = $dto->__debugInfo();
 
-        self::assertSame('[sensitive::object]', $debug['secretTimestamp']);
-        self::assertSame('[sensitive::object]', $debug['secretEnum']);
+        self::assertSame(SecretMask::sensitive($dto->secretTimestamp), $debug['secretTimestamp']);
+        self::assertSame(SecretMask::sensitive($dto->secretEnum), $debug['secretEnum']);
     }
 
     public function testSensitivePropertySerializesPlaintextDebugMasks(): void
@@ -66,7 +75,7 @@ final class DataObjectTest extends TestCase
 
         self::assertSame('secret123', $json['apiKey']);
         self::assertSame(3, $json['retries']);
-        self::assertSame('[sensitive::string]', $dto->__debugInfo()['apiKey']);
+        self::assertSame(SecretMask::sensitive('secret123'), $dto->__debugInfo()['apiKey']);
     }
 
     public function testSensitiveIntegerDebugMaskDescribesType(): void
@@ -74,7 +83,7 @@ final class DataObjectTest extends TestCase
         $dto = new DataObjectSecretTokenFixture(token: 123_456);
 
         self::assertSame(123_456, $dto->jsonSerialize()['token']);
-        self::assertSame('[sensitive::integer]', $dto->__debugInfo()['token']);
+        self::assertSame(SecretMask::sensitive(123_456), $dto->__debugInfo()['token']);
     }
 
     public function testToStringMatchesCompactJsonString(): void
@@ -119,7 +128,7 @@ final class DataObjectTest extends TestCase
 
         self::assertSame('hunter2', $json['password']);
         self::assertSame('ok', $json['label']);
-        self::assertSame('[sensitive::' . \SensitiveParameter::class . ']', $dto->__debugInfo()['password']);
+        self::assertSame('[secret::' . \SensitiveParameter::class . ']', $dto->__debugInfo()['password']);
     }
 
     public function testSecretOnConstructorParameterMasksPropertyInDebug(): void
@@ -127,7 +136,7 @@ final class DataObjectTest extends TestCase
         $dto = new DataObjectParamSecretFixture(token: 'abc');
 
         self::assertSame('abc', $dto->jsonSerialize()['token']);
-        self::assertSame('[sensitive::string]', $dto->__debugInfo()['token']);
+        self::assertSame(SecretMask::sensitive('abc'), $dto->__debugInfo()['token']);
     }
 
     public function testDuplicateAttributeOnPropertyAndParameterThrows(): void
@@ -138,21 +147,21 @@ final class DataObjectTest extends TestCase
         new DataObjectDuplicateSecretFixture(token: 'x')->jsonSerialize();
     }
 
-    public function testCredentialAttributeSerializesWhenNotPublic(): void
+    public function testCredentialAttributeSerializesOutsideHttpContext(): void
     {
         $dto = new DataObjectCredentialFixture(dsn: 'postgres://secret');
 
-        self::assertSame('[credential::string]', $dto->__debugInfo()['dsn']);
+        self::assertSame('[secret::credential]', $dto->__debugInfo()['dsn']);
         self::assertSame('postgres://secret', $dto->jsonSerialize()['dsn']);
     }
 
-    public function testCredentialAttributeThrowsOnSerializeWhenPublic(): void
+    public function testCredentialAttributeThrowsOnSerializeInHttpContext(): void
     {
-        $this->becomePublic();
+        $this->becomeOutbound();
 
         $dto = new DataObjectCredentialFixture(dsn: 'postgres://secret');
 
-        self::assertSame('[credential::string]', $dto->__debugInfo()['dsn']);
+        self::assertSame('[secret::credential]', $dto->__debugInfo()['dsn']);
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Cannot serialize credential property $dsn');
@@ -162,18 +171,20 @@ final class DataObjectTest extends TestCase
 
     public function testCustomRedactorReceivesConditionFromAttribute(): void
     {
-        $this->resetContracts();
+        $this->resetSingleton();
 
         try {
-            Contracts::register(
-                rootDirectory: __DIR__ . '/..',
+            $this->contextManager = new ContextManager;
+            Context::register(
+                rootDirectory : __DIR__ . '/..',
+                contextManager: $this->contextManager,
                 secretRedactor: new class() extends Redactor {
                     protected function redact(
                         mixed $value,
                     ): mixed {
-                        $condition = \array_values($this->secret->conditions)[0] ?? null;
+                        $condition = \array_values($this->context)[0] ?? null;
 
-                        return "{$this->secret->type}:{$condition}:" . \gettype($value);
+                        return "{$this->secret->name}:{$condition}:" . \gettype($value);
                     }
                 },
             );
@@ -181,9 +192,9 @@ final class DataObjectTest extends TestCase
             $dto = new DataObjectConditionSecretFixture(token: 'abc');
 
             // Custom redactor drives the debug channel; public wire refuses credentials.
-            self::assertSame('credential:oauth-token:string', $dto->__debugInfo()['token']);
+            self::assertSame('CREDENTIAL:oauth-token:string', $dto->__debugInfo()['token']);
 
-            $this->becomePublic();
+            $this->becomeOutbound();
 
             try {
                 $dto->jsonSerialize();
@@ -195,79 +206,22 @@ final class DataObjectTest extends TestCase
                 );
             }
         } finally {
-            $this->resetContracts();
+            $this->resetSingleton();
         }
     }
 
-    public function testSensitiveValuePropertySerializesPlaintextDebugMasks(): void
+    private function becomeOutbound(): void
     {
-        $dto = new DataObjectSecretInstanceFixture(
-            token: new Value('LEAKED', SecretPolicy::SENSITIVE),
-            label: 'ok',
-        );
-
-        $json = $dto->jsonSerialize();
-
-        // Nested Value self-serializes; sensitive payloads may leave via JSON by policy.
-        self::assertInstanceOf(Value::class, $json['token']);
-        self::assertSame('ok', $json['label']);
-        self::assertStringContainsString('LEAKED', $dto->jsonString());
-
-        // Debug channel masks through the nested Value's own __debugInfo.
-        $debug = $dto->__debugInfo();
-        self::assertInstanceOf(Value::class, $debug['token']);
-        self::assertSame('[sensitive::string]', $debug['token']->__debugInfo()['value']);
+        $this->contextManager->update(KernelContext::Request);
     }
 
-    public function testCredentialValuePropertySerializesWhenNotPublic(): void
+    private function resetSingleton(): void
     {
-        $dto = new DataObjectSecretInstanceFixture(
-            token: new Value('LEAKED', SecretPolicy::CREDENTIAL),
-            label: 'ok',
-        );
-
-        $json = $dto->jsonSerialize();
-        self::assertInstanceOf(Value::class, $json['token']);
-        self::assertStringContainsString('LEAKED', $dto->jsonString());
-        self::assertSame('[credential::string]', $json['token']->__debugInfo()['value']);
-    }
-
-    public function testCredentialValuePropertyThrowsOnSerializeWhenPublic(): void
-    {
-        $this->becomePublic();
-
-        $dto = new DataObjectSecretInstanceFixture(
-            token: new Value('LEAKED', SecretPolicy::CREDENTIAL),
-            label: 'ok',
-        );
-
-        // Parent walk returns the nested Value as-is; nested jsonSerialize throws when public.
-        $json = $dto->jsonSerialize();
-        self::assertInstanceOf(Value::class, $json['token']);
-
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Cannot serialize credential property $value');
-
-        $dto->jsonString();
-    }
-
-    private function becomePublic(): void
-    {
-        $this->resetAppEnv();
-        new AppEnv(AppEnvironment::Production, public: true);
-        self::assertTrue(AppEnv::isPublic());
-    }
-
-    private function resetAppEnv(): void
-    {
-        $property = new \ReflectionProperty(AppEnv::class, 'instance');
-        $property->setValue(null, null);
-    }
-
-    private function resetContracts(): void
-    {
-        $property = new \ReflectionProperty(Singleton::class, '__instance');
+        $property = new \ReflectionProperty(Singleton::class, '_instance');
         $property->setValue(null, []);
+
+        $initialized = new \ReflectionProperty(ContextManager::class, 'initialized');
+        $initialized->setValue(null, false);
     }
 }
 
@@ -345,16 +299,6 @@ final readonly class DataObjectConditionSecretFixture extends DataObject
     public function __construct(
         #[Secret(SecretPolicy::CREDENTIAL, 'oauth-token')]
         public string $token,
-    ) {
-        parent::__construct();
-    }
-}
-
-final readonly class DataObjectSecretInstanceFixture extends DataObject
-{
-    public function __construct(
-        public Value  $token,
-        public string $label,
     ) {
         parent::__construct();
     }

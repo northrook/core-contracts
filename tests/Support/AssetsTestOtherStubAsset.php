@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests\Support;
 
-use Northrook\Contracts\AssetInterface;
-use Northrook\Contracts\AssetOrigin;
-use Northrook\Contracts\AssetType;
+use Northrook\AssetInterface;
+use Northrook\Assets\AssetOrigin;
+use Northrook\Assets\AssetType;
 
 /**
  * Second {@see AssetInterface} fixture; used for `AssetCollection::get()` filtering.

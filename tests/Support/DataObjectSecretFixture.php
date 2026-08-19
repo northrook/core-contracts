@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests\Support;
 
-use Northrook\Contracts\AssetType;
-use Northrook\Contracts\DataObject;
-use Northrook\Contracts\Secret;
-use Northrook\Contracts\Timestamp;
+use Northrook\Assets\AssetType;
+use Northrook\Container\Secret;
+use Northrook\DataObject;
+use Northrook\Timestamp;
 
 final readonly class DataObjectSecretFixture extends DataObject
 {

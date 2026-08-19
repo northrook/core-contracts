@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts\JSON;
-use Northrook\Contracts\RuntimeException;
+use Northrook\JSON;
+use Northrook\RuntimeException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 

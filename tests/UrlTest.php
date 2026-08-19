@@ -4,20 +4,32 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts\Assert;
-use Northrook\Contracts\CurlException;
-use Northrook\Contracts\CurlInterface;
-use Northrook\Contracts\DependencyException;
-use Northrook\Contracts\Href;
-use Northrook\Contracts\InvalidArgumentException;
-use Northrook\Contracts\Uri;
-use Northrook\Contracts\Url;
+use Northrook\Context;
+use Northrook\CurlException;
+use Northrook\CurlInterface;
+use Northrook\DependencyException;
+use Northrook\Href;
+use Northrook\InvalidArgumentException;
+use Northrook\Runtime\Assert;
+use Northrook\Singleton;
+use Northrook\Uri;
+use Northrook\Url;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Contracts\HttpClient\ResponseInterface;
 
 final class UrlTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        $this->resetContext();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->resetContext();
+    }
+
     #[DataProvider('provideAcceptedUrls')]
     public function testAcceptsHttpUrls(
         string $input,
@@ -142,7 +154,7 @@ final class UrlTest extends TestCase
 
     public function testFetchWrapsUnexpectedThrowables(): void
     {
-        $curl = $this->createMock(CurlInterface::class);
+        $curl = $this->createStub(CurlInterface::class);
         $curl->method('get')->willThrowException(new \Exception('connection reset'));
 
         $url = new Url('https://example.com', http: $curl);
@@ -158,7 +170,7 @@ final class UrlTest extends TestCase
             message: 'boom',
         );
 
-        $curl = $this->createMock(CurlInterface::class);
+        $curl = $this->createStub(CurlInterface::class);
         $curl->method('get')->willThrowException($failure);
 
         $url = new Url('https://example.com', http: $curl);
@@ -173,7 +185,7 @@ final class UrlTest extends TestCase
 
     public function testDownloadFailureThrowsCurlException(): void
     {
-        $curl = $this->createMock(CurlInterface::class);
+        $curl = $this->createStub(CurlInterface::class);
         $curl->method('download')->willReturn(false);
 
         $url = new Url('https://example.com/file.txt', http: $curl);
@@ -209,9 +221,22 @@ final class UrlTest extends TestCase
         self::assertTrue($url->probe());
     }
 
+    public function testProbeFallsBackToRegisteredHttpClient(): void
+    {
+        $curl = $this->createMock(CurlInterface::class);
+        $curl->expects(self::once())->method('probeUrl')->willReturn(true);
+
+        Context::register(
+            rootDirectory: __DIR__ . '/..',
+            curlClient   : $curl,
+        );
+
+        self::assertTrue(new Url('https://example.com')->probe());
+    }
+
     public function testFetchDelegatesToHttpClient(): void
     {
-        $response = $this->createMock(ResponseInterface::class);
+        $response = $this->createStub(ResponseInterface::class);
         $response->method('getContent')->willReturn('body');
 
         $curl = $this->createMock(CurlInterface::class);
@@ -280,5 +305,11 @@ final class UrlTest extends TestCase
         self::assertSame('content', \file_get_contents($resolved));
         @\unlink($resolved);
         @\rmdir($location);
+    }
+
+    private function resetContext(): void
+    {
+        $property = new \ReflectionProperty(Singleton::class, '_instance');
+        $property->setValue(null, []);
     }
 }

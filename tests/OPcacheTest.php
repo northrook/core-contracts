@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts\InvalidArgumentException;
-use Northrook\Contracts\OPcache;
+use Northrook\InvalidArgumentException;
+use Northrook\Runtime\OPcache;
 use PHPUnit\Framework\TestCase;
 
 final class OPcacheTest extends TestCase

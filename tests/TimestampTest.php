@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts;
-use Northrook\Contracts\RuntimeException;
-use Northrook\Contracts\Singleton;
-use Northrook\Contracts\Timestamp;
+use Northrook\Context;
+use Northrook\RuntimeException;
+use Northrook\Singleton;
+use Northrook\Timestamp;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -15,7 +15,7 @@ final class TimestampTest extends TestCase
 {
     protected function tearDown(): void
     {
-        $property = new \ReflectionProperty(Singleton::class, '__instance');
+        $property = new \ReflectionProperty(Singleton::class, '_instance');
         $property->setValue(null, []);
     }
 
@@ -136,9 +136,9 @@ final class TimestampTest extends TestCase
         self::assertSame('1970-01-01 01:00:00.000', $datetime->format('Y-m-d H:i:s.v'));
     }
 
-    public function testToDateTimeDefaultsToContractsTimezone(): void
+    public function testToDateTimeDefaultsToContextTimezone(): void
     {
-        Contracts::register(
+        Context::register(
             rootDirectory: \dirname(__DIR__),
             timezone     : 'Europe/Oslo',
         );
@@ -150,7 +150,7 @@ final class TimestampTest extends TestCase
 
     public function testToDateTimeFallsBackToPhpDefaultTimezoneWhenUnregistered(): void
     {
-        self::assertFalse(Contracts::isRegistered());
+        self::assertFalse(Context::isRegistered());
 
         $previous = \date_default_timezone_get();
         \date_default_timezone_set('Asia/Tokyo');
@@ -159,7 +159,7 @@ final class TimestampTest extends TestCase
             $datetime = new Timestamp(0)->toDateTime();
 
             self::assertSame('Asia/Tokyo', $datetime->getTimezone()->getName());
-            self::assertFalse(Contracts::isRegistered());
+            self::assertFalse(Context::isRegistered());
         } finally {
             \date_default_timezone_set($previous);
         }
@@ -167,7 +167,7 @@ final class TimestampTest extends TestCase
 
     public function testFormatDefaultsToIso8601WithMilliseconds(): void
     {
-        Contracts::register(
+        Context::register(
             rootDirectory: \dirname(__DIR__),
             timezone     : 'UTC',
         );

@@ -4,37 +4,51 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\AppEnv;
-use Northrook\Contracts\AppEnvironment;
-use Northrook\Contracts\AssetType;
-use Northrook\Contracts\Exporter;
-use Northrook\Contracts\RuntimeException;
-use Northrook\Contracts\Secret;
+use Northrook\Assets\AssetType;
+use Northrook\Container\Secret;
+use Northrook\Context;
+use Northrook\Context\AppEnv;
+use Northrook\Context\ContextManager;
 use Northrook\Contracts\Serializable;
-use Northrook\Contracts\Serializer;
-use Northrook\Contracts\Tests\Support\TestParameter;
-use Northrook\Contracts\Timestamp;
-use Northrook\Contracts\Value;
-use Northrook\Contracts\Value\Secret as SecretPolicy;
+use Northrook\Contracts\Tests\Support\SecretMask;
+use Northrook\Exporter;
+use Northrook\Kernel\KernelContext;
+use Northrook\Parameter;
+use Northrook\Parameter\Secret as SecretPolicy;
+use Northrook\Parameter\Type as ParameterType;
+use Northrook\RuntimeException;
+use Northrook\Serializer;
+use Northrook\Singleton;
+use Northrook\Timestamp;
 use PHPUnit\Framework\TestCase;
 
 /**
  * Channel matrix enforced by the {@see Serializer} trait:
  *
  * - Debug out ({@see Serializer::__debugInfo()}) redacts any secret tier.
- * - Serialize / JSON: both tiers plaintext when `!{@see AppEnv::isPublic()}`;
- *   {@see SecretPolicy::CREDENTIAL} throws when public.
+ * - Serialize / JSON: both tiers plaintext outside {@see KernelContext::Request};
+ *   {@see SecretPolicy::CREDENTIAL} throws when outbound.
  */
 final class SerializerTest extends TestCase
 {
+    private ContextManager $contextManager;
+
     protected function setUp(): void
     {
-        $this->resetAppEnv();
+        $this->resetIsolation();
+
+        $this->contextManager = new ContextManager;
+        Context::register(
+            appEnv        : AppEnv::Testing,
+            contextManager: $this->contextManager,
+        );
+        Exporter::reset();
     }
 
     protected function tearDown(): void
     {
-        $this->resetAppEnv();
+        Exporter::reset();
+        $this->resetIsolation();
     }
 
     public function testDebugInfoRedactsEverySecretTier(): void
@@ -42,9 +56,9 @@ final class SerializerTest extends TestCase
         $info = SerializerChannelFixture::make()->__debugInfo();
 
         self::assertSame('visible', $info['plain']);
-        self::assertSame('[sensitive::string]', $info['apiKey']);
-        self::assertSame('[credential::string]', $info['dsn']);
-        self::assertSame('[sensitive::string]', $info['token']); // #[Secret] on constructor parameter
+        self::assertSame(SecretMask::sensitive('secret123'), $info['apiKey']);
+        self::assertSame('[secret::credential]', $info['dsn']);
+        self::assertSame(SecretMask::sensitive('param-secret'), $info['token']); // #[Secret] on constructor parameter
         self::assertSame('[uninitialized]', $info['uninitialized']);
     }
 
@@ -58,10 +72,8 @@ final class SerializerTest extends TestCase
         self::assertArrayNotHasKey('uninitialized', $state);
     }
 
-    public function testSerializeAllowsCredentialWhenNotPublic(): void
+    public function testSerializeAllowsCredentialOutsideHttpContext(): void
     {
-        self::assertFalse(AppEnv::isPublic());
-
         $state = SerializerChannelFixture::make()->__serialize();
 
         self::assertSame('visible', $state['plain']);
@@ -70,9 +82,9 @@ final class SerializerTest extends TestCase
         self::assertSame('param-secret', $state['token']);
     }
 
-    public function testSerializeThrowsOnCredentialPropertyWhenPublic(): void
+    public function testSerializeThrowsOnCredentialPropertyInHttpContext(): void
     {
-        $this->becomePublic();
+        $this->becomeOutbound();
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Cannot serialize credential property $dsn');
@@ -87,9 +99,9 @@ final class SerializerTest extends TestCase
         self::assertSame($fixture->__serialize(), $fixture->jsonSerialize());
     }
 
-    public function testJsonSerializeThrowsOnCredentialPropertyWhenPublic(): void
+    public function testJsonSerializeThrowsOnCredentialPropertyInHttpContext(): void
     {
-        $this->becomePublic();
+        $this->becomeOutbound();
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Cannot serialize credential property $dsn');
@@ -116,81 +128,53 @@ final class SerializerTest extends TestCase
         self::assertSame('parent-value', $restored->inherited());
     }
 
-    public function testValueSelfRedactsPerChannel(): void
-    {
-        $sensitive  = new Value('plaintext', SecretPolicy::SENSITIVE);
-        $credential = new Value('runtime-only', SecretPolicy::CREDENTIAL);
-
-        self::assertSame('plaintext', $sensitive->__serialize()['value']);
-        self::assertSame('runtime-only', $credential->__serialize()['value'], 'credential OK when trusted');
-        self::assertSame('[sensitive::string]', $sensitive->__debugInfo()['value']);
-        self::assertSame('[credential::string]', $credential->__debugInfo()['value']);
-    }
-
-    public function testValueCredentialSerializeThrowsWhenPublic(): void
-    {
-        $this->becomePublic();
-
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Cannot serialize credential property $value');
-
-        new Value('runtime-only', SecretPolicy::CREDENTIAL)->__serialize();
-    }
-
-    public function testValueCredentialPhpSerializeThrowsWhenPublic(): void
-    {
-        $this->becomePublic();
-
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Cannot serialize credential property $value');
-
-        \serialize(new Value('runtime-only', SecretPolicy::CREDENTIAL));
-    }
-
     public function testParameterSensitiveRoundTripRevalidates(): void
     {
-        $parameter = new TestParameter(
-            key   : 'App.Token',
+        $parameter = new Parameter(
+            key   : 'app.token',
             value : 'secret',
+            type  : ParameterType::Setting,
             secret: SecretPolicy::SENSITIVE,
-            tags  : ['api'],
+            tags  : ['api' => 'api'],
         );
 
-        /** @var TestParameter $restored */
+        /** @var Parameter $restored */
         $restored = \unserialize(\serialize($parameter));
 
         self::assertSame('secret', $restored->value);
-        self::assertSame('app.token', $restored->key, 'key set hook re-validates');
+        self::assertSame('app.token', $restored->key);
         self::assertSame(['api'], \array_values($restored->tags));
-        self::assertTrue($restored->isSecret(SecretPolicy::SENSITIVE));
+        self::assertSame(SecretPolicy::SENSITIVE, $restored->secret);
     }
 
-    public function testParameterCredentialRoundTripWhenNotPublic(): void
+    public function testParameterCredentialRoundTripOutsideHttpContext(): void
     {
-        $parameter = new TestParameter(
-            key   : 'Db.Dsn',
+        $parameter = new Parameter(
+            key   : 'db.dsn',
             value : 'postgres://…',
+            type  : ParameterType::Setting,
             secret: SecretPolicy::CREDENTIAL,
-            tags  : ['api'],
+            tags  : ['api' => 'api'],
         );
 
-        /** @var TestParameter $restored */
+        /** @var Parameter $restored */
         $restored = \unserialize(\serialize($parameter));
 
         self::assertSame('postgres://…', $restored->value);
-        self::assertTrue($restored->isSecret(SecretPolicy::CREDENTIAL));
-        self::assertSame('[credential::string]', $restored->__debugInfo()['value']);
+        self::assertSame(SecretPolicy::CREDENTIAL, $restored->secret);
+        self::assertSame('[secret::credential]', $restored->__debugInfo()['value']);
     }
 
-    public function testParameterCredentialSerializeThrowsWhenPublic(): void
+    public function testParameterCredentialSerializeThrowsInHttpContext(): void
     {
-        $this->becomePublic();
+        $this->becomeOutbound();
 
-        $parameter = new TestParameter(
-            key   : 'Db.Dsn',
+        $parameter = new Parameter(
+            key   : 'db.dsn',
             value : 'postgres://…',
+            type  : ParameterType::Setting,
             secret: SecretPolicy::CREDENTIAL,
-            tags  : ['api'],
+            tags  : ['api' => 'api'],
         );
 
         $this->expectException(RuntimeException::class);
@@ -207,12 +191,12 @@ final class SerializerTest extends TestCase
         }
     }
 
-    public function testNestedCredentialThrowsWhenPublicWithoutExporter(): void
+    public function testNestedCredentialThrowsInHttpContextWithoutExporter(): void
     {
-        $this->becomePublic();
+        $this->becomeOutbound();
 
         $outer = new SerializerNestedCredentialFixture(
-            new Value('runtime-only', SecretPolicy::CREDENTIAL),
+            new SerializerCredentialBearer('runtime-only'),
         );
 
         $this->expectException(RuntimeException::class);
@@ -220,18 +204,79 @@ final class SerializerTest extends TestCase
         \serialize($outer);
     }
 
-    private function becomePublic(): void
+    public function testRuntimeContextAllowsCredentialSerializeAfterRequestContext(): void
     {
-        $this->resetAppEnv();
-        new AppEnv(AppEnvironment::Production, public: true);
-        self::assertTrue(AppEnv::isPublic());
+        $this->becomeOutbound();
+        $this->contextManager->update(KernelContext::Runtime);
+
+        $parameter = new Parameter(
+            key   : 'db.dsn',
+            value : 'postgres://…',
+            type  : ParameterType::Setting,
+            secret: SecretPolicy::CREDENTIAL,
+            tags  : ['api' => 'api'],
+        );
+
+        $state = $parameter->__serialize();
+
+        self::assertSame('postgres://…', $state['value']);
+
+        /** @var Parameter $hydrated */
+        $hydrated = eval('return ' . $parameter->_export());
+        self::assertSame('postgres://…', $hydrated->value);
     }
 
-    private function resetAppEnv(): void
+    public function testExportThrowsOnCredentialWhenRequest(): void
     {
-        $property = new \ReflectionProperty(AppEnv::class, 'instance');
-        $property->setValue(null, null);
-        Exporter::reset();
+        $this->becomeOutbound();
+        self::assertTrue(Context::is(KernelContext::Request));
+
+        $parameter = new Parameter(
+            key   : 'db.dsn',
+            value : 'postgres://…',
+            type  : ParameterType::Setting,
+            secret: SecretPolicy::CREDENTIAL,
+            tags  : [],
+        );
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Cannot serialize credential property $value');
+        $parameter->_export();
+    }
+
+    public function testExportAllowsCredentialWhenRuntime(): void
+    {
+        $this->contextManager->update(KernelContext::Runtime);
+
+        $parameter = new Parameter(
+            key   : 'db.dsn',
+            value : 'postgres://…',
+            type  : ParameterType::Setting,
+            secret: SecretPolicy::CREDENTIAL,
+            tags  : [],
+        );
+
+        $exported = $parameter->_export();
+        /** @var Parameter $hydrated */
+        $hydrated = eval('return ' . $exported);
+
+        self::assertSame('postgres://…', $hydrated->value);
+        self::assertSame(SecretPolicy::CREDENTIAL, $hydrated->secret);
+    }
+
+    private function becomeOutbound(): void
+    {
+        $this->contextManager->update(KernelContext::Request);
+        self::assertTrue(Context::is(KernelContext::Request));
+    }
+
+    private function resetIsolation(): void
+    {
+        $property = new \ReflectionProperty(Singleton::class, '_instance');
+        $property->setValue(null, []);
+
+        $property = new \ReflectionProperty(ContextManager::class, 'initialized');
+        $property->setValue(null, false);
     }
 }
 
@@ -337,11 +382,21 @@ class SerializerRoundTripFixture extends SerializerRoundTripParentFixture implem
     }
 }
 
+final class SerializerCredentialBearer implements Serializable
+{
+    use Serializer;
+
+    public function __construct(
+        #[Secret(type: SecretPolicy::CREDENTIAL)]
+        public string $value,
+    ) {}
+}
+
 final class SerializerNestedCredentialFixture implements Serializable
 {
     use Serializer;
 
     public function __construct(
-        public Value $secret,
+        public SerializerCredentialBearer $secret,
     ) {}
 }

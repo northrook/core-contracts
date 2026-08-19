@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts\AssetCollection;
-use Northrook\Contracts\AssetInterface;
-use Northrook\Contracts\AssetOrigin;
-use Northrook\Contracts\AssetType;
-use Northrook\Contracts\ErrorBuffer;
-use Northrook\Contracts\RenderStrategy;
-use Northrook\Contracts\RuntimeException;
+use Northrook\AssetInterface;
+use Northrook\Assets\AssetCollection;
+use Northrook\Assets\AssetOrigin;
+use Northrook\Assets\AssetType;
+use Northrook\Assets\RenderStrategy;
 use Northrook\Contracts\Tests\Support\AssetsTestOtherStubAsset;
 use Northrook\Contracts\Tests\Support\AssetsTestProviderStub;
 use Northrook\Contracts\Tests\Support\AssetsTestStubAsset;
 use Northrook\Contracts\Tests\Support\MixedArray;
+use Northrook\ErrorHandler\ErrorBuffer;
+use Northrook\RuntimeException;
 use PHPUnit\Framework\TestCase;
 
 final class AssetsTest extends TestCase
@@ -62,11 +62,11 @@ final class AssetsTest extends TestCase
             self::assertSame('Duplicate asset ID: pkg.style', $exception->getMessage());
 
             // Context is deep-frozen; objects become reflective descriptions.
-            $assets    = MixedArray::at($exception->context, 'assets');
+            $assets    = MixedArray::at($exception->getContext(), 'assets');
             $first     = MixedArray::at($assets, 0);
             $second    = MixedArray::at($assets, 1);
-            $resolving = MixedArray::at($exception->context, 'resolving');
-            $duplicate = MixedArray::at($exception->context, 'duplicate');
+            $resolving = MixedArray::at($exception->getContext(), 'resolving');
+            $duplicate = MixedArray::at($exception->getContext(), 'duplicate');
 
             self::assertCount(2, $assets);
             self::assertSame(AssetsTestStubAsset::class, $first['class']);

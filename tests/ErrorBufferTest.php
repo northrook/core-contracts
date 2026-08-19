@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts\ErrorBuffer;
-use Northrook\Contracts\Exception\RuntimeError;
+use Northrook\ErrorHandler\ErrorBuffer;
+use Northrook\ErrorHandler\RuntimeError;
 use PHPUnit\Framework\TestCase;
 
 final class ErrorBufferTest extends TestCase

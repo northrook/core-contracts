@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests\Support;
 
-use Northrook\Contracts\FilesystemException;
-use Northrook\Contracts\FilesystemInterface;
+use Northrook\Filesystem\FilesystemException;
+use Northrook\FilesystemInterface;
 
 /**
  * Minimal {@see FilesystemInterface} that records calls and delegates to native PHP.

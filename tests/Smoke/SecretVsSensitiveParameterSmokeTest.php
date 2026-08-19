@@ -10,15 +10,18 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests\Smoke;
 
-use Northrook\AppEnv;
-use Northrook\Contracts\AppEnvironment;
-use Northrook\Contracts\RuntimeException;
-use Northrook\Contracts\Secret;
+use Northrook\Container\Secret;
+use Northrook\Context;
+use Northrook\Context\AppEnv;
+use Northrook\Context\ContextManager;
 use Northrook\Contracts\Serializable;
-use Northrook\Contracts\Serializer;
-use Northrook\Contracts\Snapshot;
-use Northrook\Contracts\Value;
-use Northrook\Contracts\Value\Secret as SecretPolicy;
+use Northrook\Contracts\Tests\Support\SecretMask;
+use Northrook\Kernel\KernelContext;
+use Northrook\Parameter\Secret as SecretPolicy;
+use Northrook\RuntimeException;
+use Northrook\Serializer;
+use Northrook\Singleton;
+use Northrook\Snapshot;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
@@ -39,14 +42,22 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
 {
     public const string MARKER = 'SMOKE_SECRET_MARKER_hunter2';
 
+    private ContextManager $contextManager;
+
     protected function setUp(): void
     {
-        $this->resetAppEnv();
+        $this->resetIsolation();
+
+        $this->contextManager = new ContextManager;
+        Context::register(
+            appEnv        : AppEnv::Testing,
+            contextManager: $this->contextManager,
+        );
     }
 
     protected function tearDown(): void
     {
-        $this->resetAppEnv();
+        $this->resetIsolation();
     }
 
     // ─── helpers ───────────────────────────────────────────────────────────
@@ -74,17 +85,18 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
         return \str_contains($haystack, $needle);
     }
 
-    private function becomePublic(): void
+    private function becomeOutbound(): void
     {
-        $this->resetAppEnv();
-        new AppEnv(AppEnvironment::Production, public: true);
-        self::assertTrue(AppEnv::isPublic());
+        $this->contextManager->update(KernelContext::Request);
     }
 
-    private function resetAppEnv(): void
+    private function resetIsolation(): void
     {
-        $property = new \ReflectionProperty(AppEnv::class, 'instance');
-        $property->setValue(null, null);
+        $property = new \ReflectionProperty(Singleton::class, '_instance');
+        $property->setValue(null, []);
+
+        $property = new \ReflectionProperty(ContextManager::class, 'initialized');
+        $property->setValue(null, false);
     }
 
     // ─── Native: SensitiveParameter attribute on stored properties ─────────
@@ -488,8 +500,8 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
         $info = $obj->__debugInfo();
 
         self::assertSame('ada', $info['username']);
-        self::assertSame('[sensitive::string]', $info['password']);
-        self::assertSame('[credential::string]', $info['dsn']);
+        self::assertSame(SecretMask::sensitive(self::MARKER), $info['password']);
+        self::assertSame('[secret::credential]', $info['dsn']);
         self::assertFalse(self::leaks(\var_export($info, true)));
     }
 
@@ -499,8 +511,8 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
         $out = self::capture(static fn() => \var_dump($obj));
 
         self::assertFalse(self::leaks($out));
-        self::assertStringContainsString('[sensitive::string]', $out);
-        self::assertStringContainsString('[credential::string]', $out);
+        self::assertStringContainsString(SecretMask::sensitive(self::MARKER), $out);
+        self::assertStringContainsString('[secret::credential]', $out);
     }
 
     public function testSerializerPrintRHonoursDebugInfo(): void
@@ -537,10 +549,8 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
         self::assertTrue(self::leaks(\var_export($arr, true)));
     }
 
-    public function testSerializerSerializeAllowsBothTiersWhenNotPublic(): void
+    public function testSerializerSerializeAllowsBothTiersOutsideHttpContext(): void
     {
-        self::assertFalse(AppEnv::isPublic());
-
         $sensitiveOnly = SerializedSensitiveOnly::make();
         self::assertTrue(self::leaks(\serialize($sensitiveOnly)), 'sensitive may leave via serialize');
 
@@ -548,21 +558,21 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
         self::assertTrue(self::leaks(\serialize($dual)), 'credential may leave when trusted');
     }
 
-    public function testSerializerSerializeThrowsCredentialWhenPublic(): void
+    public function testSerializerSerializeThrowsCredentialInHttpContext(): void
     {
-        $this->becomePublic();
+        $this->becomeOutbound();
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Cannot serialize credential property $dsn');
         \serialize(SerializedDual::make());
     }
 
-    public function testSerializerJsonAllowsSensitiveThrowsCredentialWhenPublic(): void
+    public function testSerializerJsonAllowsSensitiveThrowsCredentialInHttpContext(): void
     {
         $sensitiveOnly = SerializedSensitiveOnly::make();
         self::assertTrue(self::leaks((string) \json_encode($sensitiveOnly)));
 
-        $this->becomePublic();
+        $this->becomeOutbound();
 
         $this->expectException(RuntimeException::class);
         \json_encode(SerializedDual::make(), \JSON_THROW_ON_ERROR);
@@ -583,7 +593,7 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
         $info = $obj->__debugInfo();
 
         self::assertSame(
-            '[sensitive::' . \SensitiveParameter::class . ']',
+            '[secret::' . \SensitiveParameter::class . ']',
             $info['password'],
         );
         self::assertSame(self::MARKER, $obj->__serialize()['password'], 'SP ≈ sensitive: serialize OK');
@@ -595,69 +605,19 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
         $credentialFirst = SerializedBothAttributesSecretFirst::make();
         $info            = $credentialFirst->__debugInfo();
 
-        self::assertSame('[credential::' . \SensitiveParameter::class . ']', $info['token']);
+        self::assertSame('[secret::credential]', $info['token']);
         self::assertSame(self::MARKER, $credentialFirst->__serialize()['token'], 'credential OK when trusted');
 
         // Reverse declaration order: SP on property site via promoted + Secret(CREDENTIAL) still wins
         $sensitiveFirst = SerializedBothAttributesSensitiveFirst::make();
         self::assertSame(
-            '[credential::' . \SensitiveParameter::class . ']',
+            '[secret::credential]',
             $sensitiveFirst->__debugInfo()['token'],
         );
 
-        $this->becomePublic();
+        $this->becomeOutbound();
         $this->expectException(RuntimeException::class);
         $credentialFirst->__serialize();
-    }
-
-    // ─── Package: Value payload policy ─────────────────────────────────────
-
-    public function testValueSensitiveAndCredentialChannels(): void
-    {
-        $sensitive  = new Value(self::MARKER, SecretPolicy::SENSITIVE);
-        $credential = new Value(self::MARKER, SecretPolicy::CREDENTIAL);
-
-        self::assertSame('[sensitive::string]', $sensitive->__debugInfo()['value']);
-        self::assertSame('[credential::string]', $credential->__debugInfo()['value']);
-        self::assertSame(self::MARKER, $sensitive->__serialize()['value']);
-        self::assertSame(self::MARKER, $credential->__serialize()['value'], 'credential OK when trusted');
-
-        $this->becomePublic();
-        $this->expectException(RuntimeException::class);
-        $credential->__serialize();
-    }
-
-    public function testValueNestedInPlainObjectJsonLeaksWithoutJsonSerializableParent(): void
-    {
-        // engine-limit / standard: wrappers must implement JsonSerializable (Serializable does)
-        $bag         = new \stdClass;
-        $bag->secret = new Value(self::MARKER, SecretPolicy::SENSITIVE);
-
-        // stdClass json_encode walks public props; nested Value IS JsonSerializable
-        $json = \json_encode($bag);
-        self::assertTrue(self::leaks((string) $json), 'sensitive Value still encodes plaintext in JSON');
-    }
-
-    public function testValueNestedCredentialThrowsDuringJsonEncodeWhenPublic(): void
-    {
-        $this->becomePublic();
-
-        $bag = new class(new Value(self::MARKER, SecretPolicy::CREDENTIAL)) implements \JsonSerializable {
-            public function __construct(
-                public Value $secret,
-            ) {}
-
-            /**
-             * @return array{secret: Value}
-             */
-            public function jsonSerialize(): array
-            {
-                return ['secret' => $this->secret];
-            }
-        };
-
-        $this->expectException(RuntimeException::class);
-        \json_encode($bag, \JSON_THROW_ON_ERROR);
     }
 
     // ─── Package: Snapshot (reflective walker) ─────────────────────────────
@@ -706,7 +666,7 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
         $obj  = ChildWithParentSecret::make();
         $info = $obj->__debugInfo();
 
-        self::assertSame('[sensitive::string]', $info['parentSecret']);
+        self::assertSame(SecretMask::sensitive(self::MARKER), $info['parentSecret']);
         self::assertSame('visible', $info['childPlain']);
         self::assertSame(self::MARKER, $obj->parentSecret());
     }
@@ -729,7 +689,7 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
         $obj           = new NonPromotedSecretProperty;
         $obj->password = self::MARKER;
 
-        self::assertSame('[sensitive::string]', $obj->__debugInfo()['password']);
+        self::assertSame(SecretMask::sensitive(self::MARKER), $obj->__debugInfo()['password']);
         self::assertSame(self::MARKER, $obj->__serialize()['password']);
     }
 
@@ -737,7 +697,7 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
     {
         $obj = new ParamOnlySecret(self::MARKER);
 
-        self::assertSame('[sensitive::string]', $obj->__debugInfo()['password']);
+        self::assertSame(SecretMask::sensitive(self::MARKER), $obj->__debugInfo()['password']);
     }
 
     // ─── Reflection / debug_zval / export footguns ─────────────────────────
@@ -758,7 +718,7 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
         $out = self::capture(static fn() => \debug_zval_dump($obj));
 
         self::assertFalse(self::leaks($out));
-        self::assertStringContainsString('[sensitive::string]', $out);
+        self::assertStringContainsString(SecretMask::sensitive(self::MARKER), $out);
     }
 
     public function testDebugZvalDumpLeaksWithoutDebugInfo(): void
@@ -784,7 +744,7 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
         $clone = clone $obj;
 
         self::assertSame(self::MARKER, $clone->password);
-        self::assertSame('[sensitive::string]', $clone->__debugInfo()['password']);
+        self::assertSame(SecretMask::sensitive(self::MARKER), $clone->__debugInfo()['password']);
     }
 
     // ─── Symfony VarExporter (export / persist channel) ────────────────────
@@ -798,32 +758,21 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
         self::assertStringContainsString('states', $code, 'uses __serialize state path');
     }
 
-    public function testVarExporterPassesThroughCredentialWhenNotPublic(): void
+    public function testVarExporterPassesThroughCredentialOutsideHttpContext(): void
     {
-        self::assertFalse(AppEnv::isPublic());
         $code = VarExporter::export(SerializedDual::make());
 
         self::assertTrue(self::leaks($code), 'trusted persist may carry credential');
     }
 
-    public function testVarExporterThrowsOnCredentialWhenPublic(): void
+    public function testVarExporterThrowsOnCredentialInHttpContext(): void
     {
-        $this->becomePublic();
+        $this->becomeOutbound();
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Cannot serialize credential property $dsn');
 
         VarExporter::export(SerializedDual::make());
-    }
-
-    public function testVarExporterThrowsOnCredentialValueWhenPublic(): void
-    {
-        $this->becomePublic();
-
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Cannot serialize credential property $value');
-
-        VarExporter::export(new Value(self::MARKER, SecretPolicy::CREDENTIAL));
     }
 
     public function testVarExporterLeaksNativeSensitiveParameterProperties(): void
@@ -868,7 +817,7 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
 
         self::assertInstanceOf(SerializedSensitiveOnly::class, $restored);
         self::assertSame(self::MARKER, $restored->password);
-        self::assertSame('[sensitive::string]', $restored->__debugInfo()['password']);
+        self::assertSame(SecretMask::sensitive(self::MARKER), $restored->__debugInfo()['password']);
     }
 
     public function testVarExporterNestedSerializerStillExportsSensitiveInner(): void
@@ -978,7 +927,7 @@ final class SerializedDual implements Serializable
         public string $username,
         #[Secret]
         public string $password,
-        #[Secret(Secret::CREDENTIAL)]
+        #[Secret(SecretPolicy::CREDENTIAL)]
         public string $dsn,
     ) {}
 
@@ -1022,7 +971,7 @@ final class SerializedBothAttributesSecretFirst implements Serializable
 {
     use Serializer;
 
-    #[Secret(Secret::CREDENTIAL)]
+    #[Secret(SecretPolicy::CREDENTIAL)]
     public string $token;
 
     public function __construct(
@@ -1050,7 +999,7 @@ final class SerializedBothAttributesSensitiveFirst implements Serializable
 
     public function __construct(
         #[\SensitiveParameter]
-        #[Secret(Secret::CREDENTIAL)]
+        #[Secret(SecretPolicy::CREDENTIAL)]
         string $token,
     ) {
         $this->token = $token;

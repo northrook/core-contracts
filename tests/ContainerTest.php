@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts\CompilerInterface;
-use Northrook\Contracts\Container\AutodiscoverInterface;
-use Northrook\Contracts\Container\BindingAttribute;
-use Northrook\Contracts\Container\CompilerPass;
-use Northrook\Contracts\Container\CompilerPassInterface;
-use Northrook\Contracts\Container\ServiceBinding;
-use Northrook\Contracts\ContainerInterface;
-use Northrook\Contracts\InvalidArgumentException;
-use Northrook\Contracts\Service\Inline;
-use Northrook\Contracts\Service\Scoped;
-use Northrook\Contracts\Service\Shared;
-use Northrook\Contracts\Service\Unique;
+use Northrook\CompilerInterface;
+use Northrook\Container\AutodiscoverInterface;
+use Northrook\Container\BindingAttribute;
+use Northrook\Container\CompilerPass;
+use Northrook\Container\CompilerPassInterface;
+use Northrook\Container\Service\Inline;
+use Northrook\Container\Service\Scoped;
+use Northrook\Container\Service\Shared;
+use Northrook\Container\Service\Unique;
+use Northrook\Container\ServiceBinding;
+use Northrook\ContainerInterface;
+use Northrook\InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 

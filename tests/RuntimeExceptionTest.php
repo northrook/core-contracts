@@ -4,29 +4,13 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts\ErrorBuffer;
-use Northrook\Contracts\Exception\RuntimeError;
-use Northrook\Contracts\RuntimeException;
 use Northrook\Contracts\Tests\Support\MixedArray;
+use Northrook\RuntimeException;
 use PHPUnit\Framework\TestCase;
-
-use const Northrook\Contracts\LOG_LEVEL;
 
 final class RuntimeExceptionTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        ErrorBuffer::shared()->reset();
-        ErrorBuffer::setShared(null);
-    }
-
-    protected function tearDown(): void
-    {
-        ErrorBuffer::shared()->reset();
-        ErrorBuffer::setShared(null);
-    }
-
-    public function testFromAcceptsStringThrowableCodes(): void
+    public function testFromMapsNonIntegerCodesToZero(): void
     {
         $foreign = new class('sqlstate failure') extends \Exception {
             /** @var string|int */
@@ -38,6 +22,20 @@ final class RuntimeExceptionTest extends TestCase
         self::assertSame('sqlstate failure', $wrapped->getMessage());
         self::assertSame(0, $wrapped->getCode());
         self::assertSame($foreign, $wrapped->getPrevious());
+        self::assertSame('42S22', $foreign->getCode());
+    }
+
+    public function testFromMapsDigitStringCodesToZero(): void
+    {
+        $foreign = new class('integrity constraint') extends \Exception {
+            /** @var string|int */
+            protected $code = '23000';
+        };
+
+        $wrapped = RuntimeException::from($foreign);
+
+        self::assertSame(0, $wrapped->getCode());
+        self::assertSame('23000', $wrapped->getPrevious()?->getCode());
     }
 
     public function testFromPreservesIntegerCodes(): void
@@ -53,7 +51,7 @@ final class RuntimeExceptionTest extends TestCase
     {
         $wrapped = RuntimeException::from(new \RuntimeException('boom'), ['origin' => 'test']);
 
-        self::assertSame('test', $wrapped->context['origin']);
+        self::assertSame('test', $wrapped->getContext()['origin']);
     }
 
     public function testDefaultsToUnspecifiedError(): void
@@ -61,9 +59,9 @@ final class RuntimeExceptionTest extends TestCase
         $exception = new RuntimeException;
 
         self::assertSame('Unspecified error', $exception->getMessage());
-        self::assertSame(LOG_LEVEL['critical'], $exception->getCode());
+        self::assertSame(0, $exception->getCode());
         self::assertNull($exception->getPrevious());
-        self::assertSame([], $exception->context);
+        self::assertSame(['errors' => []], $exception->getContext());
     }
 
     public function testMessageIsTrimmed(): void
@@ -81,14 +79,6 @@ final class RuntimeExceptionTest extends TestCase
         self::assertInstanceOf(\LogicException::class, $exception->getPrevious());
     }
 
-    public function testPreviousFalseSkipsPreviousChain(): void
-    {
-        $exception = new RuntimeException(previous: false);
-
-        self::assertNull($exception->getPrevious());
-        self::assertSame('Unspecified error', $exception->getMessage());
-    }
-
     public function testContextIsDeepFrozenAtConstruction(): void
     {
         $payload        = new \stdClass;
@@ -98,7 +88,7 @@ final class RuntimeExceptionTest extends TestCase
 
         $payload->value = 'after';
 
-        $payload = MixedArray::at($exception->context, 'payload');
+        $payload = MixedArray::at($exception->getContext(), 'payload');
 
         self::assertSame(\stdClass::class, $payload['class']);
         self::assertSame('before', MixedArray::at($payload, 'properties')['value']);
@@ -115,48 +105,26 @@ final class RuntimeExceptionTest extends TestCase
             'resource' => $resource,
         ]);
 
-        self::assertIsString($exception->context['closure']);
-        self::assertStringStartsWith('{closure:', $exception->context['closure']);
+        $context = $exception->getContext();
+
+        self::assertIsString($context['closure']);
+        self::assertStringStartsWith('{closure:', $context['closure']);
         self::assertStringContainsString(
             self::class . '::testContextReplacesUnserializableValuesWithDescriptions()',
-            $exception->context['closure'],
+            $context['closure'],
         );
-        self::assertSame('[resource: stream]', $exception->context['resource']);
+        self::assertSame('[resource: stream]', $context['resource']);
 
         \fclose($resource);
     }
 
-    public function testErrorsFreezeBufferedPhpErrors(): void
+    public function testFromMergesExceptionInterfaceContext(): void
     {
-        ErrorBuffer::shared()->recordFrom(\E_USER_WARNING, 'buffered one', 'a.php', 1);
-        ErrorBuffer::shared()->recordFrom(\E_USER_NOTICE, 'buffered two', 'b.php', 2);
+        $source = new RuntimeException('source', ['origin' => 'inner']);
 
-        $exception = new RuntimeException('with errors');
+        $wrapped = RuntimeException::from($source, ['layer' => 'outer']);
 
-        self::assertCount(2, $exception->errors);
-        self::assertContainsOnlyInstancesOf(RuntimeError::class, $exception->errors);
-        self::assertSame('buffered one', $exception->errors[0]->message);
-        self::assertSame('buffered two', $exception->errors[1]->message);
-
-        ErrorBuffer::shared()->reset();
-
-        self::assertCount(2, $exception->errors);
-    }
-
-    public function testErrorsEmptyWhenBufferIsEmpty(): void
-    {
-        $exception = new RuntimeException('no errors');
-
-        self::assertSame([], $exception->errors);
-    }
-
-    public function testErrorsDoNotLeakIntoContext(): void
-    {
-        ErrorBuffer::shared()->recordFrom(\E_USER_WARNING, 'buffered', 'a.php', 1);
-
-        $exception = new RuntimeException('separation', ['key' => 'value']);
-
-        self::assertSame(['key' => 'value'], $exception->context);
-        self::assertCount(1, $exception->errors);
+        self::assertSame('inner', $wrapped->getContext()['origin']);
+        self::assertSame('outer', $wrapped->getContext()['layer']);
     }
 }

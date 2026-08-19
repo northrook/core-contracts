@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts\AssetType;
-use Northrook\Contracts\Secret;
-use Northrook\Contracts\Snapshot;
-use Northrook\Contracts\System;
+use Northrook\Assets\AssetType;
+use Northrook\Container\Secret;
 use Northrook\Contracts\Tests\Support\MixedArray;
-use Northrook\Contracts\Value;
-use Northrook\Contracts\Value\Secret as SecretPolicy;
+use Northrook\Contracts\Tests\Support\SecretMask;
+use Northrook\Parameter;
+use Northrook\Parameter\Secret as SecretPolicy;
+use Northrook\Parameter\Type as ParameterType;
+use Northrook\ParameterReference;
+use Northrook\Snapshot;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -217,13 +219,6 @@ final class SnapshotTest extends TestCase
         );
     }
 
-    public function testSecretInstanceIsRedacted(): void
-    {
-        $value = Snapshot::value(new Value('hunter2', SecretPolicy::SENSITIVE));
-
-        self::assertSame('[sensitive::string]', $value);
-    }
-
     public function testSecretAttributeOnPropertyIsRedacted(): void
     {
         $value = Snapshot::value(new SnapshotSecretPropertyFixture('top-secret', 'visible'));
@@ -232,7 +227,7 @@ final class SnapshotTest extends TestCase
             [
                 'class'      => SnapshotSecretPropertyFixture::class,
                 'properties' => [
-                    'token' => '[sensitive::string]',
+                    'token' => SecretMask::sensitive('top-secret'),
                     'label' => 'visible',
                 ],
             ],
@@ -243,15 +238,89 @@ final class SnapshotTest extends TestCase
     public function testSecretInContextIsRedacted(): void
     {
         $frozen = Snapshot::context([
-            'password' => new Value('hunter2', SecretPolicy::SENSITIVE),
+            'password' => new Parameter(
+                key   : 'auth.password',
+                value : 'hunter2',
+                type  : ParameterType::Setting,
+                secret: SecretPolicy::SENSITIVE,
+                tags  : [],
+            ),
             'user'     => new SnapshotSecretPropertyFixture('abc', 'ada'),
         ]);
 
-        $userProps = MixedArray::at(MixedArray::at($frozen, 'user'), 'properties');
+        $passwordProps = MixedArray::at(MixedArray::at($frozen, 'password'), 'properties');
+        $userProps     = MixedArray::at(MixedArray::at($frozen, 'user'), 'properties');
 
-        self::assertSame('[sensitive::string]', $frozen['password']);
-        self::assertSame('[sensitive::string]', $userProps['token']);
+        self::assertSame(SecretMask::sensitive('hunter2'), $passwordProps['value']);
+        self::assertSame(SecretMask::sensitive('abc'), $userProps['token']);
         self::assertSame('ada', $userProps['label']);
+    }
+
+    public function testParameterPayloadIsRedacted(): void
+    {
+        $sensitive = new Parameter(
+            key   : 'app.token',
+            value : 'secret123',
+            type  : ParameterType::Setting,
+            secret: SecretPolicy::SENSITIVE,
+            tags  : ['api' => 'api'],
+        );
+        $credential = new Parameter(
+            key   : 'db.dsn',
+            value : 'postgres://…',
+            type  : ParameterType::Setting,
+            secret: SecretPolicy::CREDENTIAL,
+            tags  : [],
+        );
+
+        $sensitiveSnap   = MixedArray::from(Snapshot::value($sensitive));
+        $sensitiveProps  = MixedArray::at($sensitiveSnap, 'properties');
+        $credentialSnap  = MixedArray::from(Snapshot::value($credential));
+        $credentialProps = MixedArray::at($credentialSnap, 'properties');
+
+        self::assertSame(Parameter::class, $sensitiveSnap['class']);
+        self::assertSame('app.token', $sensitiveProps['key']);
+        self::assertSame(SecretMask::sensitive('secret123'), $sensitiveProps['value']);
+        self::assertSame('Setting', $sensitiveProps['type']);
+        self::assertSame(['api' => 'api'], $sensitiveProps['tags']);
+
+        self::assertSame(Parameter::class, $credentialSnap['class']);
+        self::assertSame('db.dsn', $credentialProps['key']);
+        self::assertSame('[secret::credential]', $credentialProps['value']);
+    }
+
+    public function testParameterReferencePayloadIsRedacted(): void
+    {
+        $reference = new ParameterReference(
+            'app.token',
+            'secret123',
+            SecretPolicy::SENSITIVE,
+        );
+
+        $snap  = MixedArray::from(Snapshot::value($reference));
+        $props = MixedArray::at($snap, 'properties');
+
+        self::assertSame(ParameterReference::class, $snap['class']);
+        self::assertSame('app.token', $props['key']);
+        self::assertSame(SecretMask::sensitive('secret123'), $props['value']);
+    }
+
+    public function testParameterInContextKeepsEnvelope(): void
+    {
+        $parameter = new Parameter(
+            key   : 'db.dsn',
+            value : 'postgres://…',
+            type  : ParameterType::Setting,
+            secret: SecretPolicy::CREDENTIAL,
+            tags  : [],
+        );
+
+        $frozen = Snapshot::context(['db' => $parameter]);
+        $props  = MixedArray::at(MixedArray::at($frozen, 'db'), 'properties');
+
+        self::assertSame(Parameter::class, MixedArray::at($frozen, 'db')['class']);
+        self::assertSame('db.dsn', $props['key']);
+        self::assertSame('[secret::credential]', $props['value']);
     }
 
     public function testCommitOnDestructIsNotInvokedDuringSnapshot(): void
@@ -310,44 +379,6 @@ final class SnapshotTest extends TestCase
             $intSnapshot->jsonSerialize(),
         );
         self::assertSame('{"type":"integer","value":123}', (string) $intSnapshot);
-    }
-
-    #[DataProvider('provideIniBytes')]
-    public function testParseIniBytes(
-        string $raw,
-        int    $expected,
-    ): void {
-        self::assertSame($expected, System::parseIniBytes($raw));
-    }
-
-    /**
-     * @return iterable<string, array{0: string, 1: int}>
-     */
-    public static function provideIniBytes(): iterable
-    {
-        yield 'unlimited' => ['-1', -1];
-        yield 'bytes' => ['1024', 1024];
-        yield 'kilobytes' => ['2K', 2048];
-        yield 'megabytes' => ['128M', 128 * 1024 * 1024];
-        yield 'gigabytes' => ['1G', 1024 * 1024 * 1024];
-        yield 'lowercase' => ['16m', 16 * 1024 * 1024];
-    }
-
-    public function testMemoryRemainingAgreesWithLimit(): void
-    {
-        $limit = System::memoryLimit();
-
-        if ($limit === null) {
-            self::assertNull(System::memoryRemaining());
-            self::assertGreaterThan(0, System::memoryUsage());
-
-            return;
-        }
-
-        $remaining = System::memoryRemaining();
-
-        self::assertNotNull($remaining);
-        self::assertSame($limit - System::memoryUsage(), $remaining);
     }
 }
 

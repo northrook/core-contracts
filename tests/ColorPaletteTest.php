@@ -4,13 +4,26 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts\ColorPalette;
-use Northrook\Contracts\ColorScheme;
-use Northrook\Contracts\RuntimeException;
+use Northrook\ColorPalette;
+use Northrook\ColorScheme;
+use Northrook\Contracts\Tests\Support\RegistersTestContext;
+use Northrook\RuntimeException;
 use PHPUnit\Framework\TestCase;
 
 final class ColorPaletteTest extends TestCase
 {
+    use RegistersTestContext;
+
+    protected function setUp(): void
+    {
+        $this->setUpTestContext();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->tearDownTestContext();
+    }
+
     public function testSchemeHelpers(): void
     {
         $light = $this->palette(scheme: ColorScheme::Light);

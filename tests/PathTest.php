@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts\Directory;
-use Northrook\Contracts\File;
-use Northrook\Contracts\InvalidArgumentException;
-use Northrook\Contracts\Path;
-use Northrook\Contracts\RuntimeException;
-use Northrook\Contracts\Uri;
+use Northrook\Filesystem\Directory;
+use Northrook\Filesystem\File;
+use Northrook\Filesystem\Path;
+use Northrook\InvalidArgumentException;
+use Northrook\RuntimeException;
+use Northrook\Uri;
 use PHPUnit\Framework\TestCase;
 
 final class PathTest extends TestCase

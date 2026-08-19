@@ -4,17 +4,30 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\AppEnv;
-use Northrook\Contracts\AppEnvironment;
-use Northrook\Contracts\ErrorReport;
-use Northrook\Contracts\Exception\ErrorSnapshot;
-use Northrook\Contracts\Exception\RuntimeError;
-use Northrook\Contracts\Exception\StackFrame;
+use Northrook\Context;
+use Northrook\Context\AppEnv;
 use Northrook\Contracts\Tests\Support\MixedArray;
+use Northrook\Contracts\Tests\Support\RegistersTestContext;
+use Northrook\ErrorHandler\ErrorReport;
+use Northrook\ErrorHandler\ErrorSnapshot;
+use Northrook\ErrorHandler\RuntimeError;
+use Northrook\ErrorHandler\StackFrame;
 use PHPUnit\Framework\TestCase;
 
 final class ErrorReportTest extends TestCase
 {
+    use RegistersTestContext;
+
+    protected function setUp(): void
+    {
+        $this->setUpTestContext();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->tearDownTestContext();
+    }
+
     public function testConstructorFieldsAreAccessible(): void
     {
         $snapshot = $this->snapshot();
@@ -43,7 +56,7 @@ final class ErrorReportTest extends TestCase
         self::assertSame(['user' => 'bob'], $report->dumps);
         self::assertSame($phpError, $report->phpError);
         self::assertSame([$phpError], $report->phpErrors);
-        self::assertSame(AppEnv::getEnvironment(), $report->environment);
+        self::assertSame(Context::get()->appEnv, $report->environment);
     }
 
     public function testDefaultsAreEmpty(): void
@@ -120,7 +133,7 @@ final class ErrorReportTest extends TestCase
         );
         self::assertSame('shape', $serialized['reference']);
         self::assertSame('warning', $serialized['severity']);
-        self::assertSame('testing', $serialized['environment']);
+        self::assertSame('Testing', $serialized['environment']);
         self::assertInstanceOf(ErrorSnapshot::class, $serialized['error']);
         self::assertArrayHasKey('error', $serialized);
         self::assertArrayNotHasKey('throwable', $serialized);
@@ -136,8 +149,8 @@ final class ErrorReportTest extends TestCase
             stackFrames: [],
         );
 
-        self::assertInstanceOf(AppEnvironment::class, $report->environment);
-        self::assertSame(AppEnvironment::Testing, $report->environment);
+        self::assertInstanceOf(AppEnv::class, $report->environment);
+        self::assertSame(AppEnv::Testing, $report->environment);
     }
 
     public function testStringRoundTripsThroughJson(): void
@@ -159,7 +172,7 @@ final class ErrorReportTest extends TestCase
 
         self::assertSame('round-trip', $decoded['reference']);
         self::assertSame('alert', $decoded['severity']);
-        self::assertSame('testing', $decoded['environment']);
+        self::assertSame('Testing', $decoded['environment']);
         self::assertSame('RoundTripError', $error['class']);
         self::assertSame(['key' => 'value'], $decoded['context']);
         self::assertSame('engine error', $firstPhp['message']);

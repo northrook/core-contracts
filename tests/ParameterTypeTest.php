@@ -4,342 +4,188 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts\OverflowException;
-use Northrook\Contracts\Parameter\Type;
-use Northrook\Contracts\TypeException;
+use Northrook\Parameter\Type;
+use Northrook\RuntimeException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 enum ParameterTypeUnitFixture
 {
     case Alpha;
-    case Beta;
 }
 
 enum ParameterTypeIntBackedFixture: int
 {
     case One = 1;
-    case Two = 2;
-}
-
-enum ParameterTypeStringBackedFixture: string
-{
-    case Foo = 'foo';
-    case Bar = 'bar';
 }
 
 final class ParameterTypeTest extends TestCase
 {
-    // -------------------------------------------------------------------------
-    // Scalars / null
-    // -------------------------------------------------------------------------
-
-    #[DataProvider('provideScalarResolutions')]
-    public function testFromResolvesScalars(
+    #[DataProvider('provideValueAccepts')]
+    public function testValueAccepts(
         mixed $value,
-        Type  $expected,
     ): void {
-        self::assertSame($expected, Type::from($value));
-        self::assertSame($expected, Type::tryFrom($value));
-        self::assertTrue(Type::validate($value));
+        self::assertTrue(Type::Value->validate($value));
     }
 
-    public static function provideScalarResolutions(): \Generator
+    public static function provideValueAccepts(): \Generator
     {
-        yield 'null' => [null, Type::Null];
-        yield 'true' => [true, Type::Boolean];
-        yield 'false' => [false, Type::Boolean];
-        yield 'int zero' => [0, Type::Integer];
-        yield 'int negative' => [-1, Type::Integer];
-        yield 'int max' => [PHP_INT_MAX, Type::Integer];
-        yield 'int min' => [PHP_INT_MIN, Type::Integer];
-        yield 'float zero' => [0.0, Type::Float];
-        yield 'float negative zero' => [-0.0, Type::Float];
-        yield 'float' => [1.5, Type::Float];
-        yield 'NAN' => [NAN, Type::Float];
-        yield 'INF' => [INF, Type::Float];
-        yield '-INF' => [-INF, Type::Float];
-        yield 'empty string' => ['', Type::String];
-        yield 'string' => ['value', Type::String];
-        yield 'numeric string stays string' => ['42', Type::String];
-        yield 'whitespace string' => [" \t\n", Type::String];
+        yield 'null' => [null];
+        yield 'bool' => [true];
+        yield 'int' => [0];
+        yield 'float' => [1.5];
+        yield 'string' => ['ok'];
+        yield 'empty array' => [[]];
+        yield 'list' => [[1, 'a', false]];
+        yield 'keyed' => [['a' => 1, 'b' => [true]]];
+        yield 'unit enum' => [ParameterTypeUnitFixture::Alpha];
+        yield 'backed enum' => [ParameterTypeIntBackedFixture::One];
+        yield 'depth 5' => [[[[[[true]]]]]];
     }
 
-    public function testIntegerLiteralIsNotFloat(): void
-    {
-        self::assertSame(Type::Integer, Type::from(1));
-        self::assertSame(Type::Float, Type::from(1.0));
-    }
-
-    // -------------------------------------------------------------------------
-    // Enums
-    // -------------------------------------------------------------------------
-
-    public function testUnitEnum(): void
-    {
-        self::assertSame(Type::UnitEnum, Type::from(ParameterTypeUnitFixture::Alpha));
-        self::assertTrue(Type::validate(ParameterTypeUnitFixture::Beta));
-    }
-
-    public function testIntBackedEnumIsBackedEnumNotUnitEnum(): void
-    {
-        self::assertSame(Type::BackedEnum, Type::from(ParameterTypeIntBackedFixture::One));
-        self::assertNotSame(Type::UnitEnum, Type::from(ParameterTypeIntBackedFixture::Two));
-    }
-
-    public function testStringBackedEnumIsBackedEnum(): void
-    {
-        self::assertSame(Type::BackedEnum, Type::from(ParameterTypeStringBackedFixture::Foo));
-    }
-
-    // -------------------------------------------------------------------------
-    // Arrays / lists
-    // -------------------------------------------------------------------------
-
-    public function testEmptyArrayIsArrayNotList(): void
-    {
-        // PHP's array_is_list([]) === true; Type special-cases empty → Array.
-        self::assertTrue(\array_is_list([]));
-        self::assertSame(Type::Array, Type::from([]));
-        self::assertNotSame(Type::List, Type::from([]));
-    }
-
-    /**
-     * @param array<mixed> $value
-     */
-    #[DataProvider('provideLists')]
-    public function testListShapes(
-        array $value,
+    #[DataProvider('provideValueRejects')]
+    public function testValueRejects(
+        mixed $value,
     ): void {
-        self::assertSame(Type::List, Type::from($value));
+        self::assertFalse(Type::Value->validate($value));
     }
 
-    public static function provideLists(): \Generator
+    public static function provideValueRejects(): \Generator
     {
-        yield 'single index 0' => [[0 => 'a']];
-        yield 'sequential' => [[1, 2, 3]];
-        yield 'falsey values' => [[false, null, 0, 0.0, '']];
-        yield 'nested empty array element' => [[[]]];
-        yield 'nested list' => [[[1], [2]]];
-        yield 'enums in list' => [[ParameterTypeUnitFixture::Alpha, ParameterTypeIntBackedFixture::One]];
-        // PHP coerces numeric string keys to int → still a list.
-        yield 'numeric string keys' => [['0' => 'a', '1' => 'b']];
+        yield 'stdClass' => [new \stdClass];
+        yield 'closure' => [static fn() => null];
+        yield 'nested object' => [[1, new \stdClass]];
     }
 
-    /**
-     * @param array<mixed> $value
-     */
-    #[DataProvider('provideKeyedArrays')]
-    public function testKeyedArrayShapes(
-        array $value,
+    public function testValueOverflowThrows(): void
+    {
+        $this->expectException(RuntimeException::class);
+        Type::Value->validate([[[[[[true]]]]]]);
+    }
+
+    #[DataProvider('providePathAccepts')]
+    public function testPathAcceptsNonEmptyStrings(
+        string $value,
     ): void {
-        self::assertSame(Type::Array, Type::from($value));
+        self::assertTrue(Type::Path->validate($value));
     }
 
-    public static function provideKeyedArrays(): \Generator
+    public static function providePathAccepts(): \Generator
     {
-        yield 'string keys' => [['a' => 1, 'b' => 2]];
-        yield 'gap in indexes' => [[0 => 'a', 2 => 'b']];
-        yield 'starts at 1' => [[1 => 'a', 2 => 'b']];
-        yield 'mixed keys' => [[0 => 'a', 'k' => 'b']];
-        yield 'nested keyed' => [['inner' => ['x' => 1]]];
-        yield 'list value under key' => [['items' => [1, 2, 3]]];
+        yield 'relative dir' => ['var/cache'];
+        yield 'absolute dir' => ['/var/cache'];
+        yield 'trailing sep' => ['/var/cache' . \DIR_SEP];
+        yield 'file' => ['php/contracts/runtime/Runtime/Assert.php'];
+        yield 'dotfile' => ['.env'];
+        yield 'root' => [\DIR_SEP];
+        yield 'dot' => ['.'];
+        yield 'dotdot' => ['..'];
     }
 
-    public function testNestedUnsupportedRejectsWholeArray(): void
-    {
-        $value = [1, new \stdClass];
-
-        self::assertNull(Type::tryFrom($value));
-        self::assertFalse(Type::validate($value));
-
-        try {
-            Type::from($value);
-            self::fail('Expected TypeException');
-        } catch (TypeException $exception) {
-            self::assertSame('Unsupported Parameter type: list:2.', $exception->getMessage());
-            self::assertNull($exception->getPrevious());
-            self::assertSame('list:2', $exception->context['type']);
-        }
-    }
-
-    public function testDeeplyNestedUnsupportedRejects(): void
-    {
-        $resource = fopen('php://memory', 'r');
-        self::assertIsResource($resource);
-
-        try {
-            $value = [[['ok', $resource]]];
-            self::assertNull(Type::tryFrom($value));
-            self::assertFalse(Type::validate($value));
-        } finally {
-            fclose($resource);
-        }
-    }
-
-    // -------------------------------------------------------------------------
-    // Unsupported top-level
-    // -------------------------------------------------------------------------
-
-    #[DataProvider('provideUnsupportedObjects')]
-    public function testUnsupportedObjectsTryFromAndValidate(
-        mixed  $value,
-        string $messageFragment,
+    #[DataProvider('provideNonEmptyStringRejects')]
+    public function testPathRejectsNonEmptyString(
+        mixed $value,
     ): void {
-        unset($messageFragment);
-        self::assertNull(Type::tryFrom($value));
-        self::assertFalse(Type::validate($value));
+        self::assertFalse(Type::Path->validate($value));
     }
 
-    #[DataProvider('provideUnsupportedObjects')]
-    public function testUnsupportedObjectsFromThrowsTypeException(
-        mixed  $value,
-        string $messageFragment,
+    public static function provideNonEmptyStringRejects(): \Generator
+    {
+        yield 'empty' => [''];
+        yield 'null' => [null];
+        yield 'int' => [1];
+        yield 'array' => [['/var']];
+    }
+
+    #[DataProvider('provideDirectoryAccepts')]
+    public function testDirectoryAcceptsExtensionlessPaths(
+        string $value,
     ): void {
-        try {
-            Type::from($value);
-            self::fail('Expected TypeException');
-        } catch (TypeException $exception) {
-            self::assertStringContainsString($messageFragment, $exception->getMessage());
-            self::assertStringStartsWith('Unsupported Parameter type: ', $exception->getMessage());
-            self::assertNull($exception->getPrevious());
-            self::assertArrayHasKey('value', $exception->context);
-            self::assertArrayHasKey('type', $exception->context);
-            self::assertIsString($exception->context['type']);
-        }
+        self::assertTrue(Type::Directory->validate($value));
     }
 
-    public static function provideUnsupportedObjects(): \Generator
+    public static function provideDirectoryAccepts(): \Generator
     {
-        yield 'stdClass' => [new \stdClass, 'object:stdClass#'];
-        yield 'closure' => [static fn() => null, 'object:Closure#'];
-        yield 'DateTimeImmutable' => [new \DateTimeImmutable, 'object:DateTimeImmutable#'];
+        yield 'relative' => ['var/cache'];
+        yield 'absolute' => ['/usr/bin'];
+        yield 'trailing sep' => ['/var/cache' . \DIR_SEP];
+        yield 'root' => [\DIR_SEP];
+        yield 'dot' => ['.'];
+        yield 'dotdot' => ['..'];
+        yield 'extensionless file name' => ['Dockerfile'];
+        yield 'nested relative' => ['php/contracts/runtime'];
     }
 
-    public function testOpenResourceIsUnsupported(): void
+    #[DataProvider('provideDirectoryRejects')]
+    public function testDirectoryRejectsFileShapes(
+        mixed $value,
+    ): void {
+        self::assertFalse(Type::Directory->validate($value));
+    }
+
+    public static function provideDirectoryRejects(): \Generator
     {
-        $resource = fopen('php://memory', 'r');
-        self::assertIsResource($resource);
-
-        try {
-            self::assertNull(Type::tryFrom($resource));
-            self::assertFalse(Type::validate($resource));
-
-            try {
-                Type::from($resource);
-                self::fail('Expected TypeException');
-            } catch (TypeException $exception) {
-                self::assertSame('Unsupported Parameter type: resource:stream.', $exception->getMessage());
-                self::assertNull($exception->getPrevious());
-            }
-        } finally {
-            fclose($resource);
-        }
+        yield 'php file' => ['Assert.php'];
+        yield 'nested file' => ['php/contracts/runtime/Runtime/Assert.php'];
+        yield 'dotfile' => ['.env'];
+        yield 'double extension' => ['archive.tar.gz'];
+        yield 'empty' => [''];
+        yield 'non-string' => [1];
     }
 
-    public function testClosedResourceIsUnsupported(): void
+    #[DataProvider('provideFileAccepts')]
+    public function testFileAcceptsExtensionPaths(
+        string $value,
+    ): void {
+        self::assertTrue(Type::File->validate($value));
+    }
+
+    public static function provideFileAccepts(): \Generator
     {
-        $resource = fopen('php://memory', 'r');
-        self::assertIsResource($resource);
-        fclose($resource);
-
-        self::assertNull(Type::tryFrom($resource));
-        self::assertFalse(Type::validate($resource));
-
-        $this->expectException(TypeException::class);
-        $this->expectExceptionMessage('Unsupported Parameter type: resource:closed.');
-        Type::from($resource);
+        yield 'php' => ['Assert.php'];
+        yield 'nested' => ['php/contracts/runtime/Runtime/Assert.php'];
+        yield 'absolute' => ['/etc/app.ini'];
+        yield 'dotfile' => ['.env'];
+        yield 'gitignore' => ['.gitignore'];
+        yield 'double extension' => ['archive.tar.gz'];
+        yield 'minified' => ['app.min.js'];
     }
 
-    // -------------------------------------------------------------------------
-    // Nesting depth / overflow
-    // -------------------------------------------------------------------------
+    #[DataProvider('provideFileRejects')]
+    public function testFileRejectsDirectoryShapes(
+        mixed $value,
+    ): void {
+        self::assertFalse(Type::File->validate($value));
+    }
 
-    public function testNestingAtMaxDepthIsAccepted(): void
+    public static function provideFileRejects(): \Generator
     {
-        // Leaf resolved at depth 32; MAX_DEPTH rejects only depth > 32.
-        $value = self::nest(32, 'leaf');
-
-        self::assertSame(Type::List, Type::from($value));
-        self::assertTrue(Type::validate($value));
+        yield 'relative dir' => ['var/cache'];
+        yield 'absolute dir' => ['/usr/bin'];
+        yield 'trailing sep' => ['/var/cache' . \DIR_SEP];
+        yield 'trailing sep on file name' => ['Assert.php' . \DIR_SEP];
+        yield 'root' => [\DIR_SEP];
+        yield 'dot' => ['.'];
+        yield 'dotdot' => ['..'];
+        yield 'Dockerfile' => ['Dockerfile'];
+        yield 'empty' => [''];
+        yield 'non-string' => [false];
     }
 
-    public function testNestingBeyondMaxDepthTryFromReturnsNull(): void
+    public function testSettingAcceptsScalarsAndEnums(): void
     {
-        $value = self::nest(33, 'leaf');
-
-        self::assertNull(Type::tryFrom($value));
-        self::assertFalse(Type::validate($value));
+        self::assertTrue(Type::Setting->validate(true));
+        self::assertTrue(Type::Setting->validate(1));
+        self::assertTrue(Type::Setting->validate(1.5));
+        self::assertTrue(Type::Setting->validate('en'));
+        self::assertTrue(Type::Setting->validate(ParameterTypeUnitFixture::Alpha));
     }
 
-    public function testNestingBeyondMaxDepthFromWrapsOverflowException(): void
+    public function testSettingRejectsNullAndArrays(): void
     {
-        $value = self::nest(33, 'leaf');
-
-        try {
-            Type::from($value);
-            self::fail('Expected TypeException');
-        } catch (TypeException $exception) {
-            self::assertSame('Unsupported Parameter type: list:1.', $exception->getMessage());
-            self::assertInstanceOf(OverflowException::class, $exception->getPrevious());
-            self::assertSame('Maximum recursion depth exceeded.', $exception->getPrevious()->getMessage());
-        }
-    }
-
-    public function testEmptyArrayAtDepth32IsAccepted(): void
-    {
-        // Empty array short-circuits without descending further.
-        self::assertSame(Type::List, Type::from(self::nest(32, [])));
-    }
-
-    public function testEmptyArrayAtDepth33IsRejectedAsOverflow(): void
-    {
-        // Innermost [] would short-circuit, but depth 33 trips MAX_DEPTH first.
-        $value = self::nest(33, []);
-
-        self::assertNull(Type::tryFrom($value));
-
-        try {
-            Type::from($value);
-            self::fail('Expected TypeException');
-        } catch (TypeException $exception) {
-            self::assertInstanceOf(OverflowException::class, $exception->getPrevious());
-        }
-    }
-
-    public function testCircularArrayReferenceHitsDepthLimit(): void
-    {
-        $value   = [];
-        $value[] = &$value;
-
-        self::assertNull(Type::tryFrom($value));
-        self::assertFalse(Type::validate($value));
-
-        try {
-            Type::from($value);
-            self::fail('Expected TypeException');
-        } catch (TypeException $exception) {
-            self::assertInstanceOf(OverflowException::class, $exception->getPrevious());
-        }
-    }
-
-    /**
-     * Wrap `$leaf` in `$depth` single-element list layers.
-     *
-     * The leaf is resolved at recursion depth `$depth`.
-     *
-     * @return array<mixed>
-     */
-    private static function nest(
-        int   $depth,
-        mixed $leaf,
-    ): array {
-        $value = [$leaf];
-
-        for ($i = 1; $i < $depth; $i++) {
-            $value = [$value];
-        }
-
-        return $value;
+        self::assertFalse(Type::Setting->validate(null));
+        self::assertFalse(Type::Setting->validate([]));
+        self::assertFalse(Type::Setting->validate(['en']));
+        self::assertFalse(Type::Setting->validate(new \stdClass));
     }
 }

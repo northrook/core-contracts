@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests\Support;
 
-use Northrook\Contracts\AssetCollection;
-use Northrook\Contracts\AssetInterface;
-use Northrook\Contracts\AssetProviderInterface;
-use Northrook\Contracts\RenderStrategy;
+use Northrook\AssetInterface;
+use Northrook\AssetProviderInterface;
+use Northrook\Assets\AssetCollection;
+use Northrook\Assets\RenderStrategy;
 
 /**
  * Minimal {@see AssetProviderInterface} fixture for `AssetsTest`.

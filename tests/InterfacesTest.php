@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts\InvalidArgumentException;
 use Northrook\Contracts\Invokable;
 use Northrook\Contracts\Reference;
-use Northrook\Contracts\ReferenceTrait;
 use Northrook\Contracts\Resettable;
-use Northrook\Contracts\RuntimeException;
+use Northrook\InvalidArgumentException;
+use Northrook\ReferenceTrait;
+use Northrook\RuntimeException;
 use PHPUnit\Framework\TestCase;
 
 final class InterfacesTest extends TestCase
@@ -161,9 +161,11 @@ final class InterfacesReferenceFixture implements Reference
 
         if ($normalized === '') {
             throw new InvalidArgumentException(
-                name    : 'value',
-                expected: 'non-empty-string',
-                received: $value,
+                context: [
+                    'name'     => 'value',
+                    'expected' => 'non-empty-string',
+                    'received' => $value,
+                ],
             );
         }
 

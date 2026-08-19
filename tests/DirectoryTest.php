@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts\Directory;
-use Northrook\Contracts\File;
-use Northrook\Contracts\InvalidArgumentException;
-use Northrook\Contracts\Path;
-use Northrook\Contracts\RuntimeException;
 use Northrook\Contracts\Tests\Support\FilesystemStub;
+use Northrook\Filesystem\Directory;
+use Northrook\Filesystem\File;
+use Northrook\Filesystem\Path;
+use Northrook\InvalidArgumentException;
+use Northrook\RuntimeException;
 use PHPUnit\Framework\TestCase;
 
 final class DirectoryTest extends TestCase
@@ -66,6 +66,25 @@ final class DirectoryTest extends TestCase
         $directory = new Directory($this->root, assert: true);
 
         self::assertTrue($directory->isDirectory());
+    }
+
+    public function testCreateEnsuresMissingDirectoryExists(): void
+    {
+        $stub      = new FilesystemStub;
+        $directory = new Directory(
+            path      : $this->root . '/created/deep',
+            create    : true,
+            filesystem: $stub,
+        );
+
+        self::assertTrue($directory->isDirectory());
+        self::assertContains('createDirectory', $stub->calls);
+    }
+
+    public function testCreateThrowsForFilePath(): void
+    {
+        $this->expectException(RuntimeException::class);
+        new Directory($this->root . '/a.txt', create: true);
     }
 
     public function testTemporaryReturnsSystemTemp(): void

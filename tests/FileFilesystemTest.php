@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts\File;
-use Northrook\Contracts\InvalidArgumentException;
-use Northrook\Contracts\Path;
-use Northrook\Contracts\RuntimeException;
 use Northrook\Contracts\Tests\Support\FilesystemStub;
-use Northrook\Contracts\Timestamp;
+use Northrook\Filesystem\File;
+use Northrook\Filesystem\Path;
+use Northrook\InvalidArgumentException;
+use Northrook\RuntimeException;
+use Northrook\Timestamp;
 use PHPUnit\Framework\TestCase;
 
 final class FileFilesystemTest extends TestCase

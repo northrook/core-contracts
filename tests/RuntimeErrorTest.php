@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts\Exception\RuntimeError;
-use Northrook\Contracts\RuntimeException;
+use Northrook\ErrorHandler\RuntimeError;
+use Northrook\RuntimeException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -88,7 +88,7 @@ final class RuntimeErrorTest extends TestCase
         } catch (RuntimeException $exception) {
             self::assertSame('Invalid error array format.', $exception->getMessage());
             self::assertNull($exception->getPrevious());
-            self::assertSame(['bogus' => true], $exception->context['$array']);
+            self::assertSame(['bogus' => true], $exception->getContext()['$array']);
         }
     }
 

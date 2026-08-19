@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts\Email;
-use Northrook\Contracts\EmailIssue;
-use Northrook\Contracts\InvalidArgumentException;
-use Northrook\Contracts\RuntimeException;
 use Northrook\Contracts\Tests\Support\MixedArray;
+use Northrook\Email;
+use Northrook\Email\EmailIssue;
+use Northrook\InvalidArgumentException;
+use Northrook\RuntimeException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -106,8 +106,8 @@ final class EmailTest extends TestCase
             self::fail('Expected InvalidArgumentException.');
         } catch (InvalidArgumentException $exception) {
             self::assertStringStartsWith('Invalid email address', $exception->getMessage());
-            self::assertArrayHasKey('issues', $exception->context);
-            self::assertContains(EmailIssue::MissingAt->value, MixedArray::at($exception->context, 'issues'));
+            self::assertArrayHasKey('issues', $exception->getContext());
+            self::assertContains(EmailIssue::MissingAt->value, MixedArray::at($exception->getContext(), 'issues'));
         }
     }
 
@@ -172,8 +172,8 @@ final class EmailTest extends TestCase
             new Email($input);
             self::fail('Expected InvalidArgumentException.');
         } catch (InvalidArgumentException $exception) {
-            self::assertIsArray($exception->context['issues']);
-            self::assertContains($issue->value, $exception->context['issues']);
+            self::assertIsArray($exception->getContext()['issues']);
+            self::assertContains($issue->value, $exception->getContext()['issues']);
             self::assertStringContainsString($issue->message(), $exception->getMessage());
         }
     }
@@ -252,9 +252,9 @@ final class EmailTest extends TestCase
             new Email('user@other.com', policy: $allowlist);
             self::fail('Expected InvalidArgumentException.');
         } catch (InvalidArgumentException $exception) {
-            self::assertIsArray($exception->context['issues']);
-            self::assertContains(EmailIssue::PolicyRejected->value, $exception->context['issues']);
-            self::assertSame("Domain 'other.com' is not allowed.", $exception->context['policy']);
+            self::assertIsArray($exception->getContext()['issues']);
+            self::assertContains(EmailIssue::PolicyRejected->value, $exception->getContext()['issues']);
+            self::assertSame("Domain 'other.com' is not allowed.", $exception->getContext()['policy']);
             self::assertStringContainsString("Domain 'other.com' is not allowed.", $exception->getMessage());
         }
     }

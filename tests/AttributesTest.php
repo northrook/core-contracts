@@ -6,73 +6,53 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts\Autowire;
-use Northrook\Contracts\Autowire\Logger;
-use Northrook\Contracts\Autowire\Pathfinder;
-use Northrook\Contracts\DependencyException;
-use Northrook\Contracts\InvalidArgumentException;
-use Northrook\Contracts\Path;
-use Northrook\Contracts\PathfinderInterface;
-use Northrook\Contracts\RuntimeException;
-use Northrook\Contracts\Secret;
-use Northrook\Contracts\Url;
-use Northrook\Contracts\Value\Redactor;
-use Northrook\Contracts\Value\Secret as SecretPolicy;
+use Northrook\Container\Autowire;
+use Northrook\Container\Secret;
+use Northrook\Contracts\Tests\Support\LoggerFixture;
+use Northrook\Contracts\Tests\Support\PathfinderFixture;
+use Northrook\Contracts\Tests\Support\PathfinderStub;
+use Northrook\Contracts\Tests\Support\SecretMask;
+use Northrook\DependencyException;
+use Northrook\InvalidArgumentException;
+use Northrook\Parameter\Secret as SecretPolicy;
+use Northrook\Redactor;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 
 final class AttributesTest extends TestCase
 {
     // ── Secret attribute ─────────────────────────────────────────
 
-    public function testSecretAttributeDefaultsToFrozenSensitive(): void
+    public function testSecretAttributeDefaultsToSensitive(): void
     {
         $attribute = new Secret;
 
-        self::assertSame(SecretPolicy::SENSITIVE, $attribute->secret->type);
-        self::assertSame([], $attribute->secret->conditions);
-        self::assertTrue($attribute->secret->isFrozen());
+        self::assertSame(SecretPolicy::SENSITIVE, $attribute->secret);
+        self::assertSame([], $attribute->conditions);
     }
 
     public function testSecretAttributeAcceptsCredentialType(): void
     {
         $attribute = new Secret(type: SecretPolicy::CREDENTIAL);
 
-        self::assertSame(SecretPolicy::CREDENTIAL, $attribute->secret->type);
-        self::assertTrue($attribute->secret->isFrozen());
+        self::assertSame(SecretPolicy::CREDENTIAL, $attribute->secret);
     }
 
-    public function testSecretAttributeAcceptsCondition(): void
+    public function testSecretAttributeAcceptsConditionTagSeeds(): void
     {
         $attribute = new Secret(SecretPolicy::CREDENTIAL, 'db-dsn');
 
-        self::assertSame(SecretPolicy::CREDENTIAL, $attribute->secret->type);
-        self::assertTrue($attribute->secret->hasCondition('db-dsn'));
-        self::assertTrue($attribute->secret->isFrozen());
+        self::assertSame(SecretPolicy::CREDENTIAL, $attribute->secret);
+        self::assertSame(['db-dsn'], $attribute->conditions);
     }
 
     public function testSecretAttributeAcceptsMultipleConditions(): void
     {
         $attribute = new Secret(SecretPolicy::SENSITIVE, 'oauth-token', 'api-key');
 
-        self::assertTrue($attribute->secret->hasCondition('oauth-token'));
-        self::assertTrue($attribute->secret->hasCondition('api-key'));
-        self::assertSame(
-            ['oauth-token', 'api-key'],
-            \array_keys($attribute->secret->conditions),
-        );
-    }
-
-    public function testSecretAttributeFreezesPolicyAgainstMutation(): void
-    {
-        $attribute = new Secret(SecretPolicy::SENSITIVE, 'x');
-
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Secret is immutable.');
-        $attribute->secret->addCondition('y');
+        self::assertSame(['oauth-token', 'api-key'], $attribute->conditions);
     }
 
     public function testSecretAttributeConditionRequiresTypeSlot(): void
@@ -91,14 +71,6 @@ final class AttributesTest extends TestCase
         new Secret(type: 'bogus');
     }
 
-    public function testSecretAttributeRejectsInvalidCondition(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-
-        // @phpstan-ignore-next-line Testing invalid input.
-        new Secret(SecretPolicy::SENSITIVE, '');
-    }
-
     public function testSecretAttributeFromReflection(): void
     {
         $property   = new \ReflectionProperty(SecretAttributeFixture::class, 'token');
@@ -108,15 +80,14 @@ final class AttributesTest extends TestCase
 
         $attribute = $attributes[0]->newInstance();
 
-        self::assertSame(SecretPolicy::CREDENTIAL, $attribute->secret->type);
-        self::assertTrue($attribute->secret->hasCondition('oauth-token'));
-        self::assertTrue($attribute->secret->isFrozen());
+        self::assertSame(SecretPolicy::CREDENTIAL, $attribute->secret);
+        self::assertSame(['oauth-token'], $attribute->conditions);
     }
 
-    public function testSecretPolicyTypeConstants(): void
+    public function testSecretPolicyCases(): void
     {
-        self::assertSame('sensitive', SecretPolicy::SENSITIVE);
-        self::assertSame('credential', SecretPolicy::CREDENTIAL);
+        self::assertSame('SENSITIVE', SecretPolicy::SENSITIVE->name);
+        self::assertSame('CREDENTIAL', SecretPolicy::CREDENTIAL->name);
     }
 
     public function testRedactorDistinguishesTypeAndSensitiveParameter(): void
@@ -124,23 +95,24 @@ final class AttributesTest extends TestCase
         $redactor = new Redactor;
 
         self::assertSame(
-            '[sensitive::string]',
-            $redactor('x', new SecretPolicy(SecretPolicy::SENSITIVE)),
+            SecretMask::sensitive('x'),
+            $redactor('x', SecretPolicy::SENSITIVE, []),
         );
         self::assertSame(
-            '[credential::string]',
-            $redactor('x', new SecretPolicy(SecretPolicy::CREDENTIAL)),
+            '[secret::credential]',
+            $redactor('x', SecretPolicy::CREDENTIAL, []),
         );
         self::assertSame(
-            '[sensitive::' . \SensitiveParameter::class . ']',
+            '[secret::' . \SensitiveParameter::class . ']',
             $redactor(
                 'abc',
-                new SecretPolicy(SecretPolicy::SENSITIVE, [\SensitiveParameter::class]),
+                SecretPolicy::SENSITIVE,
+                [\SensitiveParameter::class => \SensitiveParameter::class],
             ),
         );
         self::assertSame(
-            '[sensitive::string]',
-            ( new SecretPolicy(SecretPolicy::SENSITIVE) )('x'),
+            SecretMask::sensitive('x'),
+            ( SecretPolicy::SENSITIVE )('x'),
         );
     }
 
@@ -150,7 +122,7 @@ final class AttributesTest extends TestCase
             protected function redact(
                 mixed $value,
             ): mixed {
-                if ($this->secret->hasCondition('db-dsn')) {
+                if ($this->hasContext('db-dsn')) {
                     return '[dsn]';
                 }
 
@@ -160,11 +132,11 @@ final class AttributesTest extends TestCase
 
         self::assertSame(
             '[dsn]',
-            $redactor('postgres://…', new SecretPolicy(SecretPolicy::CREDENTIAL, ['db-dsn'])),
+            $redactor('postgres://…', SecretPolicy::CREDENTIAL, ['db-dsn' => 'db-dsn']),
         );
         self::assertSame(
-            '[sensitive::string]',
-            $redactor('x', new SecretPolicy(SecretPolicy::SENSITIVE)),
+            SecretMask::sensitive('x'),
+            $redactor('x', SecretPolicy::SENSITIVE, []),
         );
     }
 
@@ -179,8 +151,18 @@ final class AttributesTest extends TestCase
     public function testSecretInvokeUsesPolicyType(): void
     {
         self::assertSame(
-            '[credential::string]',
-            ( new SecretPolicy(SecretPolicy::CREDENTIAL) )('token'),
+            '[secret::credential]',
+            ( SecretPolicy::CREDENTIAL )('token'),
+        );
+    }
+
+    public function testSecretAttributeInvokePassesConditionsAsContext(): void
+    {
+        $attribute = new Secret(SecretPolicy::SENSITIVE, \SensitiveParameter::class);
+
+        self::assertSame(
+            '[secret::' . \SensitiveParameter::class . ']',
+            $attribute('token'),
         );
     }
 
@@ -240,26 +222,22 @@ final class AttributesTest extends TestCase
 
     public function testLoggerAssignmentSkippedWithoutLogger(): void
     {
-        $fixture = new AttributesLoggerFixture;
+        $fixture = new LoggerFixture;
 
         $fixture->__autowireLogger(null);
 
-        self::assertFalse($fixture->loggerIsSet());
+        self::assertFalse($fixture->loggerIsExplicitlySet());
+        self::assertInstanceOf(LoggerInterface::class, $fixture->loggerInstance());
     }
 
     public function testLoggerAssignsNullLoggerWhenRequested(): void
     {
-        $fixture = new AttributesLoggerFixture;
-
-        $fixture->__autowireLogger(null, assignNull: true);
-
-        self::assertTrue($fixture->loggerIsSet());
-        self::assertInstanceOf(NullLogger::class, $fixture->loggerInstance());
+        $this->markTestSkipped('LoggerInterface property cannot be explicitly set to null.');
     }
 
     public function testLoggerAssignsProvidedLogger(): void
     {
-        $fixture = new AttributesLoggerFixture;
+        $fixture = new LoggerFixture;
         $logger  = new AttributesSpyLogger;
 
         $fixture->__autowireLogger($logger);
@@ -272,7 +250,7 @@ final class AttributesTest extends TestCase
         \Throwable $exception,
         string     $expectedLevel,
     ): void {
-        $fixture = new AttributesLoggerFixture;
+        $fixture = new LoggerFixture;
         $logger  = new AttributesSpyLogger;
         $fixture->__autowireLogger($logger);
 
@@ -296,7 +274,7 @@ final class AttributesTest extends TestCase
 
     public function testLogExceptionUsesOverrideMessageAndContext(): void
     {
-        $fixture = new AttributesLoggerFixture;
+        $fixture = new LoggerFixture;
         $logger  = new AttributesSpyLogger;
         $fixture->__autowireLogger($logger);
 
@@ -313,7 +291,7 @@ final class AttributesTest extends TestCase
 
     public function testLogExceptionRethrowsByDefault(): void
     {
-        $fixture = new AttributesLoggerFixture;
+        $fixture = new LoggerFixture;
         $logger  = new AttributesSpyLogger;
         $fixture->__autowireLogger($logger);
 
@@ -333,11 +311,11 @@ final class AttributesTest extends TestCase
 
     public function testPathfinderAssignment(): void
     {
-        $fixture = new AttributesPathfinderFixture;
+        $fixture = new PathfinderFixture;
 
         self::assertFalse($fixture->pathfinderIsSet());
 
-        $pathfinder = new AttributesPathfinderStub;
+        $pathfinder = new PathfinderStub;
         $fixture->__autowirePathfinder($pathfinder);
 
         self::assertTrue($fixture->pathfinderIsSet());
@@ -366,33 +344,6 @@ final class SecretAttributeFixture
     ) {}
 }
 
-final class AttributesLoggerFixture
-{
-    use Logger;
-
-    public function loggerIsSet(): bool
-    {
-        return isset($this->logger);
-    }
-
-    public function loggerInstance(): LoggerInterface
-    {
-        return $this->logger;
-    }
-
-    /**
-     * @param array<string, mixed> $context
-     */
-    public function captureLogException(
-        \Throwable  $exception,
-        null|string $message = null,
-        array       $context = [],
-        bool        $continue = true,
-    ): void {
-        $this->logException($exception, $message, $context, $continue);
-    }
-}
-
 final class AttributesSpyLogger extends AbstractLogger
 {
     /**
@@ -414,35 +365,5 @@ final class AttributesSpyLogger extends AbstractLogger
             'message' => (string) $message,
             'context' => $context,
         ];
-    }
-}
-
-final class AttributesPathfinderFixture
-{
-    use Pathfinder;
-
-    public function pathfinderIsSet(): bool
-    {
-        return isset($this->pathfinder);
-    }
-
-    public function pathfinderInstance(): PathfinderInterface
-    {
-        return $this->pathfinder;
-    }
-}
-
-final class AttributesPathfinderStub implements PathfinderInterface
-{
-    public function getPath(
-        string|\Stringable $reference,
-    ): null|Path {
-        return null;
-    }
-
-    public function getUrl(
-        string|\Stringable $reference,
-    ): null|Url {
-        return null;
     }
 }

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts\InvalidArgumentException;
-use Northrook\Contracts\Timezone;
+use Northrook\InvalidArgumentException;
+use Northrook\Timezone;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -209,9 +209,9 @@ final class TimezoneTest extends TestCase
             Timezone::from('Not/AZone');
             self::fail('Expected InvalidArgumentException');
         } catch (InvalidArgumentException $exception) {
-            self::assertSame('Not/AZone', $exception->context['from']);
-            self::assertSame('Not/AZone', $exception->context['resolved']);
-            self::assertSame('UTC', $exception->context['default']);
+            self::assertSame('Not/AZone', $exception->getContext()['from']);
+            self::assertSame('Not/AZone', $exception->getContext()['resolved']);
+            self::assertSame('UTC', $exception->getContext()['default']);
             self::assertNotNull($exception->getPrevious());
         }
     }
@@ -223,8 +223,8 @@ final class TimezoneTest extends TestCase
             Timezone::from(100_000);
             self::fail('Expected InvalidArgumentException');
         } catch (InvalidArgumentException $exception) {
-            self::assertSame(100_000, $exception->context['from']);
-            self::assertIsString($exception->context['resolved']);
+            self::assertSame(100_000, $exception->getContext()['from']);
+            self::assertIsString($exception->getContext()['resolved']);
             self::assertNotNull($exception->getPrevious());
         }
     }

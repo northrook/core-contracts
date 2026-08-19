@@ -4,35 +4,47 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\AppEnv;
-use Northrook\Contracts\AppEnvironment;
-use Northrook\Contracts\Exporter;
-use Northrook\Contracts\RuntimeException;
-use Northrook\Contracts\Secret;
+use Northrook\Container\Secret;
+use Northrook\Context;
+use Northrook\Context\AppEnv;
+use Northrook\Context\ContextManager;
 use Northrook\Contracts\Serializable;
-use Northrook\Contracts\Serializer;
-use Northrook\Contracts\Value;
-use Northrook\Contracts\Value\Secret as SecretPolicy;
+use Northrook\Exporter;
+use Northrook\Kernel\KernelContext;
+use Northrook\Parameter\Secret as SecretPolicy;
+use Northrook\RuntimeException;
+use Northrook\Serializer;
+use Northrook\Singleton;
 use PHPUnit\Framework\TestCase;
 
 final class ExporterTest extends TestCase
 {
+    private ContextManager $contextManager;
+
     protected function setUp(): void
     {
-        $this->resetAppEnv();
+        $this->resetIsolation();
+
+        $this->contextManager = new ContextManager;
+        Context::register(
+            appEnv        : AppEnv::Testing,
+            contextManager: $this->contextManager,
+        );
+        Exporter::reset();
     }
 
     protected function tearDown(): void
     {
-        $this->resetAppEnv();
+        Exporter::reset();
+        $this->resetIsolation();
     }
 
     public function testSerializeBypassesCredentialRefusalForNestedSerializableGraph(): void
     {
-        $this->becomePublic();
+        $this->becomeOutbound();
 
         $fixture = new ExporterNestedCredentialFixture(
-            dsn  : new Value('postgres://dsn', SecretPolicy::CREDENTIAL),
+            dsn  : new ExporterCredentialBearer('postgres://dsn'),
             plain: 'visible',
             token: 'param-secret',
         );
@@ -48,10 +60,10 @@ final class ExporterTest extends TestCase
 
     public function testOverrideClearsAfterSuccessfulCall(): void
     {
-        $this->becomePublic();
+        $this->becomeOutbound();
 
         $fixture = new ExporterNestedCredentialFixture(
-            dsn  : new Value('postgres://dsn', SecretPolicy::CREDENTIAL),
+            dsn  : new ExporterCredentialBearer('postgres://dsn'),
             plain: 'visible',
             token: 'param-secret',
         );
@@ -66,10 +78,10 @@ final class ExporterTest extends TestCase
 
     public function testOverrideClearsAfterThrownBackend(): void
     {
-        $this->becomePublic();
+        $this->becomeOutbound();
 
         $fixture = new ExporterNestedCredentialFixture(
-            dsn  : new Value('postgres://dsn', SecretPolicy::CREDENTIAL),
+            dsn  : new ExporterCredentialBearer('postgres://dsn'),
             plain: 'visible',
             token: 'param-secret',
         );
@@ -89,9 +101,9 @@ final class ExporterTest extends TestCase
 
     public function testReentrantExportKeepsOverrideUntilOutermostCompletes(): void
     {
-        $this->becomePublic();
+        $this->becomeOutbound();
 
-        $inner = new Value('runtime-only', SecretPolicy::CREDENTIAL);
+        $inner = new ExporterCredentialBearer('runtime-only');
         $outer = new ExporterReentrantTrigger($inner);
 
         $payload  = Exporter::serialize($outer);
@@ -104,10 +116,10 @@ final class ExporterTest extends TestCase
 
     public function testJsonBypassesCredentialRefusalForNestedSerializableGraph(): void
     {
-        $this->becomePublic();
+        $this->becomeOutbound();
 
         $fixture = new ExporterNestedCredentialFixture(
-            dsn  : new Value('postgres://dsn', SecretPolicy::CREDENTIAL),
+            dsn  : new ExporterCredentialBearer('postgres://dsn'),
             plain: 'visible',
             token: 'param-secret',
         );
@@ -115,17 +127,17 @@ final class ExporterTest extends TestCase
         $json = Exporter::json($fixture, \JSON_THROW_ON_ERROR);
 
         self::assertIsString($json);
-        self::assertStringContainsString('"dsn":{"value":"postgres:\/\/dsn"', $json);
+        self::assertStringContainsString('"dsn":{"value":"postgres:\/\/dsn"}', $json);
         self::assertStringContainsString('"plain":"visible"', $json);
         self::assertStringContainsString('"token":"param-secret"', $json);
     }
 
     public function testVarExportBypassesCredentialRefusalForNestedSerializableGraph(): void
     {
-        $this->becomePublic();
+        $this->becomeOutbound();
 
         $fixture = new ExporterNestedCredentialFixture(
-            dsn  : new Value('postgres://dsn', SecretPolicy::CREDENTIAL),
+            dsn  : new ExporterCredentialBearer('postgres://dsn'),
             plain: 'visible',
             token: 'param-secret',
         );
@@ -137,19 +149,29 @@ final class ExporterTest extends TestCase
         self::assertFalse(Exporter::isOverrideActive());
     }
 
-    private function becomePublic(): void
+    private function becomeOutbound(): void
     {
-        $this->resetAppEnv();
-        new AppEnv(AppEnvironment::Production, public: true);
-        self::assertTrue(AppEnv::isPublic());
+        $this->contextManager->update(KernelContext::Request);
     }
 
-    private function resetAppEnv(): void
+    private function resetIsolation(): void
     {
-        $property = new \ReflectionProperty(AppEnv::class, 'instance');
-        $property->setValue(null, null);
-        Exporter::reset();
+        $property = new \ReflectionProperty(Singleton::class, '_instance');
+        $property->setValue(null, []);
+
+        $property = new \ReflectionProperty(ContextManager::class, 'initialized');
+        $property->setValue(null, false);
     }
+}
+
+final class ExporterCredentialBearer implements Serializable
+{
+    use Serializer;
+
+    public function __construct(
+        #[Secret(type: SecretPolicy::CREDENTIAL)]
+        public string $value,
+    ) {}
 }
 
 final class ExporterNestedCredentialFixture implements Serializable
@@ -158,9 +180,9 @@ final class ExporterNestedCredentialFixture implements Serializable
 
     public function __construct(
         #[Secret]
-        public string $token,
-        public Value  $dsn,
-        public string $plain,
+        public string                   $token,
+        public ExporterCredentialBearer $dsn,
+        public string                   $plain,
     ) {}
 }
 
@@ -171,26 +193,26 @@ final class ExporterNestedCredentialFixture implements Serializable
 final class ExporterReentrantTrigger
 {
     public function __construct(
-        public Value $nested,
+        public ExporterCredentialBearer $nested,
     ) {}
 
     /**
-     * @return array{nested: Value}
+     * @return array{nested: ExporterCredentialBearer}
      */
     public function __serialize(): array
     {
         $inner = Exporter::serialize($this->nested);
 
         $restored = \unserialize($inner);
-        if (! $restored instanceof Value) {
-            throw new \LogicException('Expected nested Value round-trip.');
+        if (! $restored instanceof ExporterCredentialBearer) {
+            throw new \LogicException('Expected nested ExporterCredentialBearer round-trip.');
         }
 
         return ['nested' => $restored];
     }
 
     /**
-     * @param array{nested: Value} $data
+     * @param array{nested: ExporterCredentialBearer} $data
      */
     public function __unserialize(
         array $data,

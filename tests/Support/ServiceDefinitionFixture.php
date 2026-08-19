@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests\Support;
 
-use Northrook\Contracts\Service\Autodiscover;
+use Northrook\Container\Service\Autodiscover;
 
 #[Autodiscover(
     binding  : 'unique',

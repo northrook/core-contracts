@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts\Callback;
-use Northrook\Contracts\InvalidArgumentException;
+use Northrook\Callback;
 use Northrook\Contracts\Tests\Support\CallbackInvokableFixture;
+use Northrook\InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 

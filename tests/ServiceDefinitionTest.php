@@ -4,22 +4,22 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts\Callback;
-use Northrook\Contracts\Container\ServiceBinding;
-use Northrook\Contracts\ContainerException;
-use Northrook\Contracts\ContainerInterface;
-use Northrook\Contracts\InvalidArgumentException;
-use Northrook\Contracts\JSON;
-use Northrook\Contracts\Service\Alias;
-use Northrook\Contracts\Service\Autodiscover;
-use Northrook\Contracts\Service\Inline;
-use Northrook\Contracts\Service\Tag;
-use Northrook\Contracts\ServiceDefinition;
-use Northrook\Contracts\ServiceDefinition\CompiledServiceDefinition;
+use Northrook\Callback;
+use Northrook\Container\CompiledServiceDefinition;
+use Northrook\Container\ContainerException;
+use Northrook\Container\Service\Alias;
+use Northrook\Container\Service\Autodiscover;
+use Northrook\Container\Service\Inline;
+use Northrook\Container\Service\Tag;
+use Northrook\Container\ServiceBinding;
+use Northrook\Container\ServiceDefinition;
+use Northrook\ContainerInterface;
 use Northrook\Contracts\Tests\Support\ServiceDefinitionAliasInterface;
 use Northrook\Contracts\Tests\Support\ServiceDefinitionFactoryFixture;
 use Northrook\Contracts\Tests\Support\ServiceDefinitionFixture;
 use Northrook\Contracts\Tests\Support\ServiceDefinitionFixtureB;
+use Northrook\InvalidArgumentException;
+use Northrook\JSON;
 use PHPUnit\Framework\TestCase;
 
 final class ServiceDefinitionTest extends TestCase

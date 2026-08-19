@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Contracts\RuntimeException;
+use Northrook\RuntimeException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -78,6 +78,63 @@ final class GlobalFunctionsTest extends TestCase
         yield 'digit' => [\CHARSET_DIGIT, ctype_digit(...)];
         yield 'alnum' => [\CHARSET_ALNUM, ctype_alnum(...)];
         yield 'xdigit' => [\CHARSET_XDIGIT, ctype_xdigit(...)];
+    }
+
+    // endregion
+
+    // region is_class_string
+
+    #[DataProvider('provideIsClassStringRejectsNonStrings')]
+    public function testIsClassStringRejectsNonStrings(
+        mixed $value,
+    ): void {
+        self::assertFalse(\is_class_string($value));
+    }
+
+    /**
+     * @return \Generator<string, array{0: mixed}>
+     */
+    public static function provideIsClassStringRejectsNonStrings(): \Generator
+    {
+        yield 'null' => [null];
+        yield 'int' => [1];
+        yield 'float' => [1.5];
+        yield 'bool' => [true];
+        yield 'array' => [['Foo']];
+        yield 'object' => [new \stdClass];
+    }
+
+    #[DataProvider('provideIsClassStringCases')]
+    public function testIsClassString(
+        string $value,
+        bool   $expected,
+    ): void {
+        self::assertSame($expected, \is_class_string($value));
+    }
+
+    /**
+     * @return \Generator<string, array{0: string, 1: bool}>
+     */
+    public static function provideIsClassStringCases(): \Generator
+    {
+        yield 'loaded class' => [\stdClass::class, true];
+        yield 'loaded namespaced class' => [RuntimeException::class, true];
+        yield 'loaded interface' => [\Psr\Log\LoggerInterface::class, true];
+        yield 'unloaded fqcn' => ['Northrook\\ThisClassDoesNotExist', true];
+        yield 'leading backslash fqcn' => ['\\Northrook\\ThisClassDoesNotExist', true];
+        yield 'single letter' => ['A', true];
+        yield 'underscore' => ['_Foo', true];
+        yield 'digits after first' => ['Foo1', true];
+        yield 'empty' => ['', false];
+        yield 'backslash only' => ['\\', false];
+        yield 'numeric' => ['123', false];
+        yield 'leading digit' => ['1Foo', false];
+        yield 'segment leading digit' => ['Foo\\1Bar', false];
+        yield 'empty segment' => ['Foo\\\\Bar', false];
+        yield 'trailing backslash' => ['Foo\\', false];
+        yield 'whitespace' => ['Foo Bar', false];
+        yield 'unicode' => ['Cláss', false];
+        yield 'dollar' => ['$Foo', false];
     }
 
     // endregion
@@ -168,6 +225,31 @@ final class GlobalFunctionsTest extends TestCase
         yield 'underscore' => ['my_scheme', false];
         yield 'whitespace' => ['my scheme', false];
         yield 'unicode' => ['schéma', false];
+    }
+
+    // endregion
+
+    // region php_ini_bytes
+
+    #[DataProvider('provideIniBytes')]
+    public function testPhpIniBytes(
+        string $raw,
+        int    $expected,
+    ): void {
+        self::assertSame($expected, \php_ini_bytes($raw));
+    }
+
+    /**
+     * @return iterable<string, array{0: string, 1: int}>
+     */
+    public static function provideIniBytes(): iterable
+    {
+        yield 'unlimited' => ['-1', -1];
+        yield 'bytes' => ['1024', 1024];
+        yield 'kilobytes' => ['2K', 2048];
+        yield 'megabytes' => ['128M', 128 * 1024 * 1024];
+        yield 'gigabytes' => ['1G', 1024 * 1024 * 1024];
+        yield 'lowercase' => ['16m', 16 * 1024 * 1024];
     }
 
     // endregion

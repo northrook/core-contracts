@@ -1,6 +1,6 @@
 {
   "name": "northrook/core-contracts",
-  "description": "A set of Interfaces, Traits, and abstract Services for decoupled package integration.",
+  "description": "Contracts, interfaces, traits, and global implementations.",
   "type": "library",
   "license": "BSD-3-Clause",
   "authors": [
@@ -13,39 +13,28 @@
   "autoload": {
     "psr-4": {
       "Northrook\\": [
-        "php/app",
-        "php/src"
-      ],
-      "Northrook\\Contracts\\": [
-        "php/parameters",
         "php/contracts/assets",
-        "php/contracts/handlers",
-        "php/contracts/value",
-        "php/Contracts",
-        "php/Contracts/application",
-        "php/Contracts/assets",
-        "php/Contracts/attributes",
-        "php/Contracts/container",
-        "php/Contracts/core",
-        "php/Contracts/errors",
-        "php/Contracts/exceptions",
-        "php/Contracts/interfaces",
-        "php/Contracts/internals",
-        "php/Contracts/runtime",
-        "php/Contracts/services",
-        "php/Contracts/structures",
-        "php/Contracts/values"
+        "php/contracts/container",
+        "php/contracts/contract",
+        "php/contracts/core", 
+        "php/contracts/events",
+        "php/contracts/exceptions",
+        "php/contracts/error-handler",
+        "php/contracts/filesystem",
+        "php/contracts/interfaces",
+        "php/contracts/kernel",
+        "php/contracts/logger",
+        "php/contracts/parameters",
+        "php/contracts/runtime",
+        "php/contracts/serialization",
+        "php/contracts/structures",
+        "php/contracts/pathfinder",
+        "php/contracts/values"
       ]
     },
     "files": [
-      "php/functions/debug.php",
-      "php/Contracts/constants/global.php",
-      "php/Contracts/constants/html.php",
-      "php/Contracts/constants/logger.php",
-      "php/Contracts/constants/primitives.php",
-      "php/Contracts/functions/global.php",
-      "php/Contracts/functions/hashes.php",
-      "php/Contracts/functions/temp_path.php"
+      "php/constants.php",
+      "php/functions.php"
     ]
   },
   "autoload-dev": {
@@ -58,24 +47,25 @@
   "require": {
     "php": ">=8.5",
     "ext-hash": "*",
-    "composer-runtime-api": "^2.2",
+    "ext-uri": "*",
     "psr/log": "@stable",
-    "psr/cache": "@stable",
     "psr/container": "@stable",
     "psr/event-dispatcher": "@stable",
     "symfony/http-client-contracts": "^3.7",
-    "ext-uri": "*",
+    "composer-runtime-api": "^2.2",
+    "northrook/hashes": "dev-main",
     "ext-fileinfo": "*",
     "ext-intl": "*"
   },
   "require-dev": {
+    "northrook/php-generator": "dev-main",
     "northrook/php-cs": "dev-main",
     "northrook/php-debug": "dev-main",
     "phpunit/phpunit": "^13",
     "phpstan/phpstan": "^2.2",
-    "symfony/http-client": "^8.1",
     "symfony/var-exporter": "^8.1",
-    "tempest/highlight": "^2.27"
+    "tempest/highlight": "^2.27",
+    "tracy/tracy": "^2.12"
   },
   "scripts": {
     "phpstan": "vendor/bin/phpstan analyse",

@@ -1,0 +1,693 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Northrook\Filesystem;
+
+use Northrook\Context;
+use Northrook\Contracts\Reference;
+use Northrook\FilesystemInterface;
+use Northrook\InvalidArgumentException;
+use Northrook\Normalize;
+use Northrook\ReferenceTrait;
+use Northrook\RuntimeException;
+use Northrook\Timestamp;
+use Northrook\Uri;
+
+/**
+ * Filesystem path {@see Reference}.
+ *
+ * Location identity and structural path operations over a local path string.
+ * Validated denoting string only — no guarantee the path exists on disk.
+ *
+ * Not a facade over {@see \SplFileInfo} (intended internal helper only). Prefer
+ * {@see File} / {@see Directory} when the path is known to be a file or
+ * directory and typed I/O or listing matters.
+ *
+ * I/O and existence predicates go through {@see FilesystemInterface}. When
+ * `$filesystem` is omitted, the registered {@see Context} filesystem is used,
+ * falling back to a new {@see NativeFilesystem}.
+ *
+ *
+ */
+readonly class Path implements Reference
+{
+    use ReferenceTrait;
+
+    protected FilesystemInterface $filesystem;
+
+    /**
+     * Canonical filesystem path string after {@see normalize()}.
+     *
+     * @var non-empty-string
+     */
+    public string $value;
+
+    /**
+     * Builds from `$path` after normalization.
+     *
+     * @param string|\Stringable $path Local filesystem path (not a URI shape)
+     *
+     * @throws InvalidArgumentException When `$path` is empty, too long, or URI-shaped
+     */
+    public function __construct(
+        string|\Stringable       $path,
+        null|FilesystemInterface $filesystem = null,
+    ) {
+        $this->filesystem = $filesystem ?? Context::tryGet()->filesystem ?? new NativeFilesystem;
+        $this->value      = static::normalize($path);
+    }
+
+    /**
+     * Canonical path string (separators collapsed, `.` segments dropped, etc.).
+     *
+     * {@inheritDoc}
+     *
+     * @return non-empty-string
+     */
+    public static function normalize(
+        string|\Stringable $value,
+    ): string {
+        $string = (string) $value;
+
+        if ($string === '') {
+            throw new InvalidArgumentException(
+                message: 'Path cannot be empty.',
+                context: [
+                    'name'     => 'path',
+                    'expected' => 'non-empty filesystem path',
+                    'received' => $value,
+                ],
+            );
+        }
+
+        $schemeEnd = \strpos($string, '://');
+
+        if ($schemeEnd !== false && \is_path_scheme(\substr($string, 0, $schemeEnd))) {
+            throw new InvalidArgumentException(
+                message: 'Path cannot be URI-shaped.',
+                context: [
+                    'name'     => 'path',
+                    'expected' => 'local filesystem path',
+                    'received' => $value,
+                ],
+            );
+        }
+
+        try {
+            $normalized = Normalize::path(
+                path        : $string,
+                traversal   : true,
+                throwOnEmpty: false,
+            );
+        } catch (\Throwable $exception) {
+            if ($exception instanceof InvalidArgumentException || $exception instanceof FilesystemException) {
+                throw $exception;
+            }
+
+            throw new InvalidArgumentException(
+                message : $exception->getMessage(),
+                context : [
+                    'name'     => 'path',
+                    'expected' => 'valid filesystem path',
+                    'received' => $value,
+                ],
+                previous: $exception,
+            );
+        }
+
+        if ($normalized === '') {
+            throw new InvalidArgumentException(
+                message: 'Path normalized to an empty string.',
+                context: [
+                    'name'     => 'path',
+                    'expected' => 'non-empty filesystem path',
+                    'received' => $value,
+                ],
+            );
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * @return array{path: non-empty-string}
+     */
+    protected function filesystemContext(): array
+    {
+        return ['path' => $this->value];
+    }
+
+    // -------------------------------------------------------------------------
+    // Structure
+    // -------------------------------------------------------------------------
+
+    /**
+     * Parent directory as a typed {@see Directory}.
+     */
+    public function parent(): Directory
+    {
+        return new Directory(
+            path      : $this->dirname(),
+            filesystem: $this->filesystem,
+        );
+    }
+
+    /**
+     * Join one or more segments onto this path as a generic {@see Path}.
+     */
+    public function join(
+        string|\Stringable ...$segments,
+    ): Path {
+        $parts = [$this->value];
+
+        foreach ($segments as $segment) {
+            $part = (string) $segment;
+
+            if ($part !== '') {
+                $parts[] = $part;
+            }
+        }
+
+        return new Path(
+            path      : Normalize::path($parts, traversal: true),
+            filesystem: $this->filesystem,
+        );
+    }
+
+    /**
+     * Full pathname — same string as {@see $value}.
+     */
+    public function pathname(): string
+    {
+        return $this->value;
+    }
+
+    /**
+     * Directory portion of the pathname (string, not a {@see Directory}).
+     *
+     * Use {@see asDirectory()} or {@see parent()} when you need a typed path.
+     *
+     * @return non-empty-string
+     */
+    public function dirname(): string
+    {
+        $dirname = \dirname($this->value);
+
+        return $dirname === '' ? '.' : $dirname;
+    }
+
+    /**
+     * Final path segment (filename or directory name), including extension.
+     *
+     * @return non-empty-string
+     */
+    public function basename(): string
+    {
+        $basename = \basename($this->value);
+
+        return $basename === '' ? $this->value : $basename;
+    }
+
+    /**
+     * Basename without the extension.
+     */
+    public function filename(): string
+    {
+        return \pathinfo($this->value, \PATHINFO_FILENAME);
+    }
+
+    /**
+     * Extension without a leading `.`, or an empty string when none is present.
+     */
+    public function extension(): string
+    {
+        return \pathinfo($this->value, \PATHINFO_EXTENSION);
+    }
+
+    /**
+     * Return a copy with the extension replaced or cleared.
+     *
+     * @param string $extension Without leading `.`; empty string clears the extension
+     */
+    public function withExtension(
+        string $extension,
+    ): static {
+        $filename  = $this->filename();
+        $extension = \ltrim($extension, '.');
+        $basename  = $extension === '' ? $filename : $filename . '.' . $extension;
+
+        return new static(
+            path      : $this->joinDirname($basename),
+            filesystem: $this->filesystem,
+        );
+    }
+
+    /**
+     * Return a copy with the final path segment replaced.
+     */
+    public function withBasename(
+        string $basename,
+    ): static {
+        return new static(
+            path      : $this->joinDirname($basename),
+            filesystem: $this->filesystem,
+        );
+    }
+
+    /**
+     * Join `$basename` under this path's dirname without turning `/` into a UNC root.
+     */
+    private function joinDirname(
+        string $basename,
+    ): string {
+        $dirname = $this->dirname();
+
+        if ($dirname === '.') {
+            return $basename;
+        }
+
+        return \rtrim($dirname, \DIR_SEP) . \DIR_SEP . $basename;
+    }
+
+    // -------------------------------------------------------------------------
+    // Predicates
+    // -------------------------------------------------------------------------
+
+    /**
+     * Whether this path exists on disk.
+     *
+     * @throws RuntimeException When `$throwOnError` is true and the path does not exist
+     */
+    public function exists(
+        bool $throwOnError = false,
+    ): bool {
+        $exists = $this->filesystem->fileExists($this->value);
+
+        if ($exists) {
+            return true;
+        }
+
+        if ($throwOnError) {
+            throw new RuntimeException(
+                message: "Path '{$this->value}' does not exist.",
+                context: ['path' => $this->value],
+            );
+        }
+
+        return false;
+    }
+
+    /**
+     * Whether this path is an existing regular file.
+     *
+     * @phpstan-impure
+     */
+    public function isFile(): bool
+    {
+        return $this->filesystem->isFile($this->value);
+    }
+
+    /**
+     * Whether this path is an existing directory.
+     *
+     * @phpstan-impure
+     */
+    public function isDirectory(): bool
+    {
+        return $this->filesystem->isDirectory($this->value);
+    }
+
+    /**
+     * Whether this path is an existing symbolic link.
+     *
+     * @phpstan-impure
+     */
+    public function isLink(): bool
+    {
+        return $this->filesystem->isLink($this->value);
+    }
+
+    /**
+     * Whether this path exists and is readable.
+     *
+     * @phpstan-impure
+     */
+    public function isReadable(): bool
+    {
+        return $this->filesystem->isReadable($this->value);
+    }
+
+    /**
+     * Whether this path exists and is writable.
+     *
+     * @phpstan-impure
+     */
+    public function isWritable(): bool
+    {
+        return $this->filesystem->isWritable($this->value);
+    }
+
+    /**
+     * Whether this path is absolute on the current platform.
+     */
+    public function isAbsolute(): bool
+    {
+        return Normalize::isAbsolutePath($this->value);
+    }
+
+    /**
+     * Whether this path is relative (not absolute on the current platform).
+     */
+    public function isRelative(): bool
+    {
+        return ! $this->isAbsolute();
+    }
+
+    /**
+     * Whether the basename starts with `.` (hidden-name convention).
+     *
+     * Existence on disk is not required.
+     */
+    public function isDot(): bool
+    {
+        $basename = $this->basename();
+
+        return $basename !== '' && $basename[0] === '.';
+    }
+
+    /**
+     * Whether `$other` denotes the same canonical path string.
+     */
+    public function equals(
+        self|string|\Stringable $other,
+    ): bool {
+        if ($other instanceof self) {
+            return $this->value === $other->value;
+        }
+
+        try {
+            return $this->value === static::normalize($other);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Resolution
+    // -------------------------------------------------------------------------
+
+    /**
+     * Resolved absolute path with symlinks expanded, or false when unresolvable.
+     *
+     * @return ($throw is true ? non-empty-string : false|non-empty-string)
+     *
+     * @throws RuntimeException When `$throw` is true and the path cannot be resolved
+     */
+    public function realPath(
+        bool $throw = false,
+    ): false|string {
+        $resolved = $this->filesystem->resolvePath($this->value) ?? false;
+
+        if ($resolved !== false && $resolved !== '') {
+            return $resolved;
+        }
+
+        if ($throw) {
+            throw new RuntimeException(
+                message: "Unable to resolve real path for '{$this->value}'.",
+                context: ['path' => $this->value],
+            );
+        }
+
+        return false;
+    }
+
+    /**
+     * Absolute form of this path without requiring it to exist on disk.
+     */
+    public function absolute(): static
+    {
+        if ($this->isAbsolute()) {
+            return $this;
+        }
+
+        $cwd = \getcwd();
+
+        if ($cwd === false) {
+            throw new RuntimeException(
+                message: 'Unable to determine the current working directory.',
+                context: ['path' => $this->value],
+            );
+        }
+
+        return new static(
+            path      : Normalize::path([$cwd, $this->value], traversal: true),
+            filesystem: $this->filesystem,
+        );
+    }
+
+    /**
+     * This path expressed relative to `$from`.
+     */
+    public function relativeTo(
+        self|string|\Stringable $from,
+    ): static {
+        $fromPath = new self((string) $from, $this->filesystem)->absolute()->value;
+        $toPath   = $this->absolute()->value;
+
+        if ($fromPath === $toPath) {
+            return new static(
+                path      : './',
+                filesystem: $this->filesystem,
+            );
+        }
+
+        // Re-index after array_filter — absolute paths leave a hole at key 0.
+        $fromParts = \rtrim($fromPath, \DIR_SEP) |> ( fn($x) => \explode(\DIR_SEP, $x) ) |> ( fn($x) => \array_values(\array_filter($x, static fn(string $p): bool => $p !== '')) );
+
+        $toParts = \rtrim($toPath, \DIR_SEP) |> ( fn($x) => \explode(\DIR_SEP, $x) ) |> ( fn($x) => \array_values(\array_filter($x, static fn(string $p): bool => $p !== '')) );
+
+        $shared = 0;
+        $limit  = \min(\count($fromParts), \count($toParts));
+
+        while ($shared < $limit && $fromParts[$shared] === $toParts[$shared]) {
+            $shared++;
+        }
+
+        $up       = \array_fill(0, \count($fromParts) - $shared, '..');
+        $down     = \array_slice($toParts, $shared);
+        $relative = \implode(\DIR_SEP, [...$up, ...$down]);
+
+        return new static(
+            path      : $relative === '' ? './' : $relative,
+            filesystem: $this->filesystem,
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // Typed views
+    // -------------------------------------------------------------------------
+
+    /**
+     * View this location as a {@see File}.
+     *
+     * @param bool $assert When true, the path must exist and be a regular file
+     *
+     * @throws RuntimeException When `$assert` and the path is not an existing file
+     */
+    public function asFile(
+        bool $assert = false,
+    ): File {
+        return new File(
+            path      : $this->value,
+            assert    : $assert,
+            filesystem: $this->filesystem,
+        );
+    }
+
+    /**
+     * View this location as a {@see Directory}.
+     *
+     * @param bool $assert When true, the path must exist and be a directory
+     *
+     * @throws RuntimeException When `$assert` and the path is not an existing directory
+     */
+    public function asDirectory(
+        bool $assert = false,
+    ): Directory {
+        return new Directory(
+            path      : $this->value,
+            assert    : $assert,
+            filesystem: $this->filesystem,
+        );
+    }
+
+    /**
+     * This location as a generic {@see Path} (never a subclass instance).
+     */
+    public function toPath(): Path
+    {
+        return new Path(
+            path      : $this->value,
+            filesystem: $this->filesystem,
+        );
+    }
+
+    /**
+     * `file://` {@see Uri} for this path.
+     */
+    public function toUri(): Uri
+    {
+        $absolute = $this->absolute()->value;
+
+        if (! \str_starts_with($absolute, '/')) {
+            $absolute = '/' . \strtr($absolute, '\\', '/');
+        }
+
+        return new Uri('file://' . $absolute);
+    }
+
+    // -------------------------------------------------------------------------
+    // Filesystem
+    // -------------------------------------------------------------------------
+
+    /**
+     * Update access and modification times.
+     *
+     * Integer arguments are Unix timestamps in seconds. Omit both to touch "now".
+     *
+     * @return bool `true` on success, `false` on failure
+     */
+    public function touch(
+        null|Timestamp|int $modifiedTime = null,
+        null|Timestamp|int $accessTime = null,
+    ): bool {
+        $mtime = self::unixSeconds($modifiedTime);
+        $atime = self::unixSeconds($accessTime);
+
+        try {
+            $this->filesystem->touch($this->value, $mtime, $atime);
+
+            return true;
+        } catch (FilesystemException) {
+            return false;
+        }
+    }
+
+    /**
+     * Copy to `$target` and return a path for the destination.
+     *
+     * When `$alwaysOverwrite` is false, existing newer targets may be left
+     * untouched per the filesystem implementation.
+     */
+    public function copy(
+        string|\Stringable|self $target,
+        bool                    $alwaysOverwrite = false,
+    ): static {
+        $destination = (string) $target;
+
+        $this->filesystem->copyFile(
+            $this->value,
+            $destination,
+            $alwaysOverwrite,
+        );
+
+        return new static(
+            path      : $destination,
+            filesystem: $this->filesystem,
+        );
+    }
+
+    /**
+     * Move / rename to `$target` and return a path for the destination.
+     */
+    public function move(
+        string|\Stringable|self $target,
+        bool                    $overwrite = false,
+    ): static {
+        $destination = (string) $target;
+
+        $this->filesystem->move(
+            $this->value,
+            $destination,
+            $overwrite,
+        );
+
+        return new static(
+            path      : $destination,
+            filesystem: $this->filesystem,
+        );
+    }
+
+    /**
+     * Remove the file or directory at this path.
+     *
+     * @return bool `true` on success, `false` on failure
+     */
+    public function remove(): bool
+    {
+        try {
+            $this->filesystem->remove($this->value);
+
+            return true;
+        } catch (FilesystemException) {
+            return false;
+        }
+    }
+
+    /**
+     * Glob patterns relative to this path.
+     *
+     * When this path is an existing file, patterns are relative to its dirname.
+     *
+     * @param string|list<string> $pattern
+     *
+     * @return list<static>
+     */
+    public function glob(
+        string|array $pattern,
+        null|int     $flags = null,
+    ): array {
+        $base     = $this->isFile() ? $this->dirname() : $this->value;
+        $patterns = [];
+
+        foreach ((array) $pattern as $item) {
+            if (Normalize::isAbsolutePath($item)) {
+                $patterns[] = $item;
+            } else {
+                $patterns[] = Normalize::path([$base, $item], traversal: true);
+            }
+        }
+
+        $matches = $this->filesystem->glob($patterns, $flags);
+
+        $result = [];
+
+        foreach ($matches as $match) {
+            $result[] = new static(
+                path      : $match,
+                filesystem: $this->filesystem,
+            );
+        }
+
+        return $result;
+    }
+
+    /**
+     * @return null|int Unix seconds
+     */
+    protected static function unixSeconds(
+        null|Timestamp|int $time,
+    ): null|int {
+        if ($time === null) {
+            return null;
+        }
+
+        if ($time instanceof Timestamp) {
+            return \intdiv($time->number, 1000);
+        }
+
+        return $time;
+    }
+}

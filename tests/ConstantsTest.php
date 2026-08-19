@@ -148,65 +148,6 @@ final class ConstantsTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
-    // logger.php (Northrook\Contracts)
-    // -------------------------------------------------------------------------
-
-    #[DataProvider('provideLogLevelNames')]
-    public function testLogLevelNameConstants(
-        string $name,
-        string $expected,
-    ): void {
-        $fqn = 'Northrook\\Contracts\\' . $name;
-
-        self::assertTrue(\defined($fqn), "{$fqn} is not defined");
-        self::assertSame($expected, \constant($fqn));
-    }
-
-    /**
-     * @return \Generator<string, array{string, string}>
-     */
-    public static function provideLogLevelNames(): \Generator
-    {
-        yield 'debug' => ['LOG_DEBUG', 'debug'];
-        yield 'info' => ['LOG_INFO', 'info'];
-        yield 'notice' => ['LOG_NOTICE', 'notice'];
-        yield 'warning' => ['LOG_WARNING', 'warning'];
-        yield 'error' => ['LOG_ERROR', 'error'];
-        yield 'critical' => ['LOG_CRITICAL', 'critical'];
-        yield 'alert' => ['LOG_ALERT', 'alert'];
-        yield 'emergency' => ['LOG_EMERGENCY', 'emergency'];
-    }
-
-    #[DataProvider('provideLogLevelMap')]
-    public function testLogLevelMapFollowsMonolog(
-        string $level,
-        int    $value,
-    ): void {
-        self::assertSame($value, \Northrook\Contracts\LOG_LEVEL[$level]);
-        self::assertSame($level, \Northrook\Contracts\LOG_LEVEL[$value]);
-    }
-
-    /**
-     * @return \Generator<string, array{string, int}>
-     */
-    public static function provideLogLevelMap(): \Generator
-    {
-        yield 'debug' => ['debug', 100];
-        yield 'info' => ['info', 200];
-        yield 'notice' => ['notice', 250];
-        yield 'warning' => ['warning', 300];
-        yield 'error' => ['error', 400];
-        yield 'critical' => ['critical', 500];
-        yield 'alert' => ['alert', 550];
-        yield 'emergency' => ['emergency', 600];
-    }
-
-    public function testLogLevelMapIsBidirectionallyComplete(): void
-    {
-        self::assertCount(16, \Northrook\Contracts\LOG_LEVEL);
-    }
-
-    // -------------------------------------------------------------------------
     // primitives.php (Northrook\Contracts)
     // -------------------------------------------------------------------------
 

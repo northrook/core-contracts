@@ -2,26 +2,47 @@
 
 declare(strict_types=1);
 
+use Northrook\Context;
+
 /**
  * Compact debug descriptor for logs and exception messages.
  *
- * Examples: `string:3`, `string:empty`, `list:2`, `object:stdClass#1`.
+ * ⚠️ `$append_scalar` may dump sensitive data.
+ *
+ * Examples: `string:5:value`, `string:empty`, `list:2`, `object:stdClass#1`.*
  */
 function debug_value_type(
     mixed $from,
+    bool  $append_scalar = false,
 ): string {
-    return match (gettype($from)) {
+    $type = match (gettype($from)) {
         'string'            => 'string:' . ( $from === '' ? 'empty' : \mb_strlen($from) ),
         'integer'           => 'integer:' . \strlen(strval($from)),
         'double'            => 'float:' . \strlen(strval($from)),
         'boolean'           => 'bool:' . ( $from ? 'true' : 'false' ),
         'NULL'              => 'null',
         'array'             => ( \array_is_list($from) ? 'list:' : 'array:' ) . \count($from),
-        'object'            => 'object:' . \get_class($from) . '#' . \spl_object_id($from),
+        'object' => match (true) {
+            $from instanceof \UnitEnum => 'enum:' . $from::class . '::' . $from->name,
+            $from instanceof \Closure => 'closure' . \spl_object_id($from),
+            default => 'object:' . \spl_object_id($from),
+        },
         'resource'          => 'resource:' . ( \get_resource_type($from) ?: 'unknown' ),
         'resource (closed)' => 'resource:closed',
         default             => 'type:unknown',
     };
+
+    if (! $append_scalar || ! \is_scalar($from) || empty($from) || is_bool($from)) {
+        return $type;
+    }
+
+    if (Context::isUntrusted()) {
+        throw new RuntimeException(
+            message: 'Attempted to dump sensitive data in untrusted context.',
+        );
+    }
+
+    return "{$type}.{$from}";
 }
 
 /**
@@ -38,6 +59,23 @@ function debug_dump(
 ): void {
     if (class_exists('\Northrook\Debug::dump')) {
         \Northrook\Debug::dump(...$values);
+        return;
+    }
+
+    if (class_exists('\Tracy\Dumper')) {
+        $settings = ['location' => false, 'theme' => 'dark'];
+        $class    = 'class="tracy-' . $settings['theme'] . '"';
+        $style    = 'style="font-family: monospace; padding: .25em;"';
+        foreach ($values as $label => $value) {
+            if (! Context::CLI) {
+                if (\is_string($label)) {
+                    echo "<div {$class} {$style}><strong>{$label}</strong></div>";
+                }
+
+                echo '<div style="padding-block-start: .25em"></div>';
+            }
+            Tracy\Dumper::dump($value, $settings);
+        }
         return;
     }
 
