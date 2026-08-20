@@ -20,4 +20,12 @@ final class CurlException extends RuntimeException
             previous: $previous,
         );
     }
+
+    /**
+     * @return string
+     */
+    public function getUrl(): string
+    {
+        return $this->getContext()['url'];
+    }
 }
