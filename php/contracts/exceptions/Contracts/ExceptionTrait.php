@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Northrook\Contracts;
 
 use Northrook\ErrorHandler\ErrorBuffer;
-use Northrook\ErrorHandler\ErrorSnapshot;
 use Northrook\ExceptionInterface;
 use Northrook\Snapshot;
 
@@ -29,6 +28,15 @@ trait ExceptionTrait
     {
         return $this->context;
     }
+
+    /**
+     * @return \Northrook\ErrorHandler\RuntimeError[]
+     */
+    final public function getErrors(): array
+    {
+        return $this->context['errors'] ?? [];
+    }
+
     /**
      * @initializer
      *
