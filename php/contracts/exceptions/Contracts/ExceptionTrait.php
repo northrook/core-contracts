@@ -11,8 +11,6 @@ use Northrook\Snapshot;
 /**
  * @phpstan-require-extends \Exception
  * @phpstan-require-implements \Northrook\ExceptionInterface
- *
- *
  */
 trait ExceptionTrait
 {

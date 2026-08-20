@@ -9,8 +9,15 @@ namespace Northrook;
  */
 interface ExceptionInterface extends \Throwable
 {
-    /** @return array<array-key, mixed>  */
+    /**
+     * @return array<array-key, mixed>
+     */
     public function getContext(): array;
+
+    /**
+     * @return \Northrook\ErrorHandler\RuntimeError[]
+     */
+    public function getErrors(): array;
 
     /**
      * @param \Throwable                 $throwable
