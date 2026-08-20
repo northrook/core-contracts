@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Northrook;
 
 use Northrook\Filesystem\Path;
+use Northrook\Reference\Href;
 
 /**
  * Resolves configured parameter references into filesystem paths and public URLs.
@@ -28,16 +29,16 @@ interface PathfinderInterface
     ): null|Path;
 
     /**
-     * Resolves `$reference` to a public {@see Url}.
+     * Resolves `$reference` to a hyperlink reference {@see Href}.
      *
      * @param string|\Stringable $reference `{key}`, `{key}/suffix`, `scheme://host/path`
      *
-     * @return null|Url `null` when the reference cannot be resolved
+     * @return null|\Northrook\Reference\Href `null` when the reference cannot be resolved
      *
      * @throws InvalidArgumentException when the resolved value is a filesystem path
      * @throws RuntimeException when the `$reference` value is malformed
      */
-    public function getUrl(
+    public function getHref(
         string|\Stringable $reference,
-    ): null|Url;
+    ): null|Href;
 }

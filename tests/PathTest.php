@@ -8,8 +8,8 @@ use Northrook\Filesystem\Directory;
 use Northrook\Filesystem\File;
 use Northrook\Filesystem\Path;
 use Northrook\InvalidArgumentException;
+use Northrook\Reference\Uri;
 use Northrook\RuntimeException;
-use Northrook\Uri;
 use PHPUnit\Framework\TestCase;
 
 final class PathTest extends TestCase

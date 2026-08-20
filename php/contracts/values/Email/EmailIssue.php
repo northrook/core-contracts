@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Northrook\Email;
 
-use Northrook\Email;
+use Northrook\Reference\Email;
 
 /**
  * Diagnostic cases produced by {@see Email} validation.

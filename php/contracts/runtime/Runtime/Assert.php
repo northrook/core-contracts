@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Northrook\Runtime;
 
-use Northrook\Href;
 use Northrook\Parameter;
+use Northrook\Reference\Href;
+use Northrook\Reference\Uri;
+use Northrook\Reference\Url;
 use Northrook\RuntimeException;
-use Northrook\Uri;
-use Northrook\Url;
 
 final class Assert
 {

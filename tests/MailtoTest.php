@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Href;
 use Northrook\InvalidArgumentException;
-use Northrook\Mailto;
+use Northrook\Reference\Href;
+use Northrook\Reference\Mailto;
 use PHPUnit\Framework\TestCase;
 
 final class MailtoTest extends TestCase

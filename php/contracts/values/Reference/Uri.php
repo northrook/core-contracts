@@ -2,11 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Northrook;
+namespace Northrook\Reference;
 
 use Northrook\Contracts\Reference;
+use Northrook\CurlInterface;
 use Northrook\Filesystem\File;
 use Northrook\Filesystem\Path;
+use Northrook\InvalidArgumentException;
+use Northrook\ReferenceTrait;
+use Northrook\RuntimeException;
 use Uri\InvalidUriException;
 use Uri\UriComparisonMode;
 

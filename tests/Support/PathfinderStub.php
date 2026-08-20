@@ -6,7 +6,7 @@ namespace Northrook\Contracts\Tests\Support;
 
 use Northrook\Filesystem\Path;
 use Northrook\PathfinderInterface;
-use Northrook\Url;
+use Northrook\Reference\Href;
 
 final class PathfinderStub implements PathfinderInterface
 {
@@ -16,9 +16,9 @@ final class PathfinderStub implements PathfinderInterface
         return null;
     }
 
-    public function getUrl(
+    public function getHref(
         string|\Stringable $reference,
-    ): null|Url {
+    ): null|Href {
         return null;
     }
 }

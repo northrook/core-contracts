@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Href;
 use Northrook\InvalidArgumentException;
+use Northrook\Reference\Href;
+use Northrook\Reference\Uri;
+use Northrook\Reference\Url;
 use Northrook\Runtime\Assert;
-use Northrook\Uri;
-use Northrook\Url;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 

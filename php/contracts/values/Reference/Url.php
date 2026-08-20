@@ -2,11 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Northrook;
+namespace Northrook\Reference;
 
+use Northrook\Context;
+use Northrook\CurlException;
+use Northrook\CurlInterface;
+use Northrook\DependencyException;
 use Northrook\Filesystem\File;
 use Northrook\Filesystem\Path;
+use Northrook\InvalidArgumentException;
 use Uri\WhatWg\InvalidUrlException;
+
+use function Northrook\get_temp_path;
 
 /**
  * Absolute http(s) network URL {@see Reference}.
@@ -131,7 +138,7 @@ final class Url extends Uri
     /**
      * @param \Uri\Rfc3986\Uri  $uri
      *
-     * @return \Northrook\Url
+     * @return static
      */
     protected function withRfc(
         \Uri\Rfc3986\Uri $uri,

@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Northrook\Contracts\Tests;
 
 use Northrook\Contracts\Tests\Support\MixedArray;
-use Northrook\Email;
 use Northrook\Email\EmailIssue;
 use Northrook\InvalidArgumentException;
+use Northrook\Reference\Email;
 use Northrook\RuntimeException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;

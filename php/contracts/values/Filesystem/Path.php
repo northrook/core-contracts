@@ -9,10 +9,10 @@ use Northrook\Contracts\Reference;
 use Northrook\FilesystemInterface;
 use Northrook\InvalidArgumentException;
 use Northrook\Normalize;
+use Northrook\Reference\Uri;
 use Northrook\ReferenceTrait;
 use Northrook\RuntimeException;
 use Northrook\Timestamp;
-use Northrook\Uri;
 
 /**
  * Filesystem path {@see Reference}.

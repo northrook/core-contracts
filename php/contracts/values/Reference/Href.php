@@ -2,9 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Northrook;
+namespace Northrook\Reference;
 
 use Northrook\Contracts\Reference;
+use Northrook\CurlInterface;
+use Northrook\InvalidArgumentException;
+use Northrook\ReferenceTrait;
 use Uri\InvalidUriException;
 
 /**

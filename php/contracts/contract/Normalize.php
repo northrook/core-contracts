@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Northrook;
 
 use Northrook\Filesystem\Path;
+use Northrook\Reference\Href;
+use Northrook\Reference\Uri;
+use Northrook\Reference\Url;
 use Northrook\Runtime\Assert;
 use Stringable;
 

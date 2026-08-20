@@ -2,7 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Northrook;
+namespace Northrook\Reference;
+
+use Northrook\InvalidArgumentException;
+use Northrook\RuntimeException;
 
 /**
  * Composable `mailto:` {@see Href}.

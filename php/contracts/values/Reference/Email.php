@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Northrook;
+namespace Northrook\Reference;
 
 use Northrook\Contracts\Reference;
 use Northrook\Email\EmailIssue;
+use Northrook\InvalidArgumentException;
+use Northrook\ReferenceTrait;
 
 /**
  * Email address {@see Reference} — RFC 5322 `addr-spec` with RFC 5321 limits.
