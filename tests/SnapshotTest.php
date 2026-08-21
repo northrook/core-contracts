@@ -11,7 +11,7 @@ use Northrook\Contracts\Tests\Support\SecretMask;
 use Northrook\Parameter;
 use Northrook\Parameter\Secret as SecretPolicy;
 use Northrook\Parameter\Type as ParameterType;
-use Northrook\ParameterReference;
+use Northrook\ParameterDefinition;
 use Northrook\Snapshot;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -291,7 +291,7 @@ final class SnapshotTest extends TestCase
 
     public function testParameterReferencePayloadIsRedacted(): void
     {
-        $reference = new ParameterReference(
+        $reference = new ParameterDefinition(
             'app.token',
             'secret123',
             SecretPolicy::SENSITIVE,
@@ -300,7 +300,7 @@ final class SnapshotTest extends TestCase
         $snap  = MixedArray::from(Snapshot::value($reference));
         $props = MixedArray::at($snap, 'properties');
 
-        self::assertSame(ParameterReference::class, $snap['class']);
+        self::assertSame(ParameterDefinition::class, $snap['class']);
         self::assertSame('app.token', $props['key']);
         self::assertSame(SecretMask::sensitive('secret123'), $props['value']);
     }

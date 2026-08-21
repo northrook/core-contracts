@@ -18,7 +18,7 @@ use Northrook\Runtime\Assert;
  * @phpstan-import-type ParameterValue from \Northrook\Parameter
  * @phpstan-type SecretArgument null|"sensitive"|"credential"|\Northrook\Container\Secret|\Northrook\Parameter\Secret
  */
-final class ParameterReference implements Serializable, Exportable
+final class ParameterDefinition implements Serializable, Exportable
 {
     use Serializer;
 
@@ -97,7 +97,7 @@ final class ParameterReference implements Serializable, Exportable
     /**
      * @param non-empty-string $set
      *
-     * @return \Northrook\ParameterReference
+     * @return \Northrook\ParameterDefinition
      */
     public function key(
         mixed $set,
@@ -112,7 +112,7 @@ final class ParameterReference implements Serializable, Exportable
      * @param \Northrook\Parameter\Type  $type
      * @param bool                       $validate
      *
-     * @return \Northrook\ParameterReference
+     * @return \Northrook\ParameterDefinition
      */
     public function type(
         Type $type,
@@ -132,7 +132,7 @@ final class ParameterReference implements Serializable, Exportable
      * @param ParameterValue|\Stringable  $set
      * @param bool                        $validate
      *
-     * @return \Northrook\ParameterReference
+     * @return \Northrook\ParameterDefinition
      */
     public function value(
         bool|float|int|string|null|\UnitEnum|\Stringable|array $set,
@@ -157,7 +157,7 @@ final class ParameterReference implements Serializable, Exportable
     /**
      * @param null|"sensitive"|"credential"|\Northrook\Parameter\Secret|\Northrook\Container\Secret  $secret
      *
-     * @return \Northrook\ParameterReference
+     * @return \Northrook\ParameterDefinition
      */
     public function secret(
         null|string|SecretEnum|SecretAttribute $secret,
@@ -179,7 +179,7 @@ final class ParameterReference implements Serializable, Exportable
     /**
      * @param string ...$add
      *
-     * @return \Northrook\ParameterReference
+     * @return \Northrook\ParameterDefinition
      */
     public function tags(
         string ...$add,
@@ -248,7 +248,7 @@ final class ParameterReference implements Serializable, Exportable
     /**
      * Clear all tags.
      *
-     * @return \Northrook\ParameterReference
+     * @return \Northrook\ParameterDefinition
      */
     public function clearTags(): self
     {
@@ -263,7 +263,7 @@ final class ParameterReference implements Serializable, Exportable
      *
      * @param bool  $set
      *
-     * @return \Northrook\ParameterReference
+     * @return \Northrook\ParameterDefinition
      */
     public function freeze(
         bool $set = true,

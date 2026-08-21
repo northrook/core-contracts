@@ -54,7 +54,7 @@ interface CompilerInterface
     public CompilerPass $pass { get; }
 
     /**
-     * The Parameter Store.
+     * The mutable Parameter Store.
      *
      * @var \Northrook\ParameterStoreInterface
      */
@@ -116,11 +116,4 @@ interface CompilerInterface
      * @return array<class-string, ServiceDefinition>
      */
     public function services(): array;
-
-    /**
-     * All registered parameters, in a flat, merged array.
-     *
-     * @return array<non-empty-string, Parameter>
-     */
-    public function parameters(): array;
 }

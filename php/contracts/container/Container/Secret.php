@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Northrook\Container;
 
-use Northrook\ParameterReference;
+use Northrook\ParameterDefinition;
 
 use const Northrook\Secret\SENSITIVE;
 
@@ -12,7 +12,7 @@ use const Northrook\Secret\SENSITIVE;
  * Marks a property or parameter as secret-aware.
  *
  * Holds a {@see \Northrook\Parameter\Secret} tier plus optional tag seeds
- * in `$conditions` (merged into {@see Parameter} / {@see ParameterReference} tags,
+ * in `$conditions` (merged into {@see Parameter} / {@see ParameterDefinition} tags,
  * or passed as redaction context). Does not wrap a payload.
  *
  * - Default {@see \Northrook\Parameter\Secret::SENSITIVE} — dump / debug hygiene (≈ {@see \SensitiveParameter});

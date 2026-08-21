@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Northrook\Contracts\Tests;
 
 use Northrook\Callback;
-use Northrook\Container\CompiledServiceDefinition;
 use Northrook\Container\ContainerException;
+use Northrook\Container\Service;
 use Northrook\Container\Service\Alias;
 use Northrook\Container\Service\Autodiscover;
 use Northrook\Container\Service\Inline;
@@ -270,7 +270,7 @@ final class ServiceDefinitionTest extends TestCase
         self::assertFalse($export['locked']);
     }
 
-    public function testFinalizeLocksAndReturnsCompiledDefinition(): void
+    public function testFinalizeLocksAndReturnsService(): void
     {
         $definition = ServiceDefinition::register(
             ServiceDefinitionFixtureB::class,
@@ -279,18 +279,16 @@ final class ServiceDefinitionTest extends TestCase
             binding: ServiceBinding::Unique,
         );
 
-        $compiled = $definition->finalize();
+        $service = $definition->finalize();
 
         self::assertTrue($definition->locked);
-        self::assertInstanceOf(CompiledServiceDefinition::class, $compiled);
-        self::assertTrue($compiled->locked);
-        self::assertSame($definition->export(), $compiled->toArray());
-        self::assertSame(ServiceBinding::Unique, $compiled->binding);
-        self::assertSame([ServiceDefinitionAliasInterface::class], $compiled->aliases);
-        self::assertTrue($compiled->tags[0]->reference === 'compiled.tag');
+        self::assertInstanceOf(Service::class, $service);
+        self::assertSame(ServiceBinding::Unique, $service->binding);
+        self::assertSame([ServiceDefinitionAliasInterface::class], $service->aliases);
+        self::assertTrue($service->tags[0]->reference === 'compiled.tag');
     }
 
-    public function testCompiledDefinitionJsonRoundTripViaToArray(): void
+    public function testExportJsonRoundTripAfterFinalize(): void
     {
         $definition = ServiceDefinition::register(
             ServiceDefinitionFixtureB::class,
@@ -303,12 +301,12 @@ final class ServiceDefinitionTest extends TestCase
             binding: ServiceBinding::Shared,
         );
 
-        $compiled = $definition->finalize();
-        $json     = JSON::encode($compiled->toArray());
-        $decoded  = JSON::decode($json);
+        $definition->finalize();
+        $export  = $definition->export();
+        $json    = JSON::encode($export);
+        $decoded = JSON::decode($json);
 
-        self::assertSame($compiled->toArray(), $decoded);
-        self::assertSame($definition->export(), $decoded);
+        self::assertSame($export, $decoded);
     }
 
     public function testIdIsLowercaseDottedFqcn(): void
@@ -554,14 +552,15 @@ final class ServiceDefinitionTest extends TestCase
             locked: true,
         );
 
-        $compiled = $definition->finalize();
+        $service = $definition->finalize();
 
         self::assertTrue($definition->locked);
-        self::assertTrue($compiled->locked);
-        self::assertSame($definition->export(), $compiled->toArray());
+        self::assertInstanceOf(Service::class, $service);
+        self::assertSame($definition->id, $service->id);
+        self::assertSame(ServiceDefinitionFixtureB::class, $service->class);
     }
 
-    public function testCompiledDefinitionExposesDefinitionState(): void
+    public function testServiceExposesDefinitionState(): void
     {
         $callback = Callback::function(
             'strtolower',
@@ -576,14 +575,14 @@ final class ServiceDefinitionTest extends TestCase
             callbacks: [$callback],
         );
 
-        $compiled = $definition->finalize();
+        $service = $definition->finalize();
 
-        self::assertSame($definition->id, $compiled->id);
-        self::assertSame(ServiceDefinitionFixtureB::class, $compiled->class);
-        self::assertFalse($compiled->autowire);
-        self::assertTrue($compiled->preload);
-        self::assertSame('create', $compiled->factory);
-        self::assertSame([$callback], $compiled->callbacks);
+        self::assertSame($definition->id, $service->id);
+        self::assertSame(ServiceDefinitionFixtureB::class, $service->class);
+        self::assertFalse($service->autowire);
+        self::assertTrue($service->preload);
+        self::assertSame('create', $service->factory);
+        self::assertSame([$callback], $service->callbacks);
     }
 
     public function testExportReflectsLockedState(): void
@@ -737,11 +736,11 @@ final class ServiceDefinitionTest extends TestCase
             tags: ['other.tag'],
         );
 
-        $compiled = $definition->finalize();
-        $export   = $definition->export();
+        $service = $definition->finalize();
+        $export  = $definition->export();
 
         self::assertTrue($definition->locked);
-        self::assertSame($export, $compiled->toArray());
+        self::assertInstanceOf(Service::class, $service);
         self::assertContains(
             [
                 'reference' => ContainerInterface::DEFAULT_REFERENCE,
@@ -756,20 +755,26 @@ final class ServiceDefinitionTest extends TestCase
             ],
             $export['tags'],
         );
+        self::assertTrue(
+            \array_any(
+                $service->tags,
+                static fn(Tag $tag): bool => $tag->reference === ContainerInterface::DEFAULT_REFERENCE && $tag->arguments === ['mode' => 'export'],
+            ),
+        );
     }
 
-    public function testCompiledArgumentTagJsonRoundTrip(): void
+    public function testArgumentTagExportJsonRoundTrip(): void
     {
         $definition = ServiceDefinition::register(
             ServiceDefinitionFixtureB::class,
             arguments: ['mode' => 'json', 1 => 'pos'],
         );
 
-        $compiled = $definition->finalize();
-        $json     = JSON::encode($compiled->toArray());
-        $decoded  = JSON::decode($json);
+        $definition->finalize();
+        $export  = $definition->export();
+        $json    = JSON::encode($export);
+        $decoded = JSON::decode($json);
 
-        self::assertSame($compiled->toArray(), $decoded);
-        self::assertSame($definition->export(), $decoded);
+        self::assertSame($export, $decoded);
     }
 }

@@ -29,7 +29,7 @@ interface ParameterStoreInterface
     ): bool;
 
     /**
-     * @param array<non-empty-string, ParameterValue|ParameterReference>  $parameters
+     * @param array<non-empty-string, ParameterValue|ParameterDefinition>  $parameters
      */
     public function assign(
         array $parameters,
@@ -39,9 +39,9 @@ interface ParameterStoreInterface
     /**
      * Will not override existing parameters.
      *
-     * @param non-empty-string                   $key
-     * @param ParameterValue|ParameterReference  $value
-     * @param \Northrook\Parameter\Secret        $secret  tier string, enum, or `#[Secret]` attribute
+     * @param non-empty-string                    $key
+     * @param ParameterValue|ParameterDefinition  $value
+     * @param \Northrook\Parameter\Secret         $secret  tier string, enum, or `#[Secret]` attribute
      */
     public function add(
         string                                        $key,
@@ -54,10 +54,10 @@ interface ParameterStoreInterface
      *
      * - `$tag` is a freeform non-empty hint: `path`, `Fully\Qualified\Classname`, etc
      *
-     * @param non-empty-string                   $key
-     * @param ParameterValue|ParameterReference  $value
-     * @param \Northrook\Parameter\Secret        $secret  tier string, enum, or `#[Secret]` attribute
-     * @param null|non-empty-string              $tag
+     * @param non-empty-string                    $key
+     * @param ParameterValue|ParameterDefinition  $value
+     * @param \Northrook\Parameter\Secret         $secret  tier string, enum, or `#[Secret]` attribute
+     * @param null|non-empty-string               $tag
      */
     public function set(
         string                                        $key,
@@ -68,16 +68,16 @@ interface ParameterStoreInterface
 
     /**
      * @param non-empty-string  $key
-     * @param bool              $create  when true, insert a virgin {@see ParameterReference} (`Value::Unset`) if missing
+     * @param bool              $create  when true, insert a virgin {@see ParameterDefinition} (`Value::Unset`) if missing
      *
-     * @return \Northrook\ParameterReference
+     * @return \Northrook\ParameterDefinition
      *
      * @throws \Northrook\UndefinedEntryException when `$key` does not exist and `$create` is false
      */
     public function get(
         string $key,
         bool   $create = false,
-    ): ParameterReference;
+    ): ParameterDefinition;
 
     /**
      * @param non-empty-string  ...$key

@@ -13,7 +13,7 @@ use Northrook\InvalidArgumentException;
 use Northrook\Parameter;
 use Northrook\Parameter\Secret as SecretPolicy;
 use Northrook\Parameter\Type as ParameterType;
-use Northrook\ParameterReference;
+use Northrook\ParameterDefinition;
 use PHPUnit\Framework\TestCase;
 
 final class ParameterReferenceTest extends TestCase
@@ -32,7 +32,7 @@ final class ParameterReferenceTest extends TestCase
 
     public function testGetParameterFreezesAndBuildsParameter(): void
     {
-        $reference = new ParameterReference(
+        $reference = new ParameterDefinition(
             'App.Token',
             'secret',
             SecretPolicy::SENSITIVE,
@@ -53,7 +53,7 @@ final class ParameterReferenceTest extends TestCase
 
     public function testSecretAttributeMergesConditionsIntoTags(): void
     {
-        $reference = new ParameterReference(
+        $reference = new ParameterDefinition(
             'db.dsn',
             'postgres://…',
             new Secret(SecretPolicy::CREDENTIAL, 'db-dsn', 'primary'),
@@ -68,7 +68,7 @@ final class ParameterReferenceTest extends TestCase
 
     public function testExportIsEvalableFrozenParameter(): void
     {
-        $reference = new ParameterReference(
+        $reference = new ParameterDefinition(
             'app.flag',
             true,
             null,
@@ -90,25 +90,25 @@ final class ParameterReferenceTest extends TestCase
 
     public function testOmittingTypeResolvesFromValue(): void
     {
-        $value = new ParameterReference('app.name', 'Contracts');
+        $value = new ParameterDefinition('app.name', 'Contracts');
         self::assertSame(ParameterType::Value, $value->type);
 
-        $path = new ParameterReference('app.path', new Path('var/cache'));
+        $path = new ParameterDefinition('app.path', new Path('var/cache'));
         self::assertSame(ParameterType::Path, $path->type);
         self::assertSame('var/cache', $path->value);
 
-        $file = new ParameterReference('app.file', new File('app.ini'));
+        $file = new ParameterDefinition('app.file', new File('app.ini'));
         self::assertSame(ParameterType::File, $file->type);
         self::assertSame('app.ini', $file->value);
 
-        $directory = new ParameterReference('app.dir', new Directory('var/cache'));
+        $directory = new ParameterDefinition('app.dir', new Directory('var/cache'));
         self::assertSame(ParameterType::Directory, $directory->type);
         self::assertSame('var/cache', $directory->value);
     }
 
     public function testStringableValueIsStoredAsString(): void
     {
-        $reference = new ParameterReference(
+        $reference = new ParameterDefinition(
             'app.label',
             new class implements \Stringable {
                 public function __toString(): string
@@ -124,7 +124,7 @@ final class ParameterReferenceTest extends TestCase
 
     public function testConstructorAllowsTypeMismatchUntilGetParameter(): void
     {
-        $reference = new ParameterReference(
+        $reference = new ParameterDefinition(
             'app.file',
             'var/cache',
             type: ParameterType::File,
@@ -140,7 +140,7 @@ final class ParameterReferenceTest extends TestCase
 
     public function testValueValidateRejectsMismatch(): void
     {
-        $reference = new ParameterReference(
+        $reference = new ParameterDefinition(
             'app.file',
             'app.ini',
             type: ParameterType::File,
@@ -153,7 +153,7 @@ final class ParameterReferenceTest extends TestCase
 
     public function testTypeValidateRechecksExistingValue(): void
     {
-        $reference = new ParameterReference(
+        $reference = new ParameterDefinition(
             'app.path',
             'var/cache',
             type: ParameterType::Path,

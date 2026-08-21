@@ -14,7 +14,7 @@ use Northrook\Parameter\Type;
  *
  * - Used to store parameter values in the {@see \Northrook\ParameterMapInterface}.
  * - Provided by the {@see \Northrook\ContainerInterface}.
- * - Resolved using {@see \Northrook\ParameterReference}, during a {@see \Northrook\Container\CompilerPass}, using the {@see \Northrook\ParameterStoreInterface}.
+ * - Resolved using {@see \Northrook\ParameterDefinition}, during a {@see \Northrook\Container\CompilerPass}, using the {@see \Northrook\ParameterStoreInterface}.
  *
  * @phpstan-type ParameterValue bool|float|int|string|\UnitEnum|null|array<array-key, mixed>
  */

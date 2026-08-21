@@ -663,13 +663,23 @@ final class ServiceDefinition
      *
      * Intended for {@see CompilerInterface} COMPILE phase consumers.
      */
-    public function finalize(): CompiledServiceDefinition
+    public function finalize(): Service
     {
         if (! $this->locked) {
             $this->lock();
         }
 
-        return CompiledServiceDefinition::from($this);
+        return new Service(
+            id       : $this->id,
+            class    : $this->class,
+            binding  : $this->binding,
+            aliases  : $this->aliases,
+            tags     : $this->tags,
+            autowire : $this->autowire,
+            preload  : $this->preload,
+            factory  : $this->factory,
+            callbacks: $this->callbacks,
+        );
     }
 
     /**
