@@ -12,9 +12,6 @@ use Northrook\RuntimeException;
 
 final class Assert
 {
-    /** Nesting limit for array resolution. */
-    private const int MAX_DEPTH = 32;
-
     /**
      * Service / parameter key body.
      *
@@ -343,9 +340,10 @@ final class Assert
     /**
      * Assert `$value` is a supported {@see Parameter} payload.
      *
-     * Allows `null`, `bool`, `int`, `float`, `string`, {@see \UnitEnum}, and
-     * arrays whose elements are recursively supported. Other objects,
-     * resources, and nesting beyond 32 levels fail.
+     * Delegates shape checks to {@see Parameter\Type::Value}. Allows `null`,
+     * `bool`, `int`, `float`, `string`, {@see \UnitEnum}, and arrays whose
+     * elements are recursively supported. Other objects, resources, and
+     * nesting beyond 5 levels fail.
      *
      * @param mixed                 $value
      * @param null|non-empty-string $source optional freeform reference included in the failure message and context
@@ -353,7 +351,6 @@ final class Assert
      *                                      - `false` (default): throw {@see RuntimeException}
      *                                      - non-`false` (`true`, or a prior {@see \Throwable}): do not throw;
      *                                        assign the {@see RuntimeException} to `$catch` and return `false`
-     * @param int<0, max>           $depth  @internal recursion depth
      *
      * @return bool `true` when valid; `false` only when catching a failure
      *
@@ -363,38 +360,28 @@ final class Assert
         mixed            $value,
         null|string      $source = null,
         bool|\Throwable &$catch = false,
-        int              $depth = 0,
     ): bool {
         self::armCatch($catch);
 
-        if ($depth > self::MAX_DEPTH) {
+        try {
+            if (Parameter\Type::Value->validate($value)) {
+                return true;
+            }
+        } catch (RuntimeException $exception) {
             $message = $source !== null
                 ? "Invalid parameter value for `{$source}`: maximum nesting depth exceeded."
                 : 'Invalid parameter value: maximum nesting depth exceeded.';
 
             return self::fail(
-                message: $message,
-                context: [
+                message : $message,
+                context : [
                     'value'  => $value,
-                    'depth'  => $depth,
+                    'type'   => \debug_value_type($value),
                     'source' => $source,
                 ],
-                catch  : $catch,
+                catch   : $catch,
+                previous: $exception,
             );
-        }
-
-        if ($value === null || \is_bool($value) || \is_int($value) || \is_float($value) || \is_string($value) || $value instanceof \UnitEnum) {
-            return true;
-        }
-
-        if (\is_array($value)) {
-            foreach ($value as $item) {
-                if (! self::validParameter($item, $source, $catch, $depth + 1)) {
-                    return false;
-                }
-            }
-
-            return true;
         }
 
         $debug   = \debug_value_type($value);
@@ -407,7 +394,6 @@ final class Assert
             context: [
                 'value'  => $value,
                 'type'   => $debug,
-                'depth'  => $depth,
                 'source' => $source,
             ],
             catch  : $catch,

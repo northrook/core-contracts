@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Northrook\Parameter;
 
+use Northrook\Filesystem\Directory;
+use Northrook\Filesystem\File;
+use Northrook\Filesystem\Path;
 use Northrook\InvalidArgumentException;
 use Northrook\RuntimeException;
 
@@ -61,13 +64,54 @@ enum Type
     case Setting;
 
     /**
+     * @param mixed $value
+     *
+     * @return \Northrook\Parameter\Type
+     */
+    public static function resolve(
+        mixed $value,
+    ): self {
+        return match (true) {
+            $value instanceof Directory => Type::Directory,
+            $value instanceof File => Type::File,
+            $value instanceof Path => Type::Path,
+            \is_primitive($value), \is_array($value) => self::Value,
+            $value instanceof \UnitEnum || $value instanceof \Stringable => self::Value,
+            default => throw new InvalidArgumentException(
+                message: 'Unable to resolve ' . Type::class . ' from value.',
+                context: ['value' => \debug_value_type($value)],
+            ),
+        };
+    }
+
+    /**
      * @param string|\Northrook\Parameter\Type $value
      *
      * @return \Northrook\Parameter\Type
      */
     public static function from(
-        string|self $value,
+        string|\Northrook\Parameter\Type $value,
     ): Type {
+        $type = self::tryFrom($value);
+
+        if ($type) {
+            return $type;
+        }
+
+        throw new InvalidArgumentException(
+            message: 'Unable to resolve ' . Type::class . ' from value.',
+            context: ['value' => $value],
+        );
+    }
+
+    /**
+     * @param string|\Northrook\Parameter\Type $value
+     *
+     * @return null|\Northrook\Parameter\Type
+     */
+    public static function tryFrom(
+        string|\Northrook\Parameter\Type $value,
+    ): null|self {
         if (\is_string($value)) {
             if (\substr_count($value, '::') === 1) {
                 [$resolve, $type] = \explode('::', $value, 2);
@@ -87,27 +131,23 @@ enum Type
             return $value;
         }
 
-        throw new InvalidArgumentException(
-            message: 'Unable to resolve ' . Type::class . ' from value.',
-            context: ['value' => $value],
-        );
+        return null;
     }
+
     /**
      * Whether `$value` matches this case's shape.
      *
-     * @throws \Northrook\RuntimeException When {@see Type::Value} array nesting exceeds 5 levels.
-     *
-     * @phpstan-assert-if-true ParameterValue $value
+     * @throws \Northrook\RuntimeException when {@see Type::Value} array nesting exceeds 5 levels.
      */
     public function validate(
         mixed $value,
     ): bool {
         return match ($this) {
-            Type::Value     => $this->value($value),
             Type::Path      => $this->path($value),
             Type::Directory => $this->directory($value),
             Type::File      => $this->file($value),
             Type::Setting   => $this->setting($value),
+            Type::Value     => $this->value($value),
         };
     }
 
@@ -152,6 +192,10 @@ enum Type
     private function path(
         mixed $value,
     ): bool {
+        if ($value instanceof Path) {
+            return true;
+        }
+
         return \is_string($value) && $value !== '';
     }
 
@@ -165,7 +209,12 @@ enum Type
     private function directory(
         mixed $value,
     ): bool {
-        if (! $this->path($value)) {
+        if ($value instanceof Directory) {
+            return true;
+        }
+
+        // Path/File objects are not Directory; only strings get shape checks.
+        if (! \is_string($value) || $value === '') {
             return false;
         }
 
@@ -182,7 +231,11 @@ enum Type
     private function file(
         mixed $value,
     ): bool {
-        if (! $this->path($value)) {
+        if ($value instanceof File) {
+            return true;
+        }
+
+        if (! \is_string($value) || $value === '') {
             return false;
         }
 

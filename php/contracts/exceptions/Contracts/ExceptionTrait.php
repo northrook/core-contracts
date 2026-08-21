@@ -28,11 +28,18 @@ trait ExceptionTrait
     }
 
     /**
-     * @return \Northrook\ErrorHandler\RuntimeError[]
+     * @return list<\Northrook\ErrorHandler\RuntimeError>
      */
     final public function getErrors(): array
     {
-        return $this->context['errors'] ?? [];
+        /** @var list<\Northrook\ErrorHandler\RuntimeError> $errors */
+        $errors = $this->context['errors'] ?? [];
+
+        if (\is_array($errors)) {
+            return $errors;
+        }
+
+        throw new \RuntimeException('Invalid errors context');
     }
 
     /**

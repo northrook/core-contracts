@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
+use Northrook\Filesystem\Directory;
+use Northrook\Filesystem\File;
+use Northrook\Filesystem\Path;
+use Northrook\InvalidArgumentException;
 use Northrook\Parameter\Type;
 use Northrook\RuntimeException;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -55,6 +59,9 @@ final class ParameterTypeTest extends TestCase
         yield 'stdClass' => [new \stdClass];
         yield 'closure' => [static fn() => null];
         yield 'nested object' => [[1, new \stdClass]];
+        yield 'Path object' => [new Path('var/cache')];
+        yield 'File object' => [new File('app.ini')];
+        yield 'Directory object' => [new Directory('var/cache')];
     }
 
     public function testValueOverflowThrows(): void
@@ -80,6 +87,13 @@ final class ParameterTypeTest extends TestCase
         yield 'root' => [\DIR_SEP];
         yield 'dot' => ['.'];
         yield 'dotdot' => ['..'];
+    }
+
+    public function testPathAcceptsFilesystemObjects(): void
+    {
+        self::assertTrue(Type::Path->validate(new Path('var/cache')));
+        self::assertTrue(Type::Path->validate(new File('app.ini')));
+        self::assertTrue(Type::Path->validate(new Directory('var/cache')));
     }
 
     #[DataProvider('provideNonEmptyStringRejects')]
@@ -116,6 +130,11 @@ final class ParameterTypeTest extends TestCase
         yield 'nested relative' => ['php/contracts/runtime'];
     }
 
+    public function testDirectoryAcceptsDirectoryObject(): void
+    {
+        self::assertTrue(Type::Directory->validate(new Directory('var/cache')));
+    }
+
     #[DataProvider('provideDirectoryRejects')]
     public function testDirectoryRejectsFileShapes(
         mixed $value,
@@ -131,6 +150,8 @@ final class ParameterTypeTest extends TestCase
         yield 'double extension' => ['archive.tar.gz'];
         yield 'empty' => [''];
         yield 'non-string' => [1];
+        yield 'Path object' => [new Path('var/cache')];
+        yield 'File object' => [new File('app.ini')];
     }
 
     #[DataProvider('provideFileAccepts')]
@@ -149,6 +170,11 @@ final class ParameterTypeTest extends TestCase
         yield 'gitignore' => ['.gitignore'];
         yield 'double extension' => ['archive.tar.gz'];
         yield 'minified' => ['app.min.js'];
+    }
+
+    public function testFileAcceptsFileObject(): void
+    {
+        self::assertTrue(Type::File->validate(new File('app.ini')));
     }
 
     #[DataProvider('provideFileRejects')]
@@ -170,6 +196,8 @@ final class ParameterTypeTest extends TestCase
         yield 'Dockerfile' => ['Dockerfile'];
         yield 'empty' => [''];
         yield 'non-string' => [false];
+        yield 'Path object' => [new Path('app.ini')];
+        yield 'Directory object' => [new Directory('var/cache')];
     }
 
     public function testSettingAcceptsScalarsAndEnums(): void
@@ -187,5 +215,68 @@ final class ParameterTypeTest extends TestCase
         self::assertFalse(Type::Setting->validate([]));
         self::assertFalse(Type::Setting->validate(['en']));
         self::assertFalse(Type::Setting->validate(new \stdClass));
+    }
+
+    #[DataProvider('provideResolveCases')]
+    public function testResolve(
+        mixed $value,
+        Type  $expected,
+    ): void {
+        self::assertSame($expected, Type::resolve($value));
+    }
+
+    public static function provideResolveCases(): \Generator
+    {
+        yield 'null' => [null, Type::Value];
+        yield 'string' => ['ok', Type::Value];
+        yield 'array' => [[1], Type::Value];
+        yield 'unit enum' => [ParameterTypeUnitFixture::Alpha, Type::Value];
+        yield 'stringable' => [
+            new class implements \Stringable {
+                public function __toString(): string
+                {
+                    return 'ok';
+                }
+            },
+            Type::Value,
+        ];
+        yield 'Path' => [new Path('var/cache'), Type::Path];
+        yield 'File' => [new File('app.ini'), Type::File];
+        yield 'Directory' => [new Directory('var/cache'), Type::Directory];
+    }
+
+    public function testResolveRejectsUnsupportedObjects(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        Type::resolve(new \stdClass);
+    }
+
+    #[DataProvider('provideFromAccepts')]
+    public function testFromAccepts(
+        string|Type $value,
+        Type        $expected,
+    ): void {
+        self::assertSame($expected, Type::from($value));
+    }
+
+    public static function provideFromAccepts(): \Generator
+    {
+        yield 'case name' => ['path', Type::Path];
+        yield 'case name uppercase' => ['DIRECTORY', Type::Directory];
+        yield 'fqcn case' => [Type::class . '::File', Type::File];
+        yield 'instance' => [Type::Setting, Type::Setting];
+    }
+
+    public function testFromRejectsUnknown(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        Type::from('not-a-type');
+    }
+
+    public function testTryFromReturnsNullForUnknown(): void
+    {
+        self::assertNull(Type::tryFrom('not-a-type'));
+        self::assertNull(Type::tryFrom(''));
+        self::assertSame(Type::Value, Type::tryFrom('value'));
     }
 }

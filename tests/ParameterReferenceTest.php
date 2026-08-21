@@ -6,6 +6,10 @@ namespace Northrook\Contracts\Tests;
 
 use Northrook\Container\Secret;
 use Northrook\Contracts\Tests\Support\RegistersTestContext;
+use Northrook\Filesystem\Directory;
+use Northrook\Filesystem\File;
+use Northrook\Filesystem\Path;
+use Northrook\InvalidArgumentException;
 use Northrook\Parameter;
 use Northrook\Parameter\Secret as SecretPolicy;
 use Northrook\Parameter\Type as ParameterType;
@@ -26,7 +30,7 @@ final class ParameterReferenceTest extends TestCase
         $this->tearDownTestContext();
     }
 
-    public function testInvokeFreezesAndBuildsParameter(): void
+    public function testGetParameterFreezesAndBuildsParameter(): void
     {
         $reference = new ParameterReference(
             'App.Token',
@@ -36,7 +40,7 @@ final class ParameterReferenceTest extends TestCase
             ParameterType::Setting,
         );
 
-        $parameter = $reference();
+        $parameter = $reference->getParameter();
 
         self::assertTrue($reference->immutable);
         self::assertInstanceOf(Parameter::class, $parameter);
@@ -58,7 +62,7 @@ final class ParameterReferenceTest extends TestCase
         self::assertSame(SecretPolicy::CREDENTIAL, $reference->secret);
         self::assertTrue($reference->hasTags('db-dsn', 'primary'));
 
-        $parameter = $reference();
+        $parameter = $reference->getParameter();
         self::assertTrue($parameter->isTagged('db-dsn', 'primary'));
     }
 
@@ -81,6 +85,83 @@ final class ParameterReferenceTest extends TestCase
         self::assertTrue($hydrated->value);
         self::assertSame(ParameterType::Setting, $hydrated->type);
         self::assertNull($hydrated->secret);
-        self::assertTrue($reference->immutable, 'export freezes via __invoke');
+        self::assertTrue($reference->immutable, 'export freezes via getParameter');
+    }
+
+    public function testOmittingTypeResolvesFromValue(): void
+    {
+        $value = new ParameterReference('app.name', 'Contracts');
+        self::assertSame(ParameterType::Value, $value->type);
+
+        $path = new ParameterReference('app.path', new Path('var/cache'));
+        self::assertSame(ParameterType::Path, $path->type);
+        self::assertSame('var/cache', $path->value);
+
+        $file = new ParameterReference('app.file', new File('app.ini'));
+        self::assertSame(ParameterType::File, $file->type);
+        self::assertSame('app.ini', $file->value);
+
+        $directory = new ParameterReference('app.dir', new Directory('var/cache'));
+        self::assertSame(ParameterType::Directory, $directory->type);
+        self::assertSame('var/cache', $directory->value);
+    }
+
+    public function testStringableValueIsStoredAsString(): void
+    {
+        $reference = new ParameterReference(
+            'app.label',
+            new class implements \Stringable {
+                public function __toString(): string
+                {
+                    return 'label';
+                }
+            },
+        );
+
+        self::assertSame(ParameterType::Value, $reference->type);
+        self::assertSame('label', $reference->value);
+    }
+
+    public function testConstructorAllowsTypeMismatchUntilGetParameter(): void
+    {
+        $reference = new ParameterReference(
+            'app.file',
+            'var/cache',
+            type: ParameterType::File,
+        );
+
+        self::assertSame(ParameterType::File, $reference->type);
+        self::assertSame('var/cache', $reference->value);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid value for parameter type File');
+        $reference->getParameter();
+    }
+
+    public function testValueValidateRejectsMismatch(): void
+    {
+        $reference = new ParameterReference(
+            'app.file',
+            'app.ini',
+            type: ParameterType::File,
+        );
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid value for parameter type File');
+        $reference->value('var/cache', validate: true);
+    }
+
+    public function testTypeValidateRechecksExistingValue(): void
+    {
+        $reference = new ParameterReference(
+            'app.path',
+            'var/cache',
+            type: ParameterType::Path,
+        );
+
+        $reference->type(ParameterType::Directory);
+
+        $this->expectException(InvalidArgumentException::class);
+        $reference->type(ParameterType::File, validate: true);
     }
 }

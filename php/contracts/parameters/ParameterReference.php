@@ -48,33 +48,41 @@ final class ParameterReference implements Serializable, Exportable
     /**
      * @var ParameterValue
      */
-    private(set) mixed $value;
+    private(set) bool|float|int|string|null|\UnitEnum|array $value;
 
     /**
-     * @param non-empty-string           $key
-     * @param ParameterValue             $value
-     * @param SecretArgument            $secret
-     * @param string|list<string>        $tags
-     * @param \Northrook\Parameter\Type  $type
+     * @param non-empty-string            $key
+     * @param ParameterValue|\Stringable  $value
+     * @param SecretArgument              $secret
+     * @param string|list<string>         $tags
+     * @param null|\Northrook\Parameter\Type   $type
      */
     public function __construct(
-        string                                     $key,
-        bool|float|int|string|null|\UnitEnum|array $value,
-        null|string|SecretEnum|SecretAttribute     $secret = null,
-        string|array                               $tags = [],
-        Type                                       $type = Type::Value,
+        string                                                 $key,
+        bool|float|int|string|null|\UnitEnum|\Stringable|array $value,
+        null|string|SecretEnum|SecretAttribute                 $secret = null,
+        string|array                                           $tags = [],
+        null|Type                                              $type = null,
     ) {
         $this
             ->key($key)
+            ->type($type ?? Type::resolve($value))
             ->value($value)
             ->secret($secret)
-            ->tags(...is_string($tags) ? [$tags] : $tags)
-            ->type($type);
+            ->tags(...is_string($tags) ? [$tags] : $tags);
     }
 
-    public function __invoke(): Parameter
+    /**
+     * @return \Northrook\Parameter
+     */
+    public function getParameter(): Parameter
     {
         $this->freeze();
+
+        $this->validate(
+            $this->value,
+            __METHOD__,
+        );
 
         return new Parameter(
             key   : $this->key,
@@ -101,28 +109,47 @@ final class ParameterReference implements Serializable, Exportable
 
     /**
      * @param \Northrook\Parameter\Type  $type
+     * @param bool                       $validate
      *
      * @return \Northrook\ParameterReference
      */
     public function type(
         Type $type,
+        bool $validate = false,
     ): self {
         $this->editable();
         $this->type = $type;
+
+        if ($validate && isset($this->value)) {
+            $this->validate($this->value, __METHOD__);
+        }
+
         return $this;
     }
 
     /**
-     * @param ParameterValue $set
+     * @param ParameterValue|\Stringable  $set
+     * @param bool                        $validate
      *
      * @return \Northrook\ParameterReference
      */
     public function value(
-        mixed $set,
+        bool|float|int|string|null|\UnitEnum|\Stringable|array $set,
+        bool                                                   $validate = false,
     ): self {
         $this->editable();
-        Assert::validParameter($set, source: __METHOD__);
+
+        if ($validate) {
+            $this->validate($set, __METHOD__);
+        }
+
+        // Stringable is accepted for convenience; stored + validated as string.
+        if ($set instanceof \Stringable) {
+            $set = $set->__toString();
+        }
+
         $this->value = $set;
+
         return $this;
     }
 
@@ -258,6 +285,32 @@ final class ParameterReference implements Serializable, Exportable
     {
         $this->guardExport();
 
-        return $this()->_export();
+        return $this->getParameter()->_export();
+    }
+
+    /**
+     * @param mixed             $value
+     * @param non-empty-string  $caller
+     *
+     * @return bool
+     */
+    private function validate(
+        mixed  $value,
+        string $caller,
+    ): bool {
+        $isValid = $this->type->validate($value);
+
+        if (! $isValid) {
+            throw new InvalidArgumentException(
+                message: 'Invalid value for parameter type ' . $this->type->name,
+                context: [
+                    'caller' => $caller,
+                    'value'  => \debug_value_type($value),
+                    'type'   => $this->type,
+                ],
+            );
+        }
+
+        return $isValid;
     }
 }

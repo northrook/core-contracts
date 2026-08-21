@@ -22,10 +22,16 @@ final class CurlException extends RuntimeException
     }
 
     /**
-     * @return string
+     * @return non-empty-string
      */
     public function getUrl(): string
     {
-        return $this->getContext()['url'];
+        $url = $this->getContext()['url'] ?? null;
+
+        if (\is_string($url) && $url !== '') {
+            return $url;
+        }
+
+        throw new UndefinedEntryException('url');
     }
 }

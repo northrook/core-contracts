@@ -273,7 +273,7 @@ final class AssertTest extends TestCase
         yield 'int backed enum' => [AssertParameterIntBackedFixture::One];
         yield 'string backed enum' => [AssertParameterStringBackedFixture::Foo];
         yield 'enums in list' => [[AssertParameterUnitFixture::Alpha, AssertParameterIntBackedFixture::One]];
-        yield 'max depth' => [self::nestParameter(32, 'leaf')];
+        yield 'max depth' => [self::nestParameter(5, 'leaf')];
     }
 
     #[DataProvider('provideInvalidParameterValues')]
@@ -290,7 +290,7 @@ final class AssertTest extends TestCase
         yield 'closure' => [static fn() => null];
         yield 'DateTimeImmutable' => [new \DateTimeImmutable];
         yield 'nested object' => [[1, new \stdClass]];
-        yield 'beyond max depth' => [self::nestParameter(33, 'leaf')];
+        yield 'beyond max depth' => [self::nestParameter(6, 'leaf')];
     }
 
     public function testValidParameterFailureMessageIncludesSourceAndType(): void
@@ -339,7 +339,7 @@ final class AssertTest extends TestCase
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Invalid parameter value for `tree`: maximum nesting depth exceeded.');
-        Assert::validParameter(self::nestParameter(33, 'leaf'), 'tree');
+        Assert::validParameter(self::nestParameter(6, 'leaf'), 'tree');
     }
 
     public function testValidParameterCircularArrayHitsDepthLimit(): void

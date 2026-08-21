@@ -139,6 +139,97 @@ final class GlobalFunctionsTest extends TestCase
 
     // endregion
 
+    // region is_primitive
+
+    #[DataProvider('provideIsPrimitiveCases')]
+    public function testIsPrimitive(
+        mixed $value,
+        bool  $expected,
+    ): void {
+        self::assertSame($expected, \is_primitive($value));
+    }
+
+    /**
+     * @return \Generator<string, array{0: mixed, 1: bool}>
+     */
+    public static function provideIsPrimitiveCases(): \Generator
+    {
+        yield 'null' => [null, true];
+        yield 'true' => [true, true];
+        yield 'false' => [false, true];
+        yield 'int' => [0, true];
+        yield 'float' => [1.5, true];
+        yield 'string' => ['ok', true];
+        yield 'empty string' => ['', true];
+        yield 'array' => [[], false];
+        yield 'object' => [new \stdClass, false];
+        yield 'closure' => [static fn() => null, false];
+    }
+
+    // endregion
+
+    // region is_path_string
+
+    #[DataProvider('provideIsPathStringRejectsNonStrings')]
+    public function testIsPathStringRejectsNonStrings(
+        mixed $value,
+    ): void {
+        self::assertFalse(\is_path_string($value));
+    }
+
+    /**
+     * @return \Generator<string, array{0: mixed}>
+     */
+    public static function provideIsPathStringRejectsNonStrings(): \Generator
+    {
+        yield 'null' => [null];
+        yield 'int' => [1];
+        yield 'float' => [1.5];
+        yield 'bool' => [true];
+        yield 'array' => [['/tmp']];
+        yield 'object' => [new \stdClass];
+    }
+
+    #[DataProvider('provideIsPathStringCases')]
+    public function testIsPathString(
+        string $value,
+        bool   $expected,
+    ): void {
+        self::assertSame($expected, \is_path_string($value));
+    }
+
+    /**
+     * @return \Generator<string, array{0: string, 1: bool}>
+     */
+    public static function provideIsPathStringCases(): \Generator
+    {
+        yield 'relative file' => ['assets/app.js', true];
+        yield 'backslash separators' => ['assets\\scripts\\app.js', true];
+        yield 'absolute posix' => ['/var/www/html', true];
+        yield 'dot relative' => ['./config', true];
+        yield 'parent relative' => ['../vendor', true];
+        yield 'bare filename' => ['README.md', true];
+        yield 'root slash' => ['/', true];
+        yield 'unc shape' => ['//server/share', true];
+        yield 'windows drive' => ['C:/Users/me', true];
+        yield 'windows drive backslash' => ['C:\\Users\\me', true];
+        yield 'windows drive lowercase' => ['c:/Windows', true];
+        yield 'windows bare drive' => ['D:', true];
+        yield 'colon in later segment' => ['dir/file:name', true];
+        yield 'empty' => ['', false];
+        yield 'null byte' => ["foo\0bar", false];
+        yield 'too long' => [\str_repeat('a', \MAX_PATH_LENGTH + 1), false];
+        yield 'http url' => ['http://example.com/a', false];
+        yield 'https uppercase' => ['HTTPS://Example.COM/a', false];
+        yield 'file uri' => ['file:///etc/passwd', false];
+        yield 'php stream' => ['php://memory', false];
+        yield 'mailto' => ['mailto:user@example.com', false];
+        yield 'data uri' => ['data:text/plain,hi', false];
+        yield 'http without slashes' => ['http:example.com', false];
+    }
+
+    // endregion
+
     // region sort_keys
 
     public function testSortKeysReturnsNonArraysUnchanged(): void
