@@ -68,13 +68,15 @@ interface ParameterStoreInterface
 
     /**
      * @param non-empty-string  $key
+     * @param bool              $create  when true, insert a virgin {@see ParameterReference} (`Value::Unset`) if missing
      *
      * @return \Northrook\ParameterReference
      *
-     * @throws \Northrook\UndefinedEntryException when `$key` does not exist
+     * @throws \Northrook\UndefinedEntryException when `$key` does not exist and `$create` is false
      */
     public function get(
         string $key,
+        bool   $create = false,
     ): ParameterReference;
 
     /**
