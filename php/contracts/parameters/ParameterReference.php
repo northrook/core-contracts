@@ -261,11 +261,14 @@ final class ParameterReference implements Serializable, Exportable
     /**
      * Soft-lock against further mutation.
      *
+     * @param bool  $set
+     *
      * @return \Northrook\ParameterReference
      */
-    public function freeze(): self
-    {
-        $this->immutable = true;
+    public function freeze(
+        bool $set = true,
+    ): self {
+        $this->immutable = $set;
         return $this;
     }
 
