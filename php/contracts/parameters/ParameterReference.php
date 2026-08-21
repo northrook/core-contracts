@@ -9,6 +9,7 @@ use Northrook\Contracts\Exportable;
 use Northrook\Contracts\Serializable;
 use Northrook\Parameter\Secret as SecretEnum;
 use Northrook\Parameter\Type;
+use Northrook\Parameter\Value;
 use Northrook\Runtime\Assert;
 
 /**
@@ -59,7 +60,7 @@ final class ParameterReference implements Serializable, Exportable
      */
     public function __construct(
         string                                                 $key,
-        bool|float|int|string|null|\UnitEnum|\Stringable|array $value,
+        bool|float|int|string|null|\UnitEnum|\Stringable|array $value = Value::Unset,
         null|string|SecretEnum|SecretAttribute                 $secret = null,
         string|array                                           $tags = [],
         null|Type                                              $type = null,
@@ -298,19 +299,17 @@ final class ParameterReference implements Serializable, Exportable
         mixed  $value,
         string $caller,
     ): bool {
-        $isValid = $this->type->validate($value);
-
-        if (! $isValid) {
-            throw new InvalidArgumentException(
-                message: 'Invalid value for parameter type ' . $this->type->name,
-                context: [
-                    'caller' => $caller,
-                    'value'  => \debug_value_type($value),
-                    'type'   => $this->type,
-                ],
-            );
+        if ($value !== Value::Unset && $this->type->validate($value)) {
+            return true;
         }
 
-        return $isValid;
+        throw new InvalidArgumentException(
+            message: 'Invalid value for parameter type ' . $this->type->name,
+            context: [
+                'caller' => $caller,
+                'value'  => \debug_value_type($value),
+                'type'   => $this->type,
+            ],
+        );
     }
 }
