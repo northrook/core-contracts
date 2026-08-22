@@ -17,7 +17,7 @@ namespace Northrook;
  *
  * The container calls {@see register()} to bind the declaring class and method name after
  * discovering the attribute via reflection during compiler discovery.
- * Listener order uses {@see $priority} (higher first; see {@see ListenerMap::sorted()}).
+ * Listener order uses {@see $priority} (higher first; see {@see \Northrook\Events\ListenerMapInterface::sorted()}).
  *
  * Dispatch: {@see EventDispatcherInterface} invokes provider callables with the event as
  * argument `0`; further arguments are container-resolved. Full param wiring is validated

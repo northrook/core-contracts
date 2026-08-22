@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Northrook\Container;
 
 use Northrook\ContainerInterface;
+use Northrook\Events\ListenerMapInterface;
 use Northrook\ParameterStoreInterface;
 
 /**
@@ -53,66 +54,23 @@ interface CompilerInterface
     public CompilerPass $pass { get; }
 
     /**
-     * The mutable Parameter Store.
+     * The compiler's mutable parameter store.
      *
      * @var \Northrook\ParameterStoreInterface
      */
     public ParameterStoreInterface $parameters { get; }
 
     /**
-     * Whether a definition exists for `(id, reference)`.
+     * The compiler's mutable service registry.
      *
-     * @param class-string $id may be a service class or an alias
-     * @param null|string  $reference selects a named binding under that service
+     * @var \Northrook\Container\ServiceRegistryInterface
      */
-    public function has(
-        string      $id,
-        null|string $reference = null,
-    ): bool;
+    public ServiceRegistryInterface $services { get; }
 
     /**
-     * Definition for `(id, reference)`.
+     * The compiler's mutable event listener map.
      *
-     * @param class-string $id may be a service class or an alias
-     * @param null|string  $reference selects a named binding under that service
-     *
-     * @throws \Northrook\Container\ServiceNotFoundException if the binding is not defined
+     * @var \Northrook\Events\ListenerMapInterface
      */
-    public function get(
-        string      $id,
-        null|string $reference = null,
-    ): ServiceDefinition;
-
-    /**
-     * Register a definition, indexing its aliases and tags.
-     *
-     * @param bool $replace when `false`, throws if `$definition->class` is already registered
-     *
-     * @throws \Northrook\Container\ContainerException on conflict when `$replace` is `false`, or when the phase forbids writes
-     */
-    public function add(
-        ServiceDefinition $definition,
-        bool              $replace = false,
-    ): ServiceDefinition;
-
-    /**
-     * Remove a service (`$reference === null`) or a named binding under it.
-     *
-     * @param class-string $id may be a service class or an alias
-     * @param null|string  $reference selects a named binding under that service
-     *
-     * @throws \Northrook\Container\ServiceNotFoundException if the binding is not defined
-     * @throws \Northrook\Container\ContainerException when the phase forbids writes
-     */
-    public function remove(
-        string      $id,
-        null|string $reference = null,
-    ): void;
-
-    /**
-     * All registered definitions, keyed by service class.
-     *
-     * @return array<class-string, ServiceDefinition>
-     */
-    public function services(): array;
+    public ListenerMapInterface $listeners { get; }
 }
