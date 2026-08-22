@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Northrook\Container;
 
 use Northrook\Callback;
-use Northrook\CompilerInterface;
 use Northrook\Container\Service\Alias;
 use Northrook\Container\Service\Autodiscover;
 use Northrook\Container\Service\Tag;

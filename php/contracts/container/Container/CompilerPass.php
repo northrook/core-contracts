@@ -11,7 +11,7 @@ enum CompilerPass: string implements RuntimeContext
     /**
      * # `0`
      *
-     * Earliest step, Kernel is booted, {@see \Northrook\CompilerInterface} is created.
+     * Earliest step, Kernel is booted, {@see CompilerInterface} is created.
      */
     case INITIALIZATION = 'compiler.initialization';
 

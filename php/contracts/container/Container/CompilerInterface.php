@@ -2,11 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Northrook;
+namespace Northrook\Container;
 
-use Northrook\Container\CompilerPass;
-use Northrook\Container\CompilerPassInterface;
-use Northrook\Container\ServiceDefinition;
+use Northrook\ContainerInterface;
+use Northrook\ParameterStoreInterface;
 
 /**
  * Mutable container builder consumed by {@see CompilerPassInterface} passes.

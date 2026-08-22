@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\CompilerInterface;
 use Northrook\Container\AutodiscoverInterface;
 use Northrook\Container\BindingAttribute;
+use Northrook\Container\CompilerInterface;
 use Northrook\Container\CompilerPass;
 use Northrook\Container\CompilerPassInterface;
 use Northrook\Container\Service\Inline;
