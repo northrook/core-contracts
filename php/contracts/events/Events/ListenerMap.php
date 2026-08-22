@@ -7,12 +7,12 @@ namespace Northrook\Events;
 /**
  * Immutable, finalized listener map for the container COMPILE phase.
  *
- * Typically produced by the compiler from {@see ListenerMapInterface}.
+ * Typically produced by the compiler from {@see ListenerRegistryInterface}.
  *
  * Resolution of {@see ListenerDescriptor::$class}::{@see ListenerDescriptor::$method}
  * to an invokable happens in the kernel/container, not here.
  */
-final readonly class EventListeners
+final readonly class ListenerMap
 {
     /**
      * @param list<ListenerDescriptor>  $listeners

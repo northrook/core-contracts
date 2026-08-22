@@ -8,9 +8,9 @@ namespace Northrook\Events;
  * Mutable listener registry consumed by {@see \Northrook\Container\CompilerPassInterface} passes.
  *
  * Implementation is owned by the compiler. {@see \Northrook\Container\CompilerPass::COMPILE}
- * freezes this map into an immutable {@see \Northrook\Events\EventListeners}.
+ * freezes this map into an immutable {@see \Northrook\Events\ListenerMap}.
  */
-interface ListenerMapInterface
+interface ListenerRegistryInterface
 {
     /**
      * Register a listener for `$event`.
@@ -19,7 +19,7 @@ interface ListenerMapInterface
      * @param class-string                 $class
      * @param non-empty-string             $method
      */
-    public function add(
+    public function register(
         string $event,
         string $class,
         string $method,
@@ -47,4 +47,9 @@ interface ListenerMapInterface
     public function has(
         object|string $event,
     ): bool;
+
+    /**
+     * Freeze this registry into an immutable {@see ListenerMap}.
+     */
+    public function toListenerMap(): ListenerMap;
 }

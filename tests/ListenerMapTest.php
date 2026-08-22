@@ -11,11 +11,11 @@ use Northrook\Contracts\Tests\Support\OnEventSampleEvent;
 use Northrook\Contracts\Tests\Support\OnEventStandaloneEvent;
 use Northrook\Event;
 use Northrook\EventInterface;
-use Northrook\Events\EventListeners;
 use Northrook\Events\ListenerDescriptor;
+use Northrook\Events\ListenerMap;
 use PHPUnit\Framework\TestCase;
 
-final class EventListenersTest extends TestCase
+final class ListenerMapTest extends TestCase
 {
     // ── ListenerDescriptor ───────────────────────────────────────
 
@@ -45,11 +45,16 @@ final class EventListenersTest extends TestCase
         self::assertSame(10, $descriptor->priority);
     }
 
-    // ── EventListeners ───────────────────────────────────────────
+    // ── ListenerMap ──────────────────────────────────────────────
 
     public function testEmptyMapHasNoListeners(): void
     {
-        $listeners = new EventListeners;
+        $reflection = new \ReflectionClass(ListenerMap::class);
+
+        self::assertTrue($reflection->isFinal());
+        self::assertTrue($reflection->isReadOnly());
+
+        $listeners = new ListenerMap;
 
         self::assertSame([], $listeners->listeners);
         self::assertFalse($listeners->has(OnEventSampleEvent::class));
@@ -70,7 +75,7 @@ final class EventListenersTest extends TestCase
             'onExact',
         );
 
-        $listeners = new EventListeners([$exact, $other]);
+        $listeners = new ListenerMap([$exact, $other]);
 
         self::assertSame([$exact], $listeners->for(OnEventSampleEvent::class));
         self::assertSame([$other], $listeners->for(OnEventOtherEvent::class));
@@ -90,7 +95,7 @@ final class EventListenersTest extends TestCase
             5,
         );
 
-        $listeners = new EventListeners([$onBase, $onContract]);
+        $listeners = new ListenerMap([$onBase, $onContract]);
 
         self::assertSame(
             [$onBase, $onContract],
@@ -110,7 +115,7 @@ final class EventListenersTest extends TestCase
             'onExact',
         );
 
-        $listeners = new EventListeners([$exact]);
+        $listeners = new ListenerMap([$exact]);
 
         self::assertSame([], $listeners->for(OnEventOtherEvent::class));
         self::assertSame([], $listeners->for(Event::class));
@@ -125,7 +130,7 @@ final class EventListenersTest extends TestCase
             'onExact',
         );
 
-        $listeners = new EventListeners([$exact]);
+        $listeners = new ListenerMap([$exact]);
 
         self::assertSame([$exact], $listeners->for(new OnEventSampleEvent));
         self::assertSame([], $listeners->for(new OnEventOtherEvent));
@@ -146,7 +151,7 @@ final class EventListenersTest extends TestCase
             99,
         );
 
-        $listeners = new EventListeners([$first, $second]);
+        $listeners = new ListenerMap([$first, $second]);
 
         self::assertSame([$first, $second], $listeners->for(OnEventSampleEvent::class));
     }
@@ -172,7 +177,7 @@ final class EventListenersTest extends TestCase
             5,
         );
 
-        $listeners = new EventListeners([$low, $high, $mid]);
+        $listeners = new ListenerMap([$low, $high, $mid]);
 
         self::assertSame([$high, $mid, $low], $listeners->sorted(OnEventSampleEvent::class));
         self::assertSame([$low, $high, $mid], $listeners->for(OnEventSampleEvent::class));
@@ -180,7 +185,7 @@ final class EventListenersTest extends TestCase
 
     public function testHasIsTrueWhenForIsNonEmpty(): void
     {
-        $listeners = new EventListeners([
+        $listeners = new ListenerMap([
             new ListenerDescriptor(
                 EventInterface::class,
                 OnEventInterfaceListener::class,

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Northrook\Container;
 
 use Northrook\ContainerInterface;
-use Northrook\Events\ListenerMapInterface;
+use Northrook\Events\ListenerRegistryInterface;
 use Northrook\ParameterStoreInterface;
 
 /**
@@ -22,14 +22,14 @@ use Northrook\ParameterStoreInterface;
  * Registerable passes target the mutable phases.
  *
  * {@see CompilerPass::COMPILE} freezes into an immutable {@see ContainerInterface}
- * and {@see \Northrook\Events\EventListeners}.
+ * and {@see \Northrook\Events\ListenerMap}.
  *
  * Per-service mutation (binding, tags, aliases, …) lives on {@see ServiceDefinition}.
  * Primary constructor/factory argument overrides are the reserved
  * {@see \Northrook\Container\Service\Tag} keyed by
  * {@see ContainerInterface::DEFAULT_REFERENCE} (via {@see ServiceDefinition::setArguments()}).
  *
- * This interface is the registry, parameter store, listener map, and passes.
+ * This interface is the registry, parameter store, listener registry, and passes.
  */
 interface CompilerInterface
 {
@@ -55,6 +55,13 @@ interface CompilerInterface
     public CompilerPass $pass { get; }
 
     /**
+     * Whether the compiler has finished compiling.
+     *
+     * @var bool
+     */
+    public bool $compiled { get; }
+
+    /**
      * The compiler's mutable parameter store.
      *
      * @var \Northrook\ParameterStoreInterface
@@ -69,9 +76,9 @@ interface CompilerInterface
     public ServiceRegistryInterface $services { get; }
 
     /**
-     * The compiler's mutable event listener map.
+     * The compiler's mutable event listener registry.
      *
-     * @var \Northrook\Events\ListenerMapInterface
+     * @var \Northrook\Events\ListenerRegistryInterface
      */
-    public ListenerMapInterface $listeners { get; }
+    public ListenerRegistryInterface $listeners { get; }
 }

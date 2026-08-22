@@ -55,7 +55,7 @@ enum CompilerPass: string implements RuntimeContext
      * # `5` - Compile
      *
      * Freeze into an immutable {@see \Northrook\ContainerInterface}
-     * and {@see \Northrook\Events\EventListeners}.
+     * and {@see \Northrook\Events\ListenerMap}.
      *
      * Optional: OPCache / ahead-of-time dump of the compiled container.
      */

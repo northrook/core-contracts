@@ -16,9 +16,9 @@ use Northrook\Container\Service\Unique;
 use Northrook\Container\ServiceBinding;
 use Northrook\Container\ServiceRegistryInterface;
 use Northrook\ContainerInterface;
-use Northrook\Events\ListenerMapInterface;
-use Northrook\ParameterStoreInterface;
+use Northrook\Events\ListenerRegistryInterface;
 use Northrook\InvalidArgumentException;
+use Northrook\ParameterStoreInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -139,8 +139,12 @@ final class ContainerTest extends TestCase
             (string) new \ReflectionProperty(CompilerInterface::class, 'services')->getType(),
         );
         self::assertSame(
-            ListenerMapInterface::class,
+            ListenerRegistryInterface::class,
             (string) new \ReflectionProperty(CompilerInterface::class, 'listeners')->getType(),
+        );
+        self::assertSame(
+            'bool',
+            (string) new \ReflectionProperty(CompilerInterface::class, 'compiled')->getType(),
         );
     }
 

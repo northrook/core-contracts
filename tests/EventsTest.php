@@ -10,7 +10,8 @@ use Northrook\Contracts\Tests\Support\OnEventStandaloneEvent;
 use Northrook\Event;
 use Northrook\EventDispatcherInterface;
 use Northrook\EventInterface;
-use Northrook\Events\ListenerMapInterface;
+use Northrook\Events\ListenerMap;
+use Northrook\Events\ListenerRegistryInterface;
 use Northrook\ListenerProviderInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -40,7 +41,7 @@ final class EventsTest extends TestCase
         yield 'EventInterface' => [EventInterface::class];
         yield 'EventDispatcherInterface' => [EventDispatcherInterface::class];
         yield 'ListenerProviderInterface' => [ListenerProviderInterface::class];
-        yield 'ListenerMapInterface' => [ListenerMapInterface::class];
+        yield 'ListenerRegistryInterface' => [ListenerRegistryInterface::class];
     }
 
     public function testEventInterfaceExtendsPsrStoppable(): void
@@ -67,22 +68,27 @@ final class EventsTest extends TestCase
         );
     }
 
-    public function testCompilerInterfaceExposesListenerMap(): void
+    public function testCompilerInterfaceExposesListenerRegistry(): void
     {
         $property = new \ReflectionProperty(CompilerInterface::class, 'listeners');
 
-        self::assertSame(ListenerMapInterface::class, (string) $property->getType());
+        self::assertSame(ListenerRegistryInterface::class, (string) $property->getType());
     }
 
-    public function testListenerMapInterfaceDeclaresAddForHas(): void
+    public function testListenerRegistryInterfaceDeclaresRegisterForHasToListenerMap(): void
     {
-        $reflection = new \ReflectionClass(ListenerMapInterface::class);
+        $reflection = new \ReflectionClass(ListenerRegistryInterface::class);
 
-        self::assertTrue($reflection->hasMethod('add'));
+        self::assertTrue($reflection->hasMethod('register'));
         self::assertTrue($reflection->hasMethod('for'));
         self::assertTrue($reflection->hasMethod('has'));
+        self::assertTrue($reflection->hasMethod('toListenerMap'));
+        self::assertFalse($reflection->hasMethod('add'));
         self::assertFalse($reflection->hasMethod('sorted'));
         self::assertFalse($reflection->hasMethod('all'));
+
+        $return = (string) $reflection->getMethod('toListenerMap')->getReturnType();
+        self::assertSame(ListenerMap::class, $return);
     }
 
     public function testEventIsAbstract(): void
