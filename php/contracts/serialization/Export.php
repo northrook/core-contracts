@@ -5,13 +5,24 @@ declare(strict_types=1);
 namespace Northrook;
 
 use Northrook\Contracts\Exportable;
+use Northrook\Contracts\Resettable;
 
 /**
  * @static
  */
-final class Export
+final class Export implements Resettable
 {
+    private const string INDENT = '    ';
+
+    /** @var int<0, max> */
+    private static int $depth = 0;
+
     private function __construct() {}
+
+    public static function reset(): void
+    {
+        self::$depth = 0;
+    }
 
     /**
      * @param class-string  $className
@@ -23,10 +34,29 @@ final class Export
         string   $className,
         mixed ...$arguments,
     ): string {
-        $class  = '\\' . \trim($className, '\\');
-        $export = \array_map(Export::value(...), $arguments);
+        $class = '\\' . \trim($className, '\\');
+        $close = self::pad();
+        $item  = self::pad(1);
+        $root  = self::$depth === 0;
 
-        return "new {$class}(\n" . \implode(",\n", $export) . "\n);\n";
+        self::$depth++;
+
+        try {
+            $arguments = \array_map(
+                static fn(mixed $argument): string => $item . Export::value($argument),
+                $arguments,
+            );
+        } finally {
+            self::$depth--;
+        }
+
+        if ($arguments === []) {
+            $export = "new {$class}()";
+        } else {
+            $export = "new {$class}(\n" . \implode(",\n", $arguments) . ",\n{$close})";
+        }
+
+        return $root ? $export . ";\n" : $export;
     }
 
     /**
@@ -52,10 +82,16 @@ final class Export
         }
 
         if (\is_array($value)) {
-            $align = 0;
-            $array = [];
+            if ($value === []) {
+                return '[]';
+            }
 
-            foreach (array_keys($value) as $key) {
+            $align = 0;
+            $items = [];
+            $close = self::pad();
+            $item  = self::pad(1);
+
+            foreach (\array_keys($value) as $key) {
                 $length = \is_int($key)
                     ? \strlen(\strval($key))
                     : \strlen($key) + 2;
@@ -65,14 +101,29 @@ final class Export
                 }
             }
 
-            foreach ($value as $key => $item) {
-                $index   = \is_int($key) ? \strval($key) : "'{$key}'";
-                $array[] = \str_pad($index, $align) . ' => ' . Export::value($item);
+            self::$depth++;
+
+            try {
+                foreach ($value as $key => $element) {
+                    $index   = \is_int($key) ? \strval($key) : "'{$key}'";
+                    $items[] = $item . \str_pad($index, $align) . ' => ' . Export::value($element);
+                }
+            } finally {
+                self::$depth--;
             }
 
-            return "[\n" . \implode(",\n", $array) . "\n]";
+            return "[\n" . \implode(",\n", $items) . ",\n{$close}]";
         }
 
         return \var_export($value, true);
+    }
+
+    /**
+     * @param int<0, max> $plus
+     */
+    private static function pad(
+        int $plus = 0,
+    ): string {
+        return \str_repeat(self::INDENT, self::$depth + $plus);
     }
 }
