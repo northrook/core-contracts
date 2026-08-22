@@ -14,7 +14,10 @@ use Northrook\Container\Service\Scoped;
 use Northrook\Container\Service\Shared;
 use Northrook\Container\Service\Unique;
 use Northrook\Container\ServiceBinding;
+use Northrook\Container\ServiceRegistryInterface;
 use Northrook\ContainerInterface;
+use Northrook\Events\ListenerMapInterface;
+use Northrook\ParameterStoreInterface;
 use Northrook\InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -122,6 +125,23 @@ final class ContainerTest extends TestCase
         yield 'CompilerPassInterface' => [CompilerPassInterface::class];
         yield 'CompilerInterface' => [CompilerInterface::class];
         yield 'ContainerInterface' => [ContainerInterface::class];
+        yield 'ServiceRegistryInterface' => [ServiceRegistryInterface::class];
+    }
+
+    public function testCompilerInterfaceExposesStores(): void
+    {
+        self::assertSame(
+            ParameterStoreInterface::class,
+            (string) new \ReflectionProperty(CompilerInterface::class, 'parameters')->getType(),
+        );
+        self::assertSame(
+            ServiceRegistryInterface::class,
+            (string) new \ReflectionProperty(CompilerInterface::class, 'services')->getType(),
+        );
+        self::assertSame(
+            ListenerMapInterface::class,
+            (string) new \ReflectionProperty(CompilerInterface::class, 'listeners')->getType(),
+        );
     }
 
     public function testBindingAttributeExtendsAutodiscoverInterface(): void

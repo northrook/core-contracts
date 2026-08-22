@@ -21,14 +21,15 @@ use Northrook\ParameterStoreInterface;
  *
  * Registerable passes target the mutable phases.
  *
- * {@see CompilerPass::COMPILE} freezes into an immutable {@see ContainerInterface}.
+ * {@see CompilerPass::COMPILE} freezes into an immutable {@see ContainerInterface}
+ * and {@see \Northrook\Events\EventListeners}.
  *
  * Per-service mutation (binding, tags, aliases, …) lives on {@see ServiceDefinition}.
  * Primary constructor/factory argument overrides are the reserved
  * {@see \Northrook\Container\Service\Tag} keyed by
  * {@see ContainerInterface::DEFAULT_REFERENCE} (via {@see ServiceDefinition::setArguments()}).
  *
- * This interface is the registry, parameter store, and passes only.
+ * This interface is the registry, parameter store, listener map, and passes.
  */
 interface CompilerInterface
 {

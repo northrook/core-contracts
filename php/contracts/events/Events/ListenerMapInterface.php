@@ -4,26 +4,18 @@ declare(strict_types=1);
 
 namespace Northrook\Events;
 
-use Northrook\EventInterface;
-
 /**
- * Compiled snapshot of event listeners.
+ * Mutable listener registry consumed by {@see \Northrook\Container\CompilerPassInterface} passes.
  *
- * Source of truth is the container compile; this map is a read model consumed by
- * a {@see \Northrook\ListenerProviderInterface} implementation.
- *
- * Descriptors are `{class, method, priority}`; resolution of `class::method` to an
- * invokable happens in the kernel/container, not here.
- *
- * @phpstan-type ListenerDescriptor array{class: class-string, method: string, priority: int}
- * @phpstan-type ListenerMapInput array<class-string<EventInterface>, list<ListenerDescriptor>>
+ * Implementation is owned by the compiler. {@see \Northrook\Container\CompilerPass::COMPILE}
+ * freezes this map into an immutable {@see \Northrook\Events\EventListeners}.
  */
 interface ListenerMapInterface
 {
     /**
      * Register a listener for `$event`.
      *
-     * @param class-string<EventInterface> $event
+     * @param class-string<\Northrook\EventInterface> $event
      * @param class-string                 $class
      * @param non-empty-string             $method
      */
@@ -32,36 +24,25 @@ interface ListenerMapInterface
         string $class,
         string $method,
         int    $priority = 0,
-    ): static;
+    ): self;
 
     /**
      * Descriptors whose registered event type is a parent of, or the same as,
-     * `$event` ({@see \is_a()}), appended in registration key order —
+     * `$event` ({@see \is_a()}), appended in registration order —
      * no specificity or priority sort.
      *
-     * @param object|class-string $event
+     * @param \Northrook\EventInterface|class-string<\Northrook\EventInterface> $event
      *
-     * @return list<ListenerDescriptor>
+     * @return list<\Northrook\Events\ListenerDescriptor>
      */
     public function for(
         object|string $event,
     ): array;
 
     /**
-     * Descriptors for the event, sorted by priority descending.
-     *
-     * @param object|class-string $event
-     *
-     * @return list<ListenerDescriptor>
-     */
-    public function sorted(
-        object|string $event,
-    ): array;
-
-    /**
      * Whether any listener is registered for the event type (including parents).
      *
-     * @param object|class-string $event
+     * @param \Northrook\EventInterface|class-string<\Northrook\EventInterface> $event
      */
     public function has(
         object|string $event,
