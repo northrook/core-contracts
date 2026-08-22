@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Northrook\Container;
 
+use Northrook\Container\Service\Tag;
+
 /**
  * Immutable, finalized service definition for the container COMPILE phase.
  *
@@ -37,4 +39,19 @@ final readonly class Service
         public false|string   $factory,
         public array          $callbacks,
     ) {}
+
+    public function hasTag(
+        string $tag,
+    ): bool {
+        return \array_any(
+            array   : $this->tags,
+            callback: static fn(Tag $existing) => $existing->reference === $tag,
+        );
+    }
+
+    public function hasAlias(
+        string $alias,
+    ): bool {
+        return \in_array($alias, $this->aliases, true);
+    }
 }
