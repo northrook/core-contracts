@@ -19,6 +19,11 @@ enum KernelContext implements RuntimeContext
     case Compile;
 
     /**
+     * Initializing the Kernel.
+     */
+    case Initializing;
+
+    /**
      * CLI, CRON jobs, or other runtime processes.
      */
     case Runtime;
@@ -38,7 +43,8 @@ enum KernelContext implements RuntimeContext
         return match ($this) {
             self::Boot => 0,
             self::Compile => 1,
-            default => 2,
+            self::Initializing => 2,
+            default => 3,
         };
     }
 }
