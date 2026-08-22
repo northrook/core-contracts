@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Northrook\Events;
 
-use Northrook\EventInterface;
-
 /**
  * Immutable, finalized listener map for the container COMPILE phase.
  *
@@ -17,7 +15,7 @@ use Northrook\EventInterface;
 final readonly class EventListeners
 {
     /**
-     * @param array<class-string<EventInterface>, ListenerDescriptor>  $listeners
+     * @param list<ListenerDescriptor>  $listeners
      */
     public function __construct(
         public array $listeners = [],
