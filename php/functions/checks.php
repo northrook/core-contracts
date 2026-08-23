@@ -60,6 +60,30 @@ function is_class_string(
 }
 
 /**
+ * @param mixed $value
+ * @return bool
+ *
+ * @phpstan-assert-if-true non-empty-string $value
+ */
+function is_non_empty_string(
+    mixed $value,
+): bool {
+    return \is_string($value) && $value !== '';
+}
+
+/**
+ * @param mixed $value
+ * @return bool
+ *
+ * @phpstan-assert-if-true non-empty-lowercase-string $value
+ */
+function is_non_empty_lowercase_string(
+    mixed $value,
+): bool {
+    return \is_string($value) && $value !== '' && \strtolower($value) === $value;
+}
+
+/**
  * Check if a string is a plausible filesystem path shape.
  *
  * Separators are normalized (`\` → {@see DIR_SEP}) before checking.
