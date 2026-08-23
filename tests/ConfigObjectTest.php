@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
+use Northrook\Argument\Value;
 use Northrook\ConfigObject;
+use Northrook\InvalidArgumentException;
 use Northrook\RuntimeException;
 use PHPUnit\Framework\TestCase;
 
@@ -133,12 +135,30 @@ final class ConfigObjectTest extends TestCase
 
         self::assertNull($config->note);
     }
+
+    public function testFromAppliesNullAsOptionalDefault(): void
+    {
+        $config = ConfigObjectTestOptionalNull::from([]);
+
+        self::assertNull($config->note);
+    }
+
+    public function testFromThrowsOnRequiredTypeMismatch(): void
+    {
+        try {
+            ConfigObjectTestBasic::from(['name' => 1]);
+            self::fail('Expected RuntimeException was not thrown.');
+        } catch (RuntimeException $exception) {
+            self::assertStringContainsString('Failed to create', $exception->getMessage());
+            self::assertInstanceOf(InvalidArgumentException::class, $exception->getPrevious());
+        }
+    }
 }
 
 final readonly class ConfigObjectTestBasic extends ConfigObject
 {
     public const array DEFAULTS = [
-        'name'  => null,
+        'name'  => Value::String,
         'count' => 7,
         'label' => 'fallback',
     ];
@@ -155,7 +175,7 @@ final readonly class ConfigObjectTestBasic extends ConfigObject
 final readonly class ConfigObjectTestComputed extends ConfigObject
 {
     public const array DEFAULTS = [
-        'name'  => null,
+        'name'  => Value::String,
         'label' => 'Northrook\Contracts\Tests\configObjectTestComputedLabel',
     ];
 
@@ -181,6 +201,19 @@ final readonly class ConfigObjectTestFailingComputed extends ConfigObject
 }
 
 final readonly class ConfigObjectTestNullable extends ConfigObject
+{
+    public const array DEFAULTS = [
+        'note' => Value::Unset,
+    ];
+
+    public function __construct(
+        public null|string $note,
+    ) {
+        parent::__construct();
+    }
+}
+
+final readonly class ConfigObjectTestOptionalNull extends ConfigObject
 {
     public const array DEFAULTS = [
         'note' => null,

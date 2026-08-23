@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Northrook;
 
+use Northrook\Argument\Value;
+
 /**
  * Base class for configuration DTOs created from container-provided arrays.
  *
@@ -20,13 +22,13 @@ abstract readonly class ConfigObject extends DataObject
      * Config schema and defaults for {@see from()}.
      *
      * Keys are the only accepted config keys (allowlist). Values:
-     * - `null` — required; **absent** key throws (`array_key_exists`; present `null` is allowed)
-     * - non-`null` — optional default when the key is absent
+     * - {@see Value} — required; **absent** key throws (`array_key_exists`).
+     *   {@see Value::Unset} accepts any provided value (including `null`);
+     *   typed cases also {@see Value::matches()} the provided value.
+     * - other — optional default when the key is absent (`null` is a real default)
      * - callable-string — invoked as `$callable($config)` when the key is absent
      *
-     * Must cover every constructor parameter. `null` in DEFAULTS is only a
-     * required-key sentinel — it cannot mean “default to null” (pass `null`
-     * explicitly in `$config` instead).
+     * Must cover every constructor parameter.
      *
      * @abstract
      *
@@ -39,11 +41,12 @@ abstract readonly class ConfigObject extends DataObject
      *
      * Resolution against {@see DEFAULTS}:
      * 1. Each DEFAULTS key becomes a constructor argument
-     * 2. DEFAULTS `null` + absent key → throws (required); present `null` is kept
-     * 3. Absent key + callable-string default → invoke `$callable($config)`
-     * 4. Absent key + other default → use that value
-     * 5. Keys present in `$config` but not in DEFAULTS → throws (unknown)
-     * 6. Remaining type / arity failures come from `new static(...$args)`
+     * 2. DEFAULTS {@see Value} + absent key → throws (required)
+     * 3. DEFAULTS {@see Value} + present key → {@see Value::require()}
+     * 4. Absent key + callable-string default → invoke `$callable($config)`
+     * 5. Absent key + other default → use that value
+     * 6. Keys present in `$config` but not in DEFAULTS → throws (unknown)
+     * 7. Remaining type / arity failures come from `new static(...$args)`
      *
      * Presence is {@see array_key_exists()} — explicit `null` values are not treated as absent.
      *
@@ -64,18 +67,24 @@ abstract readonly class ConfigObject extends DataObject
             $args = [];
 
             foreach (static::DEFAULTS as $key => $value) {
-                // null sentinel in DEFAULTS marks a required key (key must be present)
-                if ($value === null && ! \array_key_exists($key, $config)) {
-                    throw new RuntimeException(
-                        message: "Missing required config `{$key}`",
-                        context: [
-                            'config'   => $config,
-                            'defaults' => static::DEFAULTS,
-                        ],
-                    );
+                $present = \array_key_exists($key, $config);
+
+                if ($value instanceof Value) {
+                    if (! $present) {
+                        throw new RuntimeException(
+                            message: "Missing required config `{$key}`",
+                            context: [
+                                'config'   => $config,
+                                'defaults' => static::DEFAULTS,
+                            ],
+                        );
+                    }
+
+                    $args[$key] = $value->require($config[$key], $key);
+                    continue;
                 }
 
-                if (\array_key_exists($key, $config)) {
+                if ($present) {
                     $args[$key] = $config[$key];
                     continue;
                 }
