@@ -8,7 +8,7 @@ final class ServiceNotFoundException extends ContainerException implements \Psr\
 {
     public function __construct(
         string          $id,
-        null|string     $reference,
+        null|string     $reference = null,
         null|string     $message = null,
         null|array      $context = null,
         null|\Throwable $previous = null,

@@ -7,18 +7,18 @@ namespace Northrook\Container;
 interface ServiceRegistryInterface
 {
     /**
-     * Whether a definition exists for `(id)`.
+     * Whether a definition exists.
      *
-     * @param class-string $id may be a service class or an alias
+     * @param non-empty-lowercase-string|class-string $id may be a service id, class, or alias
      */
     public function has(
         string $id,
     ): bool;
 
     /**
-     * Retrieve the definition for `(id)`.
+     * Retrieve a definition.
      *
-     * @param class-string $id may be a service class or an alias
+     * @param non-empty-lowercase-string|class-string $id may be a service id, class, or alias
      *
      * @throws \Northrook\Container\ServiceNotFoundException if the binding is not defined
      */
@@ -29,7 +29,7 @@ interface ServiceRegistryInterface
     /**
      * Register a definition, indexing its aliases and tags.
      *
-     * @throws \Northrook\Container\ContainerException on if the definition already exists
+     * @throws \Northrook\Container\ContainerException if the definition already exists or the registry is locked
      */
     public function register(
         ServiceDefinition $definition,
@@ -38,12 +38,13 @@ interface ServiceRegistryInterface
     /**
      * Remove a definition.
      *
-     * @param class-string $id may be a service class or an alias
+     * @param non-empty-lowercase-string|class-string $id may be a service id, class
      *
-     * @throws \Northrook\Container\ServiceNotFoundException if the binding is not defined
-     * @throws \Northrook\Container\ContainerException when the phase forbids writes
+     * @throws \Northrook\Container\ContainerException the registry is locked
+     *
+     * @return bool `true` if the binding was removed, `false` otherwise
      */
     public function remove(
         string $id,
-    ): void;
+    ): bool;
 }
