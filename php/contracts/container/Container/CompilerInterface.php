@@ -76,6 +76,13 @@ interface CompilerInterface
     public ServiceRegistryInterface $services { get; }
 
     /**
+     * Constructor, method, and member injection plans.
+     *
+     * @var \Northrook\Container\InjectionRegistryInterface
+     */
+    public InjectionRegistryInterface $injection { get; }
+
+    /**
      * The compiler's mutable event listener registry.
      *
      * @var \Northrook\Events\ListenerRegistryInterface

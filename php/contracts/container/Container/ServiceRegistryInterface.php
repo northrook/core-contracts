@@ -7,6 +7,20 @@ namespace Northrook\Container;
 interface ServiceRegistryInterface
 {
     /**
+     * Definitions keyed by service id.
+     *
+     * @var array<non-empty-lowercase-string, ServiceDefinition>
+     */
+    public array $definitions { get; }
+
+    /**
+     * Alias → service id. Does not include the implementing class.
+     *
+     * @var array<class-string, non-empty-lowercase-string>
+     */
+    public array $aliases { get; }
+
+    /**
      * Whether a definition exists.
      *
      * @param non-empty-lowercase-string|class-string $id may be a service id, class, or alias
