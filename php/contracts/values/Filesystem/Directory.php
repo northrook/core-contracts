@@ -138,9 +138,13 @@ final readonly class Directory extends Path
      */
     public function directory(
         string|\Stringable $segment,
+        bool               $assert = false,
+        bool               $create = false,
     ): self {
         return new self(
             path      : $this->pathUnder($segment),
+            assert    : $assert,
+            create    : $create,
             filesystem: $this->filesystem,
         );
     }
