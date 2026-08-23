@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Northrook\Contracts\Tests;
 
 use Northrook\Argument\Value;
+use Northrook\Filesystem\Directory;
+use Northrook\Filesystem\File;
 use Northrook\InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -40,6 +42,12 @@ final class ArgumentValueTest extends TestCase
         yield 'number numeric string' => [Value::Number, '3.14', true];
         yield 'number rejects bool' => [Value::Number, true, false];
         yield 'string' => [Value::String, '', true];
+        yield 'non-empty string' => [Value::NonEmptyString, 'x', true];
+        yield 'non-empty string rejects empty' => [Value::NonEmptyString, '', false];
+        yield 'non-empty string rejects non-string' => [Value::NonEmptyString, 1, false];
+        yield 'non-empty lowercase' => [Value::NonEmptyLowercaseString, 'a-b_1', true];
+        yield 'non-empty lowercase rejects empty' => [Value::NonEmptyLowercaseString, '', false];
+        yield 'non-empty lowercase rejects mixed case' => [Value::NonEmptyLowercaseString, 'Abc', false];
         yield 'class-string' => [Value::ClassString, \stdClass::class, true];
         yield 'class-string rejects empty' => [Value::ClassString, '', false];
         yield 'array' => [Value::Array, [], true];
@@ -92,5 +100,30 @@ final class ArgumentValueTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         Value::Int->optional('no', 0);
+    }
+
+    public function testPathFileDirectoryRequireExisting(): void
+    {
+        $file = File::temporary();
+        $dir  = Directory::temporary();
+
+        try {
+            self::assertTrue(Value::Path->matches($file));
+            self::assertTrue(Value::Path->matches($file->value));
+            self::assertTrue(Value::Path->matches($dir));
+            self::assertTrue(Value::File->matches($file));
+            self::assertTrue(Value::File->matches($file->value));
+            self::assertTrue(Value::Directory->matches($dir));
+            self::assertTrue(Value::Directory->matches($dir->value));
+
+            self::assertFalse(Value::File->matches($dir->value));
+            self::assertFalse(Value::Directory->matches($file->value));
+            self::assertFalse(Value::Path->matches($dir->value . '/no-such-' . \bin2hex(\random_bytes(4))));
+            self::assertFalse(Value::File->matches(''));
+            self::assertFalse(Value::Path->matches('https://example.com/x'));
+            self::assertFalse(Value::Path->matches(1));
+        } finally {
+            @\unlink($file->value);
+        }
     }
 }

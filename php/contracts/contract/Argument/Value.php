@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Northrook\Argument;
 
+use Northrook\Filesystem\Path as FilesystemPath;
 use Northrook\InvalidArgumentException;
 
 /**
@@ -20,6 +21,8 @@ use Northrook\InvalidArgumentException;
  * ```
  *
  * {@see Unset} means provided, any type. Typed cases also check {@see matches()}.
+ * {@see Path}, {@see File}, and {@see Directory} require a valid denoting string
+ * (or {@see \Northrook\Filesystem\Path}) that exists on disk as that kind.
  */
 enum Value
 {
@@ -35,7 +38,13 @@ enum Value
     case Float;
 
     case String;
+    case NonEmptyString;
+    case NonEmptyLowercaseString;
     case ClassString;
+
+    case Path;
+    case File;
+    case Directory;
 
     case Array;
     case Object;
@@ -64,11 +73,37 @@ enum Value
             self::Int => \is_int($value),
             self::Float => \is_float($value),
             self::String => \is_string($value),
+            self::NonEmptyString => \is_string($value) && $value !== '',
+            self::NonEmptyLowercaseString => \is_string($value) && $value !== '' && \strtolower($value) === $value,
             self::ClassString => \is_class_string($value),
+            self::Path => $this->existingPath($value)?->exists() ?? false,
+            self::File => $this->existingPath($value)?->isFile() ?? false,
+            self::Directory => $this->existingPath($value)?->isDirectory() ?? false,
             self::Array => \is_array($value),
             self::Object => \is_object($value),
             self::Key => \is_string($value) || \is_int($value),
         };
+    }
+
+    /**
+     * {@see FilesystemPath} (and subclasses) as given; strings via constructor.
+     */
+    private function existingPath(
+        mixed $value,
+    ): null|FilesystemPath {
+        if ($value instanceof FilesystemPath) {
+            return $value;
+        }
+
+        if (! \is_string($value) && ! $value instanceof \Stringable) {
+            return null;
+        }
+
+        try {
+            return new FilesystemPath($value);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /**
