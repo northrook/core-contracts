@@ -6,6 +6,7 @@ namespace Northrook;
 
 use Northrook\Contracts\Exportable;
 use Northrook\Contracts\Resettable;
+use Northrook\Export\Constant;
 
 /**
  * @static
@@ -22,6 +23,20 @@ final class Export implements Resettable
     public static function reset(): void
     {
         self::$depth = 0;
+    }
+
+    /**
+     * Living identifier for nested {@see value()} / {@see array()} / {@see class()} graphs.
+     *
+     * Leading `\` is stripped. Magic `__…__` names stay unprefixed; all others get `\`.
+     * The dump does not resolve or validate the identifier.
+     *
+     * @param string $name
+     */
+    public static function const(
+        string $name,
+    ): Constant {
+        return Constant::export($name);
     }
 
     /**
@@ -79,6 +94,10 @@ final class Export implements Resettable
 
         if ($value instanceof \UnitEnum) {
             return '\\' . \ltrim(\var_export($value, true), '\\');
+        }
+
+        if ($value instanceof Constant) {
+            return $value->constant;
         }
 
         if (\is_array($value)) {

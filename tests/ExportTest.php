@@ -122,4 +122,28 @@ final class ExportTest extends TestCase
         self::assertInstanceOf(Parameter::class, $hydrated);
         self::assertSame(1, $hydrated->value);
     }
+
+    public function testConstEmitsTheGivenSource(): void
+    {
+        $export = Export::array([
+            'env'   => Export::const('APP_ENV'),
+            'class' => Export::const('\\__CLASS__'),
+            'halt'  => Export::const('__COMPILER_HALT_OFFSET__'),
+            'case'  => Export::const('\\' . Type::class . '::Setting'),
+            'type'  => Export::const('\\' . Parameter::class . '::class'),
+        ]);
+
+        self::assertSame(
+            <<<'PHP'
+                [
+                    'env'   => \APP_ENV,
+                    'class' => __CLASS__,
+                    'halt'  => __COMPILER_HALT_OFFSET__,
+                    'case'  => \Northrook\Parameter\Type::Setting,
+                    'type'  => \Northrook\Parameter::class,
+                ]
+                PHP,
+            $export,
+        );
+    }
 }
