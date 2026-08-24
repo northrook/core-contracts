@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Northrook\Events;
+namespace Northrook\Container\Compiler;
+
+use Northrook\Events\ListenerMap;
 
 /**
  * Mutable listener registry consumed by {@see \Northrook\Container\CompilerPassInterface} passes.
@@ -10,7 +12,7 @@ namespace Northrook\Events;
  * Implementation is owned by the compiler. {@see \Northrook\Container\CompilerPass::COMPILE}
  * freezes this map into an immutable {@see \Northrook\Events\ListenerMap}.
  */
-interface ListenerRegistryInterface
+interface ListenerRegistryInterface extends CompilerStateInterface
 {
     /**
      * Register a listener for `$event`.

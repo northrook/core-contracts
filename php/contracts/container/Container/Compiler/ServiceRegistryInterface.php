@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Northrook\Container;
+namespace Northrook\Container\Compiler;
 
-interface ServiceRegistryInterface
+use Northrook\Container\ServiceDefinition;
+
+interface ServiceRegistryInterface extends CompilerStateInterface
 {
     /**
      * Definitions keyed by service id.

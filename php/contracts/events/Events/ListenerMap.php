@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Northrook\Events;
 
+use Northrook\Container\Compiler\ListenerRegistryInterface;
+
 /**
  * Immutable, finalized listener map for the container COMPILE phase.
  *

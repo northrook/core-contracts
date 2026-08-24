@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
+use Northrook\Container\Compiler\ListenerRegistryInterface;
 use Northrook\Container\CompilerInterface;
 use Northrook\Contracts\Tests\Support\OnEventSampleEvent;
 use Northrook\Contracts\Tests\Support\OnEventStandaloneEvent;
@@ -11,7 +12,6 @@ use Northrook\Event;
 use Northrook\EventDispatcherInterface;
 use Northrook\EventInterface;
 use Northrook\Events\ListenerMap;
-use Northrook\Events\ListenerRegistryInterface;
 use Northrook\ListenerProviderInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;

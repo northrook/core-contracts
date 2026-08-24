@@ -6,6 +6,8 @@ namespace Northrook\Contracts\Tests;
 
 use Northrook\Container\AutodiscoverInterface;
 use Northrook\Container\BindingAttribute;
+use Northrook\Container\Compiler\ListenerRegistryInterface;
+use Northrook\Container\Compiler\ServiceRegistryInterface;
 use Northrook\Container\CompilerInterface;
 use Northrook\Container\CompilerPass;
 use Northrook\Container\CompilerPassInterface;
@@ -14,9 +16,7 @@ use Northrook\Container\Service\Scoped;
 use Northrook\Container\Service\Shared;
 use Northrook\Container\Service\Unique;
 use Northrook\Container\ServiceBinding;
-use Northrook\Container\ServiceRegistryInterface;
 use Northrook\ContainerInterface;
-use Northrook\Events\ListenerRegistryInterface;
 use Northrook\InvalidArgumentException;
 use Northrook\ParameterStoreInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -146,6 +146,20 @@ final class ContainerTest extends TestCase
             'bool',
             (string) new \ReflectionProperty(CompilerInterface::class, 'compiled')->getType(),
         );
+    }
+
+    public function testCompilerInterfaceDeclaresAuthorizeMutation(): void
+    {
+        $method = new \ReflectionMethod(CompilerInterface::class, 'authorizeMutation');
+
+        self::assertSame('void', (string) $method->getReturnType());
+        self::assertCount(1, $method->getParameters());
+
+        $subject = $method->getParameters()[0];
+
+        self::assertSame('subject', $subject->getName());
+        self::assertFalse($subject->isDefaultValueAvailable());
+        self::assertSame('object|array|string', (string) $subject->getType());
     }
 
     public function testBindingAttributeExtendsAutodiscoverInterface(): void

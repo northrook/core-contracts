@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Northrook\Container;
 
+use Northrook\Container\Compiler\DependencyRegistryInterface;
+use Northrook\Container\Compiler\ListenerRegistryInterface;
+use Northrook\Container\Compiler\ServiceRegistryInterface;
 use Northrook\ContainerInterface;
-use Northrook\Events\ListenerRegistryInterface;
 use Northrook\ParameterStoreInterface;
 
 /**
@@ -71,21 +73,30 @@ interface CompilerInterface
     /**
      * The compiler's mutable service registry.
      *
-     * @var \Northrook\Container\ServiceRegistryInterface
+     * @var \Northrook\Container\Compiler\ServiceRegistryInterface
      */
     public ServiceRegistryInterface $services { get; }
 
     /**
      * Constructor, method, and member injection plans.
      *
-     * @var \Northrook\Container\InjectionRegistryInterface
+     * @var \Northrook\Container\Compiler\DependencyRegistryInterface
      */
-    public InjectionRegistryInterface $injection { get; }
+    public DependencyRegistryInterface $dependencies { get; }
 
     /**
      * The compiler's mutable event listener registry.
      *
-     * @var \Northrook\Events\ListenerRegistryInterface
+     * @var \Northrook\Container\Compiler\ListenerRegistryInterface
      */
     public ListenerRegistryInterface $listeners { get; }
+
+    /**
+     * Authorize a class, or a specific method on that class.
+     *
+     * @param object|class-string|array{0: object|class-string, 1: non-empty-string}  $subject
+     */
+    public function authorizeMutation(
+        object|string|array $subject,
+    ): void;
 }
