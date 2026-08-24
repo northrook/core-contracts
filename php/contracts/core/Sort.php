@@ -37,7 +37,7 @@ enum Sort
     case Boolean;
 
     /**
-     * Caller-supplied comparator; signals that no built-in criterion applies.
+     * CallTarget-supplied comparator; signals that no built-in criterion applies.
      *
      * Consumers should pair this with an explicit callable or comparator object.
      */
