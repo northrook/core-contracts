@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Northrook\Contracts\Tests;
 
 use Northrook\Container\Compiler\ListenerRegistryInterface;
-use Northrook\Container\CompilerInterface;
 use Northrook\Contracts\Tests\Support\OnEventSampleEvent;
 use Northrook\Contracts\Tests\Support\OnEventStandaloneEvent;
 use Northrook\Event;
@@ -66,13 +65,6 @@ final class EventsTest extends TestCase
             PsrListenerProviderInterface::class,
             new \ReflectionClass(ListenerProviderInterface::class)->getInterfaceNames(),
         );
-    }
-
-    public function testCompilerInterfaceExposesListenerRegistry(): void
-    {
-        $property = new \ReflectionProperty(CompilerInterface::class, 'listeners');
-
-        self::assertSame(ListenerRegistryInterface::class, (string) $property->getType());
     }
 
     public function testListenerRegistryInterfaceDeclaresRegisterForHasToListenerMap(): void

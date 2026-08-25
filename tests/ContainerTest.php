@@ -6,7 +6,7 @@ namespace Northrook\Contracts\Tests;
 
 use Northrook\Container\AutodiscoverInterface;
 use Northrook\Container\BindingAttribute;
-use Northrook\Container\Compiler\ListenerRegistryInterface;
+use Northrook\Container\Compiler\DependencyRegistryInterface;
 use Northrook\Container\Compiler\ServiceRegistryInterface;
 use Northrook\Container\CompilerInterface;
 use Northrook\Container\CompilerPass;
@@ -139,8 +139,8 @@ final class ContainerTest extends TestCase
             (string) new \ReflectionProperty(CompilerInterface::class, 'services')->getType(),
         );
         self::assertSame(
-            ListenerRegistryInterface::class,
-            (string) new \ReflectionProperty(CompilerInterface::class, 'listeners')->getType(),
+            DependencyRegistryInterface::class,
+            (string) new \ReflectionProperty(CompilerInterface::class, 'dependencies')->getType(),
         );
         self::assertSame(
             'bool',

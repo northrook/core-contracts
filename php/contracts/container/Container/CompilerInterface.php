@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Northrook\Container;
 
 use Northrook\Container\Compiler\DependencyRegistryInterface;
-use Northrook\Container\Compiler\ListenerRegistryInterface;
 use Northrook\Container\Compiler\ServiceRegistryInterface;
 use Northrook\ContainerInterface;
 use Northrook\ParameterStoreInterface;
@@ -23,15 +22,14 @@ use Northrook\ParameterStoreInterface;
  *
  * Registerable passes target the mutable phases.
  *
- * {@see CompilerPass::COMPILE} freezes into an immutable {@see ContainerInterface}
- * and {@see \Northrook\Events\ListenerMap}.
+ * {@see CompilerPass::COMPILE} freezes into an immutable {@see ContainerInterface}.
  *
  * Per-service mutation (binding, tags, aliases, …) lives on {@see ServiceDefinition}.
  * Primary constructor/factory argument overrides are the reserved
  * {@see \Northrook\Container\Service\Tag} keyed by
  * {@see ContainerInterface::DEFAULT_REFERENCE} (via {@see ServiceDefinition::setArguments()}).
  *
- * This interface is the registry, parameter store, listener registry, and passes.
+ * This interface is the registry, parameter store, and passes.
  */
 interface CompilerInterface
 {
@@ -83,13 +81,6 @@ interface CompilerInterface
      * @var \Northrook\Container\Compiler\DependencyRegistryInterface
      */
     public DependencyRegistryInterface $dependencies { get; }
-
-    /**
-     * The compiler's mutable event listener registry.
-     *
-     * @var \Northrook\Container\Compiler\ListenerRegistryInterface
-     */
-    public ListenerRegistryInterface $listeners { get; }
 
     /**
      * Authorize a class, or a specific method on that class.

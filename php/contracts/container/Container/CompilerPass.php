@@ -21,7 +21,6 @@ enum CompilerPass: string implements RuntimeContext
      * - Resolve {@see \Northrook\ConfigObject}s
      * - {@see \Northrook\Container\Service\Autodiscover} services
      * - {@see \Northrook\Container\Autowire} dependencies
-     * - Collect {@see \Northrook\OnEvent} listeners during discovery
      */
     case DISCOVERY = 'compiler.discovery';
 
@@ -54,8 +53,7 @@ enum CompilerPass: string implements RuntimeContext
     /**
      * # `5` - Compile
      *
-     * Freeze into an immutable {@see \Northrook\ContainerInterface}
-     * and {@see \Northrook\Events\ListenerMap}.
+     * Freeze into an immutable {@see \Northrook\ContainerInterface}.
      *
      * Optional: OPCache / ahead-of-time dump of the compiled container.
      */
