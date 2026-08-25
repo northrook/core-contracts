@@ -36,6 +36,46 @@ function is_valid_class(
 }
 
 /**
+ * Whether `$value` is an `object` or `class-string` that satisfies every required part.
+ *
+ * - Only `object` and `class-string` are parsed.
+ * - Anything else, a missing part list, or a failed `is_a` check is `false`.
+ *
+ * @param mixed $value
+ * @param mixed ...$composedOf
+ *
+ * @return bool
+ *
+ * @phpstan-assert-if-true object|class-string $value
+ */
+function is_class(
+    mixed    $value,
+    mixed ...$composedOf,
+): bool {
+    if ($composedOf === [] || ( ! \is_object($value) && ! \is_string($value) )) {
+        return false;
+    }
+
+    foreach ($composedOf as $type) {
+        if (\is_object($type)) {
+            $expected = $type::class;
+        }
+        elseif (\is_string($type) && $type !== '') {
+            $expected = $type;
+        }
+        else {
+            return false;
+        }
+
+        if (! \is_a($value, $expected, true)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/**
  * Check if a string is a valid class-string shape.
  *
  * Does not check if the class exists.

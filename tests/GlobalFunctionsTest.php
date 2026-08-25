@@ -82,6 +82,62 @@ final class GlobalFunctionsTest extends TestCase
 
     // endregion
 
+    // region is_class
+
+    public function testIsClassRejectsNullValue(): void
+    {
+        self::assertFalse(\is_class(null, \DateTime::class));
+    }
+
+    public function testIsClassRejectsEmptyParts(): void
+    {
+        self::assertFalse(\is_class(new \DateTime));
+    }
+
+    public function testIsClassRejectsNullPart(): void
+    {
+        self::assertFalse(\is_class(new \DateTime, null));
+        self::assertFalse(\is_class(new \DateTime, \DateTimeInterface::class, null));
+    }
+
+    #[DataProvider('provideIsClassCases')]
+    public function testIsClass(
+        mixed $value,
+        bool  $expected,
+        mixed ...$composedOf,
+    ): void {
+        self::assertSame($expected, \is_class($value, ...$composedOf));
+    }
+
+    /**
+     * @return \Generator<string, array{0: mixed, 1: bool, 2?: mixed}>
+     */
+    public static function provideIsClassCases(): \Generator
+    {
+        $date = new \DateTime;
+
+        yield 'object matches class' => [$date, true, \DateTime::class];
+        yield 'object matches interface' => [$date, true, \DateTimeInterface::class];
+        yield 'object matches class and interface' => [$date, true, \DateTime::class, \DateTimeInterface::class];
+        yield 'object matches object part' => [$date, true, new \DateTime];
+        yield 'object misses sibling class object' => [$date, false, new \DateTimeImmutable];
+        yield 'class-string matches interface' => [\DateTime::class, true, \DateTimeInterface::class];
+        yield 'class-string matches object part' => [\DateTime::class, true, $date];
+        yield 'object misses unrelated class' => [new \stdClass, false, \DateTime::class];
+        yield 'class-string misses unrelated class' => [\stdClass::class, false, \DateTime::class];
+        yield 'unknown class-string' => ['Northrook\\ThisClassDoesNotExist', false, \DateTime::class];
+        yield 'empty string part' => [$date, false, ''];
+        yield 'non class string value' => ['not-a-class', false, \DateTime::class];
+        yield 'int value' => [1, false, \DateTime::class];
+        yield 'float value' => [1.5, false, \DateTime::class];
+        yield 'bool value' => [true, false, \DateTime::class];
+        yield 'array value' => [[\DateTime::class], false, \DateTime::class];
+        yield 'int part' => [$date, false, 1];
+        yield 'array part' => [$date, false, [\DateTime::class]];
+    }
+
+    // endregion
+
     // region is_class_string
 
     #[DataProvider('provideIsClassStringRejectsNonStrings')]
