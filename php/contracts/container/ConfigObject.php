@@ -93,7 +93,8 @@ abstract readonly class ConfigObject extends DataObject
                 if (\is_string($value) && \is_callable($value)) {
                     try {
                         $args[$key] = $value($config);
-                    } catch (\Throwable $exception) {
+                    }
+                    catch (\Throwable $exception) {
                         throw new RuntimeException(
                             message : "Failed to resolve config `{$key}`",
                             context : [
@@ -120,7 +121,8 @@ abstract readonly class ConfigObject extends DataObject
 
             // @phpstan-ignore-next-line - Unsafe usage of new static() is intentional
             return new static(...$args);
-        } catch (\Throwable $exception) {
+        }
+        catch (\Throwable $exception) {
             throw new RuntimeException(
                 message : 'Failed to create ' . static::class . ' from config array.',
                 context : \func_get_args(),

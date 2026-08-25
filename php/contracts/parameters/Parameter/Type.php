@@ -118,7 +118,8 @@ enum Type
                 if (\ltrim($resolve, '\\') === __CLASS__) {
                     $resolve = \strtolower($type);
                 }
-            } else {
+            }
+            else {
                 $resolve = \strtolower($value);
             }
 
@@ -268,7 +269,7 @@ enum Type
 
         $dot = \strrpos($base, '.');
 
-        if ($dot === false || $dot === ( \strlen($base) - 1 )) {
+        if ($dot === false || $dot === \strlen($base) - 1) {
             return '';
         }
 

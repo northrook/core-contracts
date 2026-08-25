@@ -172,25 +172,29 @@ final class ServiceDefinitionTest extends TestCase
         try {
             $definition->autowire(false);
             self::fail('Expected ContainerException for autowire()');
-        } catch (ContainerException) {
+        }
+        catch (ContainerException) {
         }
 
         try {
             $definition->binding(ServiceBinding::Inline);
             self::fail('Expected ContainerException for binding()');
-        } catch (ContainerException) {
+        }
+        catch (ContainerException) {
         }
 
         try {
             $definition->addAlias(ServiceDefinitionAliasInterface::class);
             self::fail('Expected ContainerException for addAlias()');
-        } catch (ContainerException) {
+        }
+        catch (ContainerException) {
         }
 
         try {
             $definition->setArgument('mode', 'x');
             self::fail('Expected ContainerException for setArgument()');
-        } catch (ContainerException) {
+        }
+        catch (ContainerException) {
         }
 
         $definition->lock(false);
@@ -678,14 +682,16 @@ final class ServiceDefinitionTest extends TestCase
             // @phpstan-ignore-next-line Testing invalid input.
             $definition->setArgument('', 'x');
             self::fail('Expected InvalidArgumentException for empty key');
-        } catch (InvalidArgumentException) {
+        }
+        catch (InvalidArgumentException) {
         }
 
         try {
             // @phpstan-ignore-next-line Testing invalid input.
             $definition->setArgument('$mode', 'x');
             self::fail('Expected InvalidArgumentException for $-prefixed key');
-        } catch (InvalidArgumentException) {
+        }
+        catch (InvalidArgumentException) {
         }
 
         $this->expectException(InvalidArgumentException::class);

@@ -21,7 +21,8 @@ final class NativeLoggerTest extends TestCase
         foreach ($this->cleanup as $path) {
             if (\is_file($path)) {
                 @\unlink($path);
-            } elseif (\is_dir($path)) {
+            }
+            elseif (\is_dir($path)) {
                 @\rmdir($path);
             }
         }
@@ -126,7 +127,8 @@ final class NativeLoggerTest extends TestCase
             $callback(new NativeLogger);
 
             return (string) \file_get_contents($path);
-        } finally {
+        }
+        finally {
             if (\is_string($previous)) {
                 \ini_set('error_log', $previous);
             }

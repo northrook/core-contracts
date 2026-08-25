@@ -95,7 +95,8 @@ final class OnEventTest extends TestCase
         try {
             new OnEvent(\stdClass::class);
             self::fail('Expected InvalidArgumentException.');
-        } catch (InvalidArgumentException $exception) {
+        }
+        catch (InvalidArgumentException $exception) {
             self::assertSame(['event' => \stdClass::class, 'errors' => []], $exception->getContext());
         }
     }
@@ -211,7 +212,8 @@ final class OnEventTest extends TestCase
         try {
             $attribute->register(OnEventSecondBindingListener::class, 'second');
             self::fail('Expected InvalidArgumentException.');
-        } catch (InvalidArgumentException $exception) {
+        }
+        catch (InvalidArgumentException $exception) {
             self::assertSame(
                 [
                     'event'  => OnEventSampleEvent::class,
@@ -309,7 +311,8 @@ final class OnEventTest extends TestCase
         try {
             $attribute->register('Northrook\\MissingListener', 'onEvent');
             self::fail('Expected InvalidArgumentException.');
-        } catch (InvalidArgumentException $exception) {
+        }
+        catch (InvalidArgumentException $exception) {
             self::assertSame(
                 [
                     'event'  => OnEventSampleEvent::class,
@@ -329,7 +332,8 @@ final class OnEventTest extends TestCase
         try {
             $attribute->register(OnEventBadListeners::class, 'wrongClass');
             self::fail('Expected InvalidArgumentException.');
-        } catch (InvalidArgumentException $exception) {
+        }
+        catch (InvalidArgumentException $exception) {
             self::assertSame(OnEventSampleEvent::class, $exception->getContext()['event']);
             self::assertSame(OnEventBadListeners::class, $exception->getContext()['class']);
             self::assertSame('wrongClass', $exception->getContext()['method']);

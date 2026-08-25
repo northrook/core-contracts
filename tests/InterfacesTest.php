@@ -119,7 +119,8 @@ final class InterfacesTest extends TestCase
         try {
             InterfacesReferenceFixture::from('   ', throw: true);
             self::fail('Expected RuntimeException.');
-        } catch (RuntimeException $exception) {
+        }
+        catch (RuntimeException $exception) {
             self::assertInstanceOf(InvalidArgumentException::class, $exception->getPrevious());
         }
     }

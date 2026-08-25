@@ -79,9 +79,9 @@ final class Priority implements \Stringable, Resettable
     ): int {
         if ($this->resolved) {
             $value = $this->value ?? throw new InvalidArgumentException(
-                message: 'Resolved priority has no concrete value.',
-                context: ['domain' => $this->domain],
-            );
+                    message: 'Resolved priority has no concrete value.',
+                    context: ['domain' => $this->domain],
+                );
 
             if ($relative !== null && $relative === $value) {
                 $value = $this->bumpAway($this->step($value), $relative);
@@ -143,7 +143,8 @@ final class Priority implements \Stringable, Resettable
         if ($all) {
             self::$autoIterator = [];
             self::$taken        = [];
-        } else {
+        }
+        else {
             unset(self::$autoIterator[$this->domain], self::$taken[$this->domain]);
         }
     }

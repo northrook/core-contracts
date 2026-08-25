@@ -77,7 +77,8 @@ final class ConfigObjectTest extends TestCase
         try {
             ConfigObjectTestFailingComputed::from([]);
             self::fail('Expected RuntimeException was not thrown.');
-        } catch (RuntimeException $exception) {
+        }
+        catch (RuntimeException $exception) {
             self::assertStringContainsString('Failed to create', $exception->getMessage());
 
             $previous = $exception->getPrevious();
@@ -93,7 +94,8 @@ final class ConfigObjectTest extends TestCase
         try {
             ConfigObjectTestBasic::from([]);
             self::fail('Expected RuntimeException was not thrown.');
-        } catch (RuntimeException $exception) {
+        }
+        catch (RuntimeException $exception) {
             self::assertStringContainsString('Failed to create', $exception->getMessage());
 
             $previous = $exception->getPrevious();
@@ -108,7 +110,8 @@ final class ConfigObjectTest extends TestCase
         try {
             ConfigObjectTestBasic::from(['name' => 'app', 'count' => 'lots']);
             self::fail('Expected RuntimeException was not thrown.');
-        } catch (RuntimeException $exception) {
+        }
+        catch (RuntimeException $exception) {
             self::assertStringContainsString('Failed to create', $exception->getMessage());
             self::assertInstanceOf(\TypeError::class, $exception->getPrevious());
         }
@@ -119,7 +122,8 @@ final class ConfigObjectTest extends TestCase
         try {
             ConfigObjectTestBasic::from(['name' => 'app', 'bogus' => 1, 'extra' => 2]);
             self::fail('Expected RuntimeException was not thrown.');
-        } catch (RuntimeException $exception) {
+        }
+        catch (RuntimeException $exception) {
             self::assertStringContainsString('Failed to create', $exception->getMessage());
 
             $previous = $exception->getPrevious();
@@ -148,7 +152,8 @@ final class ConfigObjectTest extends TestCase
         try {
             ConfigObjectTestBasic::from(['name' => 1]);
             self::fail('Expected RuntimeException was not thrown.');
-        } catch (RuntimeException $exception) {
+        }
+        catch (RuntimeException $exception) {
             self::assertStringContainsString('Failed to create', $exception->getMessage());
             self::assertInstanceOf(InvalidArgumentException::class, $exception->getPrevious());
         }

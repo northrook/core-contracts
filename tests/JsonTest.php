@@ -73,7 +73,8 @@ final class JsonTest extends TestCase
         try {
             JSON::encode("\xB1\x31");
             self::fail('Expected RuntimeException was not thrown.');
-        } catch (RuntimeException $exception) {
+        }
+        catch (RuntimeException $exception) {
             self::assertInstanceOf(\JsonException::class, $exception->getPrevious());
         }
     }
@@ -138,7 +139,8 @@ final class JsonTest extends TestCase
         try {
             JSON::decode('{invalid');
             self::fail('Expected RuntimeException was not thrown.');
-        } catch (RuntimeException $exception) {
+        }
+        catch (RuntimeException $exception) {
             self::assertInstanceOf(\JsonException::class, $exception->getPrevious());
         }
     }

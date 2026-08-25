@@ -51,7 +51,8 @@ final class Timezone extends \DateTimeZone implements \Stringable
             return parent::getOffset(
                 $datetime ?? new \DateTimeImmutable('now', new \DateTimeZone('UTC')),
             );
-        } catch (\Throwable $exception) {
+        }
+        catch (\Throwable $exception) {
             throw new RuntimeException(
                 message : 'Unable to resolve timezone offset.',
                 context : [
@@ -94,7 +95,8 @@ final class Timezone extends \DateTimeZone implements \Stringable
             $sign    = $value >= 0 ? '+' : '-';
             $abs     = \abs($value);
             $resolve = $sign . \intdiv($abs, 60) . ':' . ( $abs % 60 );
-        } else {
+        }
+        else {
             $resolve = $value;
         }
 
@@ -108,13 +110,15 @@ final class Timezone extends \DateTimeZone implements \Stringable
 
         if ($resolve === false || $resolve === null) {
             $resolve = null;
-        } else {
+        }
+        else {
             $resolve = \trim((string) $resolve) ?: null;
         }
 
         try {
             return new self($resolve ?? $default);
-        } catch (\Throwable $exception) {
+        }
+        catch (\Throwable $exception) {
             throw new InvalidArgumentException(
                 message : 'Unable to resolve ' . self::class . ' from value.',
                 context : [

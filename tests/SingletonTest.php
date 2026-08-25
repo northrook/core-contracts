@@ -68,7 +68,8 @@ final class SingletonTest extends TestCase
         try {
             SingletonTestGreeting::get();
             self::fail('Expected RuntimeException was not thrown.');
-        } catch (RuntimeException $exception) {
+        }
+        catch (RuntimeException $exception) {
             self::assertStringContainsString('failed to initialize via get().', $exception->getMessage());
             self::assertInstanceOf(\LogicException::class, $exception->getPrevious());
         }
@@ -96,7 +97,8 @@ final class SingletonTest extends TestCase
         try {
             SingletonTestClock::get();
             self::fail('Expected RuntimeException was not thrown.');
-        } catch (RuntimeException $exception) {
+        }
+        catch (RuntimeException $exception) {
             self::assertStringContainsString(
                 'was permanently unregistered and cannot be retrieved.',
                 $exception->getMessage(),

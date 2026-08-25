@@ -546,10 +546,12 @@ final class ServiceDefinition
                         message: "Service factory class `{$factoryClass}` does not match service class `{$this->class}`.",
                     );
                 }
-            } else {
+            }
+            else {
                 $method = $factory;
             }
-        } else {
+        }
+        else {
             if ($factory[0] !== $this->class) {
                 throw new ContainerException(
                     message: "Service factory class `{$factory[0]}` does not match service class `{$this->class}`.",
@@ -579,7 +581,8 @@ final class ServiceDefinition
                     message: "Service factory `{$method}` is not static.",
                 );
             }
-        } catch (\ReflectionException $exception) {
+        }
+        catch (\ReflectionException $exception) {
             throw new ContainerException(
                 message : "Service factory `{$method}` is not a valid factory method.",
                 previous: $exception,
@@ -806,7 +809,8 @@ final class ServiceDefinition
         foreach ($arguments as $key => $value) {
             if (\is_int($key)) {
                 $positional[$key] = $value;
-            } else {
+            }
+            else {
                 $named[$key] = $value;
             }
         }

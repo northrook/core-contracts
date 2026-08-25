@@ -86,7 +86,8 @@ final class Exporter implements Resettable
 
         try {
             return $fn();
-        } finally {
+        }
+        finally {
             self::$overrideDepth--;
         }
     }

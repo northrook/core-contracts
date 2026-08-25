@@ -146,7 +146,7 @@ final class SetTest extends TestCase
     public function testFilterWithCustomCallback(): void
     {
         $set      = self::set([1, 2, 3, 4]);
-        $filtered = $set->filter(static fn(int $value): bool => ( $value % 2 ) === 0);
+        $filtered = $set->filter(static fn(int $value): bool => $value % 2 === 0);
 
         self::assertSame([2, 4], $filtered->values());
     }

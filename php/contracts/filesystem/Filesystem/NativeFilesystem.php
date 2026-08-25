@@ -480,7 +480,8 @@ final class NativeFilesystem implements FilesystemInterface
             foreach (\explode('/', \trim($segment, '/')) as $part) {
                 if ($part === '..') {
                     \array_pop($result);
-                } elseif ($part !== '.' && $part !== '') {
+                }
+                elseif ($part !== '.' && $part !== '') {
                     $result[] = $part;
                 }
             }
@@ -781,10 +782,12 @@ final class NativeFilesystem implements FilesystemInterface
                 }
 
                 $temp = null;
-            } else {
+            }
+            else {
                 $temp = null;
             }
-        } finally {
+        }
+        finally {
             if ($temp !== null && \is_file($temp)) {
                 @\unlink($temp);
             }
@@ -1008,7 +1011,8 @@ final class NativeFilesystem implements FilesystemInterface
                 if (! $this->removeTree($child)) {
                     return false;
                 }
-            } elseif (! @\unlink($child)) {
+            }
+            elseif (! @\unlink($child)) {
                 return false;
             }
         }

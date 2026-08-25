@@ -97,7 +97,8 @@ trait ExceptionTrait
         if ($message === null) {
             if ($previous !== null && \trim($previous->getMessage()) !== '') {
                 $message = $previous->getMessage();
-            } elseif ($previous !== null) {
+            }
+            elseif ($previous !== null) {
                 $fallback = \array_last(\explode('\\', $previous::class));
 
                 if (! \is_string($fallback) || $fallback === '') {
@@ -105,7 +106,8 @@ trait ExceptionTrait
                 }
 
                 $message = $fallback;
-            } else {
+            }
+            else {
                 $message = 'Unspecified error';
             }
         }

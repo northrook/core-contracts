@@ -199,13 +199,15 @@ final class DataObjectTest extends TestCase
             try {
                 $dto->jsonSerialize();
                 self::fail('Expected RuntimeException for credential serialize');
-            } catch (RuntimeException $exception) {
+            }
+            catch (RuntimeException $exception) {
                 self::assertStringContainsString(
                     'Cannot serialize credential property $token',
                     $exception->getMessage(),
                 );
             }
-        } finally {
+        }
+        finally {
             $this->resetSingleton();
         }
     }

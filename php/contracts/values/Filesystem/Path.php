@@ -100,7 +100,8 @@ readonly class Path implements Reference
                 traversal   : true,
                 throwOnEmpty: false,
             );
-        } catch (\Throwable $exception) {
+        }
+        catch (\Throwable $exception) {
             if ($exception instanceof InvalidArgumentException || $exception instanceof FilesystemException) {
                 throw $exception;
             }
@@ -388,7 +389,8 @@ readonly class Path implements Reference
 
         try {
             return $this->value === static::normalize($other);
-        } catch (\Throwable) {
+        }
+        catch (\Throwable) {
             return false;
         }
     }
@@ -570,7 +572,8 @@ readonly class Path implements Reference
             $this->filesystem->touch($this->value, $mtime, $atime);
 
             return true;
-        } catch (FilesystemException) {
+        }
+        catch (FilesystemException) {
             return false;
         }
     }
@@ -631,7 +634,8 @@ readonly class Path implements Reference
             $this->filesystem->remove($this->value);
 
             return true;
-        } catch (FilesystemException) {
+        }
+        catch (FilesystemException) {
             return false;
         }
     }
@@ -655,7 +659,8 @@ readonly class Path implements Reference
         foreach ((array) $pattern as $item) {
             if (Normalize::isAbsolutePath($item)) {
                 $patterns[] = $item;
-            } else {
+            }
+            else {
                 $patterns[] = Normalize::path([$base, $item], traversal: true);
             }
         }

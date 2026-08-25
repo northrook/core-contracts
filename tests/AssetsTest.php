@@ -58,7 +58,8 @@ final class AssetsTest extends TestCase
         try {
             new AssetCollection($first, $second);
             self::fail('Expected RuntimeException for duplicate asset ID.');
-        } catch (RuntimeException $exception) {
+        }
+        catch (RuntimeException $exception) {
             self::assertSame('Duplicate asset ID: pkg.style', $exception->getMessage());
 
             // Context is deep-frozen; objects become reflective descriptions.

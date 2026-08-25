@@ -1,0 +1,94 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Northrook;
+
+/**
+ * @template T of object
+ */
+final readonly class Reflect
+{
+    /**
+     * @param \ReflectionClass<T> $class
+     */
+    private function __construct(
+        /** @var \ReflectionClass<T> */
+        public \ReflectionClass $class,
+    ) {}
+
+    /**
+     * @return array<non-empty-string, \ReflectionProperty>
+     */
+    public function getPropertiesMap(
+        bool         $onlyPublic = false,
+        false|object $onlyInitialized = false,
+        bool         $includeStatic = false,
+        bool         $includeVirtual = false,
+    ): array {
+        $array = [];
+        $class = $this->class;
+
+        while ($class !== false) {
+            foreach ($class->getProperties() as $property) {
+                if (! $includeStatic && $property->isStatic()) {
+                    continue;
+                }
+
+                if (! $includeVirtual && $property->isVirtual()) {
+                    continue;
+                }
+
+                if ($onlyPublic && ! $property->isPublic()) {
+                    continue;
+                }
+
+                if ($onlyInitialized && ! $property->isInitialized($onlyInitialized)) {
+                    continue;
+                }
+
+                $name = $property->getName();
+
+                if (\array_key_exists($name, $array) || $property->getDeclaringClass()->name !== $class->name) {
+                    continue;
+                }
+
+                $array[$name] = $property;
+            }
+
+            $class = $class->getParentClass();
+        }
+
+        return $array;
+    }
+
+    /**
+     * @return \ReflectionProperty[]
+     */
+    public function getProperties(): array
+    {
+        return $this->class->getProperties();
+    }
+
+    /**
+     * @template TClass of object
+     *
+     * @param TClass|class-string<TClass> $class
+     *
+     * @return \Northrook\Reflect<TClass>
+     */
+    public static function class(
+        object|string $class,
+    ): self {
+        try {
+            return new Reflect(new \ReflectionClass($class));
+        }
+        catch (\Throwable $exception) {
+            throw new RuntimeException(
+                message : 'Failed to reflect class ' . \debug_value_type($class),
+                context : ['class' => $class],
+                previous: $exception,
+            );
+        }
+    }
+}

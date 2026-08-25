@@ -90,7 +90,8 @@ final readonly class Tag implements AutodiscoverInterface
         if (\is_array($value)) {
             $reference = \array_shift($value);
             $arguments = \array_merge($arguments, $value);
-        } else {
+        }
+        else {
             $reference = $value;
         }
         return new Tag($reference, ...$arguments);

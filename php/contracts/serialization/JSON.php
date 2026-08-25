@@ -40,7 +40,8 @@ final class JSON
 
         try {
             $json = \json_encode($value, $flags, $depth);
-        } catch (\Throwable $exception) {
+        }
+        catch (\Throwable $exception) {
             throw RuntimeException::from($exception);
         }
 
@@ -75,7 +76,8 @@ final class JSON
                 $depth,
                 $flags,
             );
-        } catch (\Throwable $exception) {
+        }
+        catch (\Throwable $exception) {
             throw RuntimeException::from($exception);
         }
     }

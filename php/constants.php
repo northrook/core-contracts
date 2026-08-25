@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-/*----------------------------------%1787139774%---
+/*----------------------------------%1787651551%---
 
   This file is auto-generated, do not edit.
 
----#DP5E5TNS6HZ2#--------------------------------*/
+---#46E92TBNF422#--------------------------------*/
 
 require_once __DIR__ . '/constants/global.php';
 require_once __DIR__ . '/constants/html.php';

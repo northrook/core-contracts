@@ -79,7 +79,8 @@ class Uri implements Reference
 
         try {
             $parsed = new \Uri\Rfc3986\Uri($string, $base->rfc());
-        } catch (InvalidUriException $exception) {
+        }
+        catch (InvalidUriException $exception) {
             throw new InvalidArgumentException(
                 message : $exception->getMessage(),
                 context : [
@@ -135,7 +136,8 @@ class Uri implements Reference
 
         try {
             $normalized = new \Uri\Rfc3986\Uri($string)->toString();
-        } catch (InvalidUriException $exception) {
+        }
+        catch (InvalidUriException $exception) {
             throw new InvalidArgumentException(
                 message : $exception->getMessage(),
                 context : [
@@ -169,7 +171,8 @@ class Uri implements Reference
 
         try {
             return $this->parsed = new \Uri\Rfc3986\Uri($this->value);
-        } catch (InvalidUriException $exception) {
+        }
+        catch (InvalidUriException $exception) {
             throw new RuntimeException(
                 message : 'RFC 3986 URI parsing failed.',
                 context : ['value' => $this->value],
@@ -275,7 +278,8 @@ class Uri implements Reference
                 }
 
                 $params[$key][] = $value;
-            } else {
+            }
+            else {
                 $params[$key] = $value;
             }
         }
@@ -389,7 +393,8 @@ class Uri implements Reference
 
         if ($path === '' || $path === '/') {
             $next = '/' . $segment;
-        } else {
+        }
+        else {
             $next = \rtrim($path, '/') . '/' . $segment;
         }
 
@@ -410,7 +415,8 @@ class Uri implements Reference
     ): static {
         try {
             return $this->withRfc($this->rfc()->withScheme($scheme));
-        } catch (InvalidUriException $exception) {
+        }
+        catch (InvalidUriException $exception) {
             throw new InvalidArgumentException(
                 message : $exception->getMessage(),
                 context : [
@@ -437,7 +443,8 @@ class Uri implements Reference
     ): static {
         try {
             return $this->withRfc($this->rfc()->withUserInfo($userInfo));
-        } catch (InvalidUriException $exception) {
+        }
+        catch (InvalidUriException $exception) {
             throw new InvalidArgumentException(
                 message : $exception->getMessage(),
                 context : [
@@ -475,7 +482,8 @@ class Uri implements Reference
 
         try {
             return $this->withRfc($this->rfc()->withHost($host));
-        } catch (InvalidUriException $exception) {
+        }
+        catch (InvalidUriException $exception) {
             throw new InvalidArgumentException(
                 message : $exception->getMessage(),
                 context : [
@@ -502,7 +510,8 @@ class Uri implements Reference
     ): static {
         try {
             return $this->withRfc($this->rfc()->withPort($port));
-        } catch (InvalidUriException $exception) {
+        }
+        catch (InvalidUriException $exception) {
             throw new InvalidArgumentException(
                 message : $exception->getMessage(),
                 context : [
@@ -527,7 +536,8 @@ class Uri implements Reference
     ): static {
         try {
             return $this->withRfc($this->rfc()->withPath($path));
-        } catch (InvalidUriException $exception) {
+        }
+        catch (InvalidUriException $exception) {
             throw new InvalidArgumentException(
                 message : $exception->getMessage(),
                 context : [
@@ -568,7 +578,8 @@ class Uri implements Reference
             $encoded = self::buildQuery($query);
 
             return $this->withRfc($this->rfc()->withQuery($encoded === '' ? null : $encoded));
-        } catch (InvalidUriException $exception) {
+        }
+        catch (InvalidUriException $exception) {
             throw new InvalidArgumentException(
                 message : $exception->getMessage(),
                 context : [
@@ -629,7 +640,8 @@ class Uri implements Reference
     ): static {
         try {
             return $this->withQuery([...$this->queryParams(), ...$query]);
-        } catch (\Throwable $exception) {
+        }
+        catch (\Throwable $exception) {
             throw new InvalidArgumentException(
                 message : $exception->getMessage(),
                 context : [
@@ -657,7 +669,8 @@ class Uri implements Reference
         try {
             $fragment = $fragment === '' ? null : $fragment;
             return $this->withRfc($this->rfc()->withFragment($fragment));
-        } catch (InvalidUriException $exception) {
+        }
+        catch (InvalidUriException $exception) {
             throw new InvalidArgumentException(
                 message : $exception->getMessage(),
                 context : [
@@ -684,7 +697,8 @@ class Uri implements Reference
 
         try {
             return $this->withRfc($this->rfc()->resolve($string));
-        } catch (InvalidUriException $exception) {
+        }
+        catch (InvalidUriException $exception) {
             throw new InvalidArgumentException(
                 message : $exception->getMessage(),
                 context : [

@@ -238,7 +238,8 @@ final readonly class Directory extends Path
         try {
             $candidate = new Path((string) $path, $this->filesystem)->absolute()->value;
             $root      = $this->absolute()->value;
-        } catch (\Throwable) {
+        }
+        catch (\Throwable) {
             return false;
         }
 
@@ -356,7 +357,8 @@ final readonly class Directory extends Path
         foreach ((array) $pattern as $item) {
             if (Normalize::isAbsolutePath($item)) {
                 $patterns[] = $item;
-            } else {
+            }
+            else {
                 $patterns[] = Normalize::path([$this->value, $item], traversal: true);
             }
         }
@@ -405,7 +407,8 @@ final readonly class Directory extends Path
     {
         try {
             return $this->filesystem->listDirectory($this->value);
-        } catch (FilesystemException) {
+        }
+        catch (FilesystemException) {
             return false;
         }
     }
@@ -490,7 +493,8 @@ final readonly class Directory extends Path
             $this->filesystem->createDirectory($this->value, $permissions);
 
             return $this->isDirectory();
-        } catch (FilesystemException) {
+        }
+        catch (FilesystemException) {
             return false;
         }
     }
@@ -581,7 +585,8 @@ final readonly class Directory extends Path
             $this->filesystem->remove($this->value);
 
             return true;
-        } catch (FilesystemException) {
+        }
+        catch (FilesystemException) {
             return false;
         }
     }

@@ -117,7 +117,8 @@ abstract class Singleton
 
             if ($file !== null && $line !== null) {
                 $location = "{$file}:{$line}@{$timestamp}";
-            } else {
+            }
+            else {
                 throw new LogicException(
                     message: 'debug_backtrace() failed to provide file/line.',
                 );
@@ -126,7 +127,8 @@ abstract class Singleton
             $instance->_selfInstantiated = $location;
 
             return $instance;
-        } catch (\Throwable $exception) {
+        }
+        catch (\Throwable $exception) {
             throw new RuntimeException(
                 message : static::class . ' failed to initialize via get().',
                 context : [
@@ -169,7 +171,8 @@ abstract class Singleton
 
         if ($resettable) {
             unset(self::$_instance[static::class]);
-        } else {
+        }
+        else {
             self::$_instance[static::class] = false;
         }
     }

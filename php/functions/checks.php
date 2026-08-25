@@ -13,6 +13,27 @@ function is_primitive(
 ): bool {
     return \is_scalar($value) || $value === null;
 }
+/**
+ * Check if a string is a valid class name.
+ *
+ * If the class cannot be loaded, this function will return `false`.
+ *
+ * @param mixed $value
+ *
+ * @return bool
+ *
+ * @phpstan-assert-if-true class-string $value
+ */
+function is_valid_class(
+    mixed $value,
+): bool {
+    try {
+        return \is_string($value) && \class_exists($value);
+    }
+    catch (\Throwable) {
+        return false;
+    }
+}
 
 /**
  * Check if a string is a valid class-string shape.

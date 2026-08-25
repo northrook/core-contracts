@@ -100,7 +100,8 @@ final class FilesystemStub implements FilesystemInterface
         foreach ((array) $paths as $path) {
             if (\is_file($path) || \is_link($path)) {
                 @\unlink($path);
-            } elseif (\is_dir($path)) {
+            }
+            elseif (\is_dir($path)) {
                 @\rmdir($path);
             }
         }

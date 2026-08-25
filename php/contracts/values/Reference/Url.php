@@ -73,7 +73,8 @@ final class Url extends Uri
 
         try {
             $parsed = new \Uri\WhatWg\Url($string);
-        } catch (InvalidUrlException $exception) {
+        }
+        catch (InvalidUrlException $exception) {
             throw new InvalidArgumentException(
                 message : $exception->getMessage(),
                 context : [
@@ -220,9 +221,11 @@ final class Url extends Uri
 
         try {
             return $http->get($this->value, options: $options)->getContent();
-        } catch (CurlException $exception) {
+        }
+        catch (CurlException $exception) {
             throw $exception;
-        } catch (\Throwable $exception) {
+        }
+        catch (\Throwable $exception) {
             throw new CurlException(
                 url     : $this->value,
                 message : $exception->getMessage(),

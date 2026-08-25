@@ -103,7 +103,8 @@ class Set implements \ArrayAccess, \Countable, \IteratorAggregate, \JsonSerializ
         foreach ($values as $value) {
             if ($override) {
                 $this->append($value);
-            } else {
+            }
+            else {
                 $this->add($value);
             }
         }

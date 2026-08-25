@@ -55,7 +55,8 @@ final readonly class Mailto extends Href
 
         try {
             $list = \array_map(static fn(string $r): string => Email::normalize($r), $list);
-        } catch (InvalidArgumentException $exception) {
+        }
+        catch (InvalidArgumentException $exception) {
             throw new InvalidArgumentException(
                 message : $exception->getMessage(),
                 context : [
@@ -132,7 +133,8 @@ final readonly class Mailto extends Href
             }
 
             return new self($string);
-        } catch (\Throwable $exception) {
+        }
+        catch (\Throwable $exception) {
             if ($throw) {
                 throw new RuntimeException(
                     message : self::class . ' failed to initialize via from(): ' . $exception->getMessage(),

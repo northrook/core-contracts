@@ -300,7 +300,8 @@ final class AttributesTest extends TestCase
         try {
             $fixture->captureLogException($exception, continue: false);
             self::fail('Expected the exception to be rethrown.');
-        } catch (\RuntimeException $caught) {
+        }
+        catch (\RuntimeException $caught) {
             self::assertSame($exception, $caught);
         }
 

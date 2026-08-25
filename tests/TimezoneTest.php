@@ -208,7 +208,8 @@ final class TimezoneTest extends TestCase
         try {
             Timezone::from('Not/AZone');
             self::fail('Expected InvalidArgumentException');
-        } catch (InvalidArgumentException $exception) {
+        }
+        catch (InvalidArgumentException $exception) {
             self::assertSame('Not/AZone', $exception->getContext()['from']);
             self::assertSame('Not/AZone', $exception->getContext()['resolved']);
             self::assertSame('UTC', $exception->getContext()['default']);
@@ -222,7 +223,8 @@ final class TimezoneTest extends TestCase
         try {
             Timezone::from(100_000);
             self::fail('Expected InvalidArgumentException');
-        } catch (InvalidArgumentException $exception) {
+        }
+        catch (InvalidArgumentException $exception) {
             self::assertSame(100_000, $exception->getContext()['from']);
             self::assertIsString($exception->getContext()['resolved']);
             self::assertNotNull($exception->getPrevious());

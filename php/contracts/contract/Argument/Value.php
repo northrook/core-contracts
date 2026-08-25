@@ -101,7 +101,8 @@ enum Value
 
         try {
             return new FilesystemPath($value);
-        } catch (\Throwable) {
+        }
+        catch (\Throwable) {
             return null;
         }
     }

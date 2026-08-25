@@ -49,20 +49,24 @@ final readonly class CallTarget
             $this->function = null;
             $this->class    = $target::class;
             $this->method   = $method;
-        } elseif ($method !== null) {
+        }
+        elseif ($method !== null) {
             $this->function = null;
             $this->class    = $this->classString($target);
             $this->method   = $method;
-        } elseif (\str_contains($target, '::')) {
+        }
+        elseif (\str_contains($target, '::')) {
             [$class, $parsed] = \explode('::', $target, 2);
             $this->function = null;
             $this->class    = $this->classString($class);
             $this->method   = $this->methodName($parsed);
-        } elseif (\is_callable($target)) {
+        }
+        elseif (\is_callable($target)) {
             $this->function = $target;
             $this->class    = null;
             $this->method   = null;
-        } else {
+        }
+        else {
             $this->class    = self::classString($target);
             $this->method   = null;
             $this->function = null;

@@ -20,9 +20,11 @@ class UndefinedEntryException extends RuntimeException
 
         if (\is_object($key)) {
             $context['key'] = \get_class($key) . '@' . \spl_object_id($key);
-        } elseif (\is_int($key)) {
+        }
+        elseif (\is_int($key)) {
             $context['key'] = $key;
-        } else {
+        }
+        else {
             $string = \trim((string) $key);
 
             $context['key'] = \is_numeric($string)
@@ -31,12 +33,12 @@ class UndefinedEntryException extends RuntimeException
         }
 
         $message ??= 'Undefined entry ' . match (gettype($key)) {
-            'integer' => "at index `{$context['key']}`",
-            'object'  => "for object `{$context['key']}`",
-            'string' => empty($context['key'])
-                ? 'for `empty` key'
-                : "for key `{$context['key']}`",
-        };
+                'integer' => "at index `{$context['key']}`",
+                'object'  => "for object `{$context['key']}`",
+                'string' => empty($context['key'])
+                    ? 'for `empty` key'
+                    : "for key `{$context['key']}`",
+            };
 
         parent::__construct($message, $context, $previous, $code);
     }

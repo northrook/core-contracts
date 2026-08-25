@@ -319,7 +319,8 @@ final class AssertTest extends TestCase
             $this->expectException(RuntimeException::class);
             $this->expectExceptionMessage('Invalid parameter value: unsupported type resource:stream.');
             Assert::validParameter($resource);
-        } finally {
+        }
+        finally {
             \fclose($resource);
         }
     }
@@ -753,7 +754,8 @@ final class AssertTest extends TestCase
             self::assertIsString($resolved);
             self::assertDirectoryExists($resolved);
             self::assertSame(\realpath($path), $resolved);
-        } finally {
+        }
+        finally {
             if (\is_dir($path)) {
                 @\rmdir($path);
             }

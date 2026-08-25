@@ -726,7 +726,8 @@ final class ContextManagerTest extends TestCase
         try {
             $manager->freeze(false);
             self::fail('Expected LogicException');
-        } catch (LogicException $exception) {
+        }
+        catch (LogicException $exception) {
             self::assertStringContainsString('Cannot unfreeze context in an untrusted context.', $exception->getMessage());
         }
 
@@ -775,7 +776,8 @@ final class ContextManagerTest extends TestCase
         try {
             $manager->freeze(false);
             self::fail('Expected LogicException');
-        } catch (LogicException $exception) {
+        }
+        catch (LogicException $exception) {
             self::assertStringContainsString('Cannot unfreeze context in an untrusted context.', $exception->getMessage());
         }
 

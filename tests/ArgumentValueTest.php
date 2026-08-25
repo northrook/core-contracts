@@ -122,7 +122,8 @@ final class ArgumentValueTest extends TestCase
             self::assertFalse(Value::File->matches(''));
             self::assertFalse(Value::Path->matches('https://example.com/x'));
             self::assertFalse(Value::Path->matches(1));
-        } finally {
+        }
+        finally {
             @\unlink($file->value);
         }
     }

@@ -138,7 +138,8 @@ enum LogLevel: int
     ): null|self {
         try {
             return self::fromName($name);
-        } catch (InvalidArgumentException) {
+        }
+        catch (InvalidArgumentException) {
             return null;
         }
     }
@@ -148,7 +149,8 @@ enum LogLevel: int
     ): self {
         try {
             return LogLevel::from($value);
-        } catch (\ValueError $exception) {
+        }
+        catch (\ValueError $exception) {
             throw new InvalidArgumentException(
                 message : "{$value} is not a valid log level.",
                 previous: $exception,

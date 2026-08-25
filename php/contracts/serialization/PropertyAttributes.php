@@ -67,7 +67,8 @@ final class PropertyAttributes implements Resettable
                 );
                 break;
             }
-        } catch (\ReflectionException $exception) {
+        }
+        catch (\ReflectionException $exception) {
             throw new RuntimeException(
                 message : "Failed to resolve attributes for {$className}::\${$propertyName}",
                 context : ['class' => $className, 'property' => $propertyName],

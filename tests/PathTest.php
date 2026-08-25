@@ -161,7 +161,8 @@ final class PathTest extends TestCase
             self::assertTrue($path->isWritable());
 
             self::assertFalse(new Path($file . '.missing')->exists());
-        } finally {
+        }
+        finally {
             @\unlink($file);
         }
     }
@@ -181,7 +182,8 @@ final class PathTest extends TestCase
         try {
             self::assertSame(\realpath($file), new Path($file)->realPath());
             self::assertFalse(new Path($file . '.missing')->realPath());
-        } finally {
+        }
+        finally {
             @\unlink($file);
         }
     }
@@ -210,7 +212,8 @@ final class PathTest extends TestCase
             $file = new Path($base . '/three.log');
             self::assertTrue($file->remove());
             self::assertFileDoesNotExist($base . '/three.log');
-        } finally {
+        }
+        finally {
             @\unlink($base . '/one.txt');
             @\unlink($base . '/two.txt');
             @\unlink($base . '/three.log');
@@ -236,7 +239,8 @@ final class PathTest extends TestCase
             self::assertFileExists($base . '/real/keep.txt');
             self::assertSame('keep', \file_get_contents($base . '/real/keep.txt'));
             self::assertSame('src', \file_get_contents($base . '/linkdir'));
-        } finally {
+        }
+        finally {
             @\unlink($base . '/linkdir');
             @\unlink($base . '/src.txt');
             @\unlink($base . '/real/keep.txt');

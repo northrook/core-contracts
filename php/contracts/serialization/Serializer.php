@@ -56,7 +56,8 @@ trait Serializer
 
             if ($outbound && $redaction !== null && $redaction['secret'] === Parameter\Secret::CREDENTIAL) {
                 $state[$name] = $this->redactForSerialize($name, $value, $redaction['secret']);
-            } else {
+            }
+            else {
                 $state[$name] = $this->castValue($value);
             }
         }

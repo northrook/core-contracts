@@ -4,7 +4,7 @@
     "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
     "This file is @generated automatically"
   ],
-  "content-hash": "d96158fbe9a00a6fa41025e0af11bf7e",
+  "content-hash": "053432c739bc1715d39cd56e199c6345",
   "packages": [
     {
       "name": "northrook/hashes",
@@ -12,12 +12,12 @@
       "source": {
         "type": "git",
         "url": "https://github.com/northrook/hashes.git",
-        "reference": "ffe8745076bfbb56bec4bd838ffbc1bf1e9287ef"
+        "reference": "e9d61438b2cbc5d3e8e7ab01e6b10ab783f2dcbe"
       },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/northrook/hashes/zipball/ffe8745076bfbb56bec4bd838ffbc1bf1e9287ef",
-        "reference": "ffe8745076bfbb56bec4bd838ffbc1bf1e9287ef",
+        "url": "https://api.github.com/repos/northrook/hashes/zipball/e9d61438b2cbc5d3e8e7ab01e6b10ab783f2dcbe",
+        "reference": "e9d61438b2cbc5d3e8e7ab01e6b10ab783f2dcbe",
         "shasum": ""
       },
       "require": {
@@ -51,56 +51,7 @@
       "support": {
         "source": "https://github.com/northrook/hashes/tree/main"
       },
-      "time": "2026-08-16T10:41:20+00:00"
-    },
-    {
-      "name": "psr/cache",
-      "version": "3.0.0",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/php-fig/cache.git",
-        "reference": "aa5030cfa5405eccfdcb1083ce040c2cb8d253bf"
-      },
-      "dist": {
-        "type": "zip",
-        "url": "https://api.github.com/repos/php-fig/cache/zipball/aa5030cfa5405eccfdcb1083ce040c2cb8d253bf",
-        "reference": "aa5030cfa5405eccfdcb1083ce040c2cb8d253bf",
-        "shasum": ""
-      },
-      "require": {
-        "php": ">=8.0.0"
-      },
-      "type": "library",
-      "extra": {
-        "branch-alias": {
-          "dev-master": "1.0.x-dev"
-        }
-      },
-      "autoload": {
-        "psr-4": {
-          "Psr\\Cache\\": "src/"
-        }
-      },
-      "notification-url": "https://packagist.org/downloads/",
-      "license": [
-        "MIT"
-      ],
-      "authors": [
-        {
-          "name": "PHP-FIG",
-          "homepage": "https://www.php-fig.org/"
-        }
-      ],
-      "description": "Common interface for caching libraries",
-      "keywords": [
-        "cache",
-        "psr",
-        "psr-6"
-      ],
-      "support": {
-        "source": "https://github.com/php-fig/cache/tree/3.0.0"
-      },
-      "time": "2021-02-03T23:26:27+00:00"
+      "time": "2026-08-23T13:36:14+00:00"
     },
     {
       "name": "psr/container",
@@ -557,12 +508,12 @@
       "source": {
         "type": "git",
         "url": "https://github.com/northrook/php-cs.git",
-        "reference": "b78ce37053cb0c653be57ef87e3730c7a820664d"
+        "reference": "e6f5a7184110024c8029601e8b27ef59f526448b"
       },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/northrook/php-cs/zipball/b78ce37053cb0c653be57ef87e3730c7a820664d",
-        "reference": "b78ce37053cb0c653be57ef87e3730c7a820664d",
+        "url": "https://api.github.com/repos/northrook/php-cs/zipball/e6f5a7184110024c8029601e8b27ef59f526448b",
+        "reference": "e6f5a7184110024c8029601e8b27ef59f526448b",
         "shasum": ""
       },
       "require": {
@@ -602,7 +553,7 @@
         "issues": "https://github.com/northrook/php-cs/issues",
         "source": "https://github.com/northrook/php-cs/tree/main"
       },
-      "time": "2026-08-18T20:42:53+00:00"
+      "time": "2026-08-25T11:28:05+00:00"
     },
     {
       "name": "northrook/php-debug",
@@ -610,18 +561,19 @@
       "source": {
         "type": "git",
         "url": "https://codeberg.org/northrook/php-debug.git",
-        "reference": "03c3f784583a9529c0f90ae4ea110a4076400636c256d5b96a361e8712353a51"
+        "reference": "586b4763fd6899293c4c32a1100e5eaab19b32f6e31a47f5c965df742c489b51"
       },
       "dist": {
         "type": "zip",
-        "url": "https://codeberg.org/api/v1/repos/northrook/php-debug/archive/03c3f784583a9529c0f90ae4ea110a4076400636c256d5b96a361e8712353a51.zip",
-        "reference": "03c3f784583a9529c0f90ae4ea110a4076400636c256d5b96a361e8712353a51",
+        "url": "https://codeberg.org/api/v1/repos/northrook/php-debug/archive/586b4763fd6899293c4c32a1100e5eaab19b32f6e31a47f5c965df742c489b51.zip",
+        "reference": "586b4763fd6899293c4c32a1100e5eaab19b32f6e31a47f5c965df742c489b51",
         "shasum": ""
       },
       "require": {
         "ext-mbstring": "*",
         "northrook/ansi-formatter": "dev-main",
         "northrook/core-contracts": "dev-main",
+        "northrook/hashes": "dev-main",
         "northrook/inline-styles": "dev-main",
         "php": ">=8.5"
       },
@@ -653,7 +605,7 @@
         "issues": "https://codeberg.org/northrook/php-debug/issues",
         "source": "https://codeberg.org/northrook/php-debug/branch/main"
       },
-      "time": "2026-08-07T13:28:25+00:00"
+      "time": "2026-08-20T09:15:47+00:00"
     },
     {
       "name": "northrook/php-generator",
@@ -661,12 +613,12 @@
       "source": {
         "type": "git",
         "url": "https://codeberg.org/northrook/php-generator.git",
-        "reference": "f74ca1e4e42a8732989912a42bf86ef5d7e9b196d32c8327353b0afb6726d79a"
+        "reference": "a35ca3bb594e6ab81478d2659b2254ae4fb692ae75decf5114e2bbe2916fcab4"
       },
       "dist": {
         "type": "zip",
-        "url": "https://codeberg.org/api/v1/repos/northrook/php-generator/archive/f74ca1e4e42a8732989912a42bf86ef5d7e9b196d32c8327353b0afb6726d79a.zip",
-        "reference": "f74ca1e4e42a8732989912a42bf86ef5d7e9b196d32c8327353b0afb6726d79a",
+        "url": "https://codeberg.org/api/v1/repos/northrook/php-generator/archive/a35ca3bb594e6ab81478d2659b2254ae4fb692ae75decf5114e2bbe2916fcab4.zip",
+        "reference": "a35ca3bb594e6ab81478d2659b2254ae4fb692ae75decf5114e2bbe2916fcab4",
         "shasum": ""
       },
       "require": {
@@ -701,7 +653,7 @@
         "issues": "https://codeberg.org/northrook/php-generator/issues",
         "source": "https://codeberg.org/northrook/php-generator/branch/main"
       },
-      "time": "2026-08-19T11:20:38+00:00"
+      "time": "2026-08-23T11:49:11+00:00"
     },
     {
       "name": "phar-io/manifest",
@@ -823,11 +775,11 @@
     },
     {
       "name": "phpstan/phpstan",
-      "version": "2.2.8",
+      "version": "2.2.9",
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/phpstan/phpstan/zipball/e285254e60f33c21902efef4a926ca0987c06804",
-        "reference": "e285254e60f33c21902efef4a926ca0987c06804",
+        "url": "https://api.github.com/repos/phpstan/phpstan/zipball/13d6b4f347bad222da436580c8304fa6f83e6bd0",
+        "reference": "13d6b4f347bad222da436580c8304fa6f83e6bd0",
         "shasum": ""
       },
       "require": {
@@ -883,7 +835,7 @@
           "type": "github"
         }
       ],
-      "time": "2026-08-04T22:21:45+00:00"
+      "time": "2026-08-22T07:38:16+00:00"
     },
     {
       "name": "phpunit/php-code-coverage",
@@ -2591,16 +2543,16 @@
     },
     {
       "name": "symfony/polyfill-deepclone",
-      "version": "v1.40.0",
+      "version": "v1.42.0",
       "source": {
         "type": "git",
         "url": "https://github.com/symfony/polyfill-deepclone.git",
-        "reference": "dca4ccba5f360070b574414dce4c1e7a559844fa"
+        "reference": "70ba0627efc68e97ea392843458a2dd9d6dbd156"
       },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/symfony/polyfill-deepclone/zipball/dca4ccba5f360070b574414dce4c1e7a559844fa",
-        "reference": "dca4ccba5f360070b574414dce4c1e7a559844fa",
+        "url": "https://api.github.com/repos/symfony/polyfill-deepclone/zipball/70ba0627efc68e97ea392843458a2dd9d6dbd156",
+        "reference": "70ba0627efc68e97ea392843458a2dd9d6dbd156",
         "shasum": ""
       },
       "require": {
@@ -2654,7 +2606,7 @@
         "shim"
       ],
       "support": {
-        "source": "https://github.com/symfony/polyfill-deepclone/tree/v1.40.0"
+        "source": "https://github.com/symfony/polyfill-deepclone/tree/v1.42.0"
       },
       "funding": [
         {
@@ -2674,20 +2626,20 @@
           "type": "tidelift"
         }
       ],
-      "time": "2026-06-12T07:27:17+00:00"
+      "time": "2026-08-07T06:33:24+00:00"
     },
     {
       "name": "symfony/var-exporter",
-      "version": "v8.1.4",
+      "version": "v8.1.5",
       "source": {
         "type": "git",
         "url": "https://github.com/symfony/var-exporter.git",
-        "reference": "6efa89335ab6d336643a807fcc89ae4f8a7a17e9"
+        "reference": "b8f7dd85493e8372c7c81a1547caaaf86b9c16d1"
       },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/symfony/var-exporter/zipball/6efa89335ab6d336643a807fcc89ae4f8a7a17e9",
-        "reference": "6efa89335ab6d336643a807fcc89ae4f8a7a17e9",
+        "url": "https://api.github.com/repos/symfony/var-exporter/zipball/b8f7dd85493e8372c7c81a1547caaaf86b9c16d1",
+        "reference": "b8f7dd85493e8372c7c81a1547caaaf86b9c16d1",
         "shasum": ""
       },
       "require": {
@@ -2737,7 +2689,7 @@
         "serialize"
       ],
       "support": {
-        "source": "https://github.com/symfony/var-exporter/tree/v8.1.4"
+        "source": "https://github.com/symfony/var-exporter/tree/v8.1.5"
       },
       "funding": [
         {
@@ -2757,7 +2709,7 @@
           "type": "tidelift"
         }
       ],
-      "time": "2026-07-30T12:40:56+00:00"
+      "time": "2026-08-13T16:11:28+00:00"
     },
     {
       "name": "tempest/highlight",
@@ -2956,7 +2908,6 @@
     "northrook/php-cs": 20,
     "northrook/php-debug": 20,
     "northrook/php-generator": 20,
-    "psr/cache": 0,
     "psr/container": 0,
     "psr/event-dispatcher": 0,
     "psr/log": 0
@@ -2966,10 +2917,10 @@
   "platform": {
     "php": ">=8.5",
     "ext-hash": "*",
-    "ext-intl": "*",
     "ext-uri": "*",
+    "composer-runtime-api": "^2.2",
     "ext-fileinfo": "*",
-    "composer-runtime-api": "^2.2"
+    "ext-intl": "*"
   },
   "platform-dev": {},
   "plugin-api-version": "2.9.0"

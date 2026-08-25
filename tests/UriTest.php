@@ -132,7 +132,8 @@ final class UriTest extends TestCase
             // @phpstan-ignore-next-line Testing invalid input.
             $uri->withQuery([0 => 'x']);
             self::fail('Expected InvalidArgumentException for non-string keys.');
-        } catch (InvalidArgumentException) {
+        }
+        catch (InvalidArgumentException) {
             self::assertTrue(true);
         }
 

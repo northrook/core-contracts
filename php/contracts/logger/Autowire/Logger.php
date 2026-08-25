@@ -61,10 +61,10 @@ trait Logger
         bool        $continue = false,
     ): void {
         $level = LogLevel::tryFrom($exception->getCode()) ?? match (true) {
-            $exception instanceof \RuntimeException, $exception instanceof \LogicException => LogLevel::CRITICAL,
-            $exception instanceof \Exception => LogLevel::ERROR,
-            default => LogLevel::WARNING,
-        };
+                $exception instanceof \RuntimeException, $exception instanceof \LogicException => LogLevel::CRITICAL,
+                $exception instanceof \Exception => LogLevel::ERROR,
+                default => LogLevel::WARNING,
+            };
 
         $message ??= $exception->getMessage();
 

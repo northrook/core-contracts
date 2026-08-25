@@ -1,6 +1,6 @@
 {
   "extends": "vendor/northrook/php-cs/dprint.json",
-  "excludes" : [
+  "excludes": [
     "php/*.php"
   ]
 }

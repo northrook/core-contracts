@@ -98,7 +98,8 @@ final class OnEvent
 
         try {
             $reflection = new \ReflectionMethod($class, $method);
-        } catch (\ReflectionException) {
+        }
+        catch (\ReflectionException) {
             throw new InvalidArgumentException(
                 message: $this::class . " cannot register '{$this->event}' on '{$class}::{$method}', method does not exist.",
                 context: [

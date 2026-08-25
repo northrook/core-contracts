@@ -85,7 +85,8 @@ final class RuntimeErrorTest extends TestCase
         try {
             RuntimeError::from(['bogus' => true]);
             self::fail('Expected RuntimeException for invalid error array');
-        } catch (RuntimeException $exception) {
+        }
+        catch (RuntimeException $exception) {
             self::assertSame('Invalid error array format.', $exception->getMessage());
             self::assertNull($exception->getPrevious());
             self::assertSame(['bogus' => true], $exception->getContext()['$array']);

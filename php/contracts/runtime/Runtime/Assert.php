@@ -367,7 +367,8 @@ final class Assert
             if (Parameter\Type::Value->validate($value)) {
                 return true;
             }
-        } catch (RuntimeException $exception) {
+        }
+        catch (RuntimeException $exception) {
             $message = $source !== null
                 ? "Invalid parameter value for `{$source}`: maximum nesting depth exceeded."
                 : 'Invalid parameter value: maximum nesting depth exceeded.';
@@ -436,7 +437,8 @@ final class Assert
             }
 
             $previous = null;
-        } catch (\Throwable $exception) {
+        }
+        catch (\Throwable $exception) {
             $previous = $exception;
         }
 
@@ -485,9 +487,11 @@ final class Assert
 
         if (! \is_string($key)) {
             $errors[] = 'not a string (' . \get_debug_type($key) . ')';
-        } elseif ($key === '') {
+        }
+        elseif ($key === '') {
             $errors[] = 'empty string';
-        } else {
+        }
+        else {
             foreach (['-', '.', ':'] as $separator) {
                 if (\str_contains($key, $separator . $separator)) {
                     $errors[] = "Invalid separator: `{$separator}`. Must not immediately repeat in `{$key}`.";
@@ -563,7 +567,8 @@ final class Assert
 
         if (! \is_string($path)) {
             $errors[] = 'not a string (' . \get_debug_type($path) . ')';
-        } elseif (\strlen($path) > $maxLength) {
+        }
+        elseif (\strlen($path) > $maxLength) {
             $errors[] = "exceeds maximum byte length of `{$maxLength}` (got " . \strlen($path) . ')';
         }
 
@@ -869,21 +874,25 @@ final class Assert
 
         if (! \is_string($value) && ! $value instanceof \Stringable) {
             $errors[] = 'not a string (' . \get_debug_type($value) . ')';
-        } else {
+        }
+        else {
             $string = (string) $value;
 
             if ($string === '') {
                 $errors[] = 'empty string';
-            } else {
+            }
+            else {
                 $uri = Uri::from($string);
 
                 if ($uri === null) {
                     if (! $allowRelative && ! \str_contains($string, ':')) {
                         $errors[] = 'not an absolute URI (missing scheme); relative-ref not allowed';
-                    } else {
+                    }
+                    else {
                         $errors[] = 'does not match URI shape rules';
                     }
-                } else {
+                }
+                else {
                     if (! $allowRelative && $uri->isRelative()) {
                         $errors[] = 'not an absolute URI (missing scheme); relative-ref not allowed';
                     }
@@ -1011,17 +1020,20 @@ final class Assert
 
         if (! \is_string($value) && ! $value instanceof \Stringable) {
             $errors[] = 'not a string (' . \get_debug_type($value) . ')';
-        } else {
+        }
+        else {
             $string = (string) $value;
 
             if ($string === '') {
                 $errors[] = 'empty string';
-            } elseif (! Url::isValid($string)) {
+            }
+            elseif (! Url::isValid($string)) {
                 $uri = Uri::from($string);
 
                 if ($uri === null) {
                     $errors[] = 'does not match absolute URI shape rules';
-                } else {
+                }
+                else {
                     if ($uri->isRelative()) {
                         $errors[] = 'not an absolute URL (missing scheme)';
                     }
@@ -1105,12 +1117,14 @@ final class Assert
 
         if (! \is_string($value) && ! $value instanceof \Stringable) {
             $errors[] = 'not a string (' . \get_debug_type($value) . ')';
-        } else {
+        }
+        else {
             $string = (string) $value;
 
             if ($string === '') {
                 $errors[] = 'empty string';
-            } elseif (! Href::isValid($string)) {
+            }
+            elseif (! Href::isValid($string)) {
                 $errors[] = 'does not match safe href rules';
             }
         }

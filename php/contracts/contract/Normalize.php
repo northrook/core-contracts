@@ -90,7 +90,8 @@ final class Normalize
             }
 
             $path = \implode(\DIR_SEP, $segments);
-        } else {
+        }
+        else {
             $path = (string) $path;
         }
 
@@ -190,7 +191,8 @@ final class Normalize
 
         if ($schemeEnd !== false && \is_path_scheme(\substr($path, 0, $schemeEnd))) {
             $path = \substr($path, 0, $schemeEnd + 3) . \strtr(\substr($path, $schemeEnd + 3), '\\', \DIR_SEP);
-        } else {
+        }
+        else {
             $path = \strtr($path, '\\', \DIR_SEP);
         }
 
@@ -297,7 +299,8 @@ final class Normalize
             }
 
             $url = \implode('/', $parts);
-        } else {
+        }
+        else {
             $url = (string) $url;
         }
 
@@ -331,16 +334,19 @@ final class Normalize
                 [$query, $fragment] = \explode('#', $rest, 2);
                 $query    = '?' . $query;
                 $fragment = '#' . $fragment;
-            } else {
+            }
+            else {
                 [$url, $rest] = \explode('#', $url, 2);
                 [$fragment, $query] = \explode('?', $rest, 2);
                 $fragment = '#' . $fragment;
                 $query    = '?' . $query;
             }
-        } elseif ($queryPos !== false) {
+        }
+        elseif ($queryPos !== false) {
             [$url, $query] = \explode('?', $url, 2);
             $query = '?' . $query;
-        } elseif ($fragmentPos !== false) {
+        }
+        elseif ($fragmentPos !== false) {
             [$url, $fragment] = \explode('#', $url, 2);
             $fragment = '#' . $fragment;
         }

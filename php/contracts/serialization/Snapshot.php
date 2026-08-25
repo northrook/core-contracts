@@ -220,7 +220,8 @@ final class Snapshot implements JsonSerializable, Stringable
 
         try {
             return $fn(self::resolveBudget($maxDepth, $maxNodes));
-        } finally {
+        }
+        finally {
             self::releaseCushion();
         }
     }
@@ -275,7 +276,8 @@ final class Snapshot implements JsonSerializable, Stringable
                 // Unlimited `memory_limit` — still bound the walk, generously.
                 $autoDepth = self::MAX_DEPTH;
                 $autoNodes = self::MAX_NODES;
-            } else {
+            }
+            else {
                 $spendable = (int) \max(
                     0,
                     ( $remaining - self::CUSHION_BYTES ) * self::HEADROOM_FRACTION,
@@ -422,9 +424,11 @@ final class Snapshot implements JsonSerializable, Stringable
                 if (\is_array($item)) {
                     if ($nextDepth > $budget->maxDepth) {
                         $copy[$key] = self::TRUNCATED_DEPTH;
-                    } elseif (self::isArrayOnStack($item, $arrayStack)) {
+                    }
+                    elseif (self::isArrayOnStack($item, $arrayStack)) {
                         $copy[$key] = self::ARRAY_RECURSION;
-                    } else {
+                    }
+                    else {
                         if (! $budget->consume()) {
                             $copy[$key] = self::TRUNCATED_NODES;
                             break;
@@ -437,7 +441,8 @@ final class Snapshot implements JsonSerializable, Stringable
                             $nextDepth,
                         );
                     }
-                } else {
+                }
+                else {
                     $copy[$key] = self::snapshotValue(
                         $item,
                         $seen,
@@ -450,7 +455,8 @@ final class Snapshot implements JsonSerializable, Stringable
             unset($item);
 
             return $copy;
-        } finally {
+        }
+        finally {
             \array_pop($arrayStack);
         }
     }
@@ -524,7 +530,7 @@ final class Snapshot implements JsonSerializable, Stringable
 
         // Deep reflection can jump memory — skip when headroom is already thin.
         $remaining = MemoryManager::getMemoryRemaining();
-        if ($remaining && $remaining < ( self::CUSHION_BYTES * 4 )) {
+        if ($remaining && $remaining < self::CUSHION_BYTES * 4) {
             $copy = self::uncloneable($value);
             $seen->offsetSet($value, $copy);
 
@@ -593,7 +599,8 @@ final class Snapshot implements JsonSerializable, Stringable
             $seen->offsetSet($value, $copy);
 
             return $copy;
-        } catch (\Throwable) {
+        }
+        catch (\Throwable) {
             $copy = self::uncloneable($value);
             $seen->offsetSet($value, $copy);
 
@@ -632,7 +639,8 @@ final class Snapshot implements JsonSerializable, Stringable
             }
 
             return "{$name}@{$file}:{$line}";
-        } catch (\Throwable) {
+        }
+        catch (\Throwable) {
             return '[Closure]';
         }
     }

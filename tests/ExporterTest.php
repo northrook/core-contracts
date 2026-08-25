@@ -89,7 +89,8 @@ final class ExporterTest extends TestCase
         try {
             Exporter::json($fixture, \JSON_THROW_ON_ERROR, 1);
             self::fail('expected json depth throw');
-        } catch (\JsonException) {
+        }
+        catch (\JsonException) {
         }
 
         self::assertFalse(Exporter::isOverrideActive());

@@ -55,7 +55,8 @@ enum Filter
 
                 return $resolve;
             }
-        } else {
+        }
+        else {
             $resolve = \strtolower($from);
         }
 

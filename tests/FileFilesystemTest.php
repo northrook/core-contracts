@@ -30,7 +30,8 @@ final class FileFilesystemTest extends TestCase
             self::assertContains('isFile', $stub->calls);
             self::assertContains('appendToFile', $stub->calls);
             self::assertContains('readFile', $stub->calls);
-        } finally {
+        }
+        finally {
             @\unlink($path);
         }
     }
@@ -46,7 +47,8 @@ final class FileFilesystemTest extends TestCase
             self::assertTrue($file->append('b'));
             self::assertSame('ab', $file->read());
             self::assertTrue($file->exists());
-        } finally {
+        }
+        finally {
             @\unlink($path);
         }
     }
@@ -62,7 +64,8 @@ final class FileFilesystemTest extends TestCase
 
             self::assertTrue($location->exists());
             self::assertContains('fileExists', $stub->calls);
-        } finally {
+        }
+        finally {
             @\unlink($path);
         }
     }
@@ -80,7 +83,8 @@ final class FileFilesystemTest extends TestCase
 
             self::assertContains('createParentDirectory', $stub->calls);
             self::assertContains('writeFileAtomically', $stub->calls);
-        } finally {
+        }
+        finally {
             @\unlink($path);
         }
     }
@@ -96,7 +100,8 @@ final class FileFilesystemTest extends TestCase
             self::assertTrue($file->isFile());
             self::assertStringStartsWith('nr-tmp-', $file->basename());
             self::assertStringEndsWith('.tmp', $file->basename());
-        } finally {
+        }
+        finally {
             $file->remove();
         }
     }
@@ -144,10 +149,12 @@ final class FileFilesystemTest extends TestCase
             try {
                 self::assertTrue(\str_starts_with($file->value, $safe . \DIRECTORY_SEPARATOR));
                 self::assertTrue($file->isFile());
-            } finally {
+            }
+            finally {
                 $file->remove();
             }
-        } finally {
+        }
+        finally {
             @\rmdir($safe);
         }
     }
@@ -188,7 +195,8 @@ final class FileFilesystemTest extends TestCase
 
             self::assertTrue($file->write('nested'));
             self::assertSame('nested', \file_get_contents($path));
-        } finally {
+        }
+        finally {
             @\unlink($path);
             @\rmdir($base . \DIRECTORY_SEPARATOR . 'deep');
             @\rmdir($base);
@@ -203,7 +211,8 @@ final class FileFilesystemTest extends TestCase
             $this->expectException(InvalidArgumentException::class);
             // @phpstan-ignore-next-line Testing invalid input.
             new File($path)->write(123);
-        } finally {
+        }
+        finally {
             @\unlink($path);
         }
     }
@@ -220,7 +229,8 @@ final class FileFilesystemTest extends TestCase
             self::assertInstanceOf(Timestamp::class, $file->modifiedAt());
             self::assertInstanceOf(Timestamp::class, $file->createdAt());
             self::assertSame('text/plain', $file->mimeType());
-        } finally {
+        }
+        finally {
             @\unlink($path);
         }
     }
@@ -243,7 +253,8 @@ final class FileFilesystemTest extends TestCase
 
             self::assertSame('text/plain', $file->mimeType());
             self::assertContains('mimeType', $stub->calls);
-        } finally {
+        }
+        finally {
             @\unlink($path);
         }
     }
@@ -270,7 +281,8 @@ final class FileFilesystemTest extends TestCase
             self::assertFileDoesNotExist($copy);
             self::assertFileExists($moved);
             self::assertSame($moved, $movedFile->value);
-        } finally {
+        }
+        finally {
             @\unlink($base);
             @\unlink($copy);
             @\unlink($moved);

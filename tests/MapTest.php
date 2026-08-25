@@ -179,7 +179,8 @@ final class MapTest extends TestCase
             self::assertSame('stream', $map->get($handle));
             self::assertTrue($map->delete($handle));
             self::assertTrue($map->isEmpty);
-        } finally {
+        }
+        finally {
             \fclose($handle);
         }
     }

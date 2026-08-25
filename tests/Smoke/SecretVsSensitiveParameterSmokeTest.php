@@ -71,7 +71,8 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
         \ob_start();
         try {
             $callback();
-        } catch (\Throwable $e) {
+        }
+        catch (\Throwable $e) {
             echo \get_class($e) . ': ' . $e->getMessage();
         }
 
@@ -238,7 +239,8 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
 
             try {
                 $throw('ada', self::MARKER);
-            } catch (\Throwable $e) {
+            }
+            catch (\Throwable $e) {
                 $args = $e->getTrace()[0]['args'] ?? [];
                 self::assertCount(2, $args);
                 self::assertSame('ada', $args[0]);
@@ -252,7 +254,8 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
                 );
                 self::assertStringContainsString('SensitiveParameterValue', $asString);
             }
-        } finally {
+        }
+        finally {
             \ini_set('zend.exception_ignore_args', (string) $previous);
         }
     }
@@ -274,11 +277,13 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
 
             try {
                 $throw('ada', self::MARKER);
-            } catch (\Throwable $e) {
+            }
+            catch (\Throwable $e) {
                 self::assertArrayNotHasKey('args', $e->getTrace()[0] ?? []);
                 self::assertFalse(self::leaks((string) $e));
             }
-        } finally {
+        }
+        finally {
             \ini_set('zend.exception_ignore_args', (string) $previous);
         }
     }
@@ -300,7 +305,8 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
             $args = $probe(self::MARKER);
             self::assertInstanceOf(\SensitiveParameterValue::class, $args[0] ?? null);
             self::assertSame(self::MARKER, $args[0]->getValue());
-        } finally {
+        }
+        finally {
             \ini_set('zend.exception_ignore_args', (string) $previous);
         }
     }
@@ -333,7 +339,8 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
         $thrown = false;
         try {
             $throw(self::MARKER);
-        } catch (\Throwable $e) {
+        }
+        catch (\Throwable $e) {
             $thrown = true;
             self::assertTrue(self::leaks($e->getMessage()));
             self::assertTrue(self::leaks((string) $e));
@@ -441,13 +448,15 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
 
             try {
                 $throw(['token' => self::MARKER]);
-            } catch (\Throwable $e) {
+            }
+            catch (\Throwable $e) {
                 $arg = $e->getTrace()[0]['args'][0] ?? null;
                 self::assertInstanceOf(\SensitiveParameterValue::class, $arg);
                 self::assertSame(['token' => self::MARKER], $arg->getValue());
                 self::assertFalse(self::leaks((string) $e));
             }
-        } finally {
+        }
+        finally {
             \ini_set('zend.exception_ignore_args', (string) $previous);
         }
     }

@@ -104,7 +104,8 @@ final class EmailTest extends TestCase
         try {
             new Email('not-an-email');
             self::fail('Expected InvalidArgumentException.');
-        } catch (InvalidArgumentException $exception) {
+        }
+        catch (InvalidArgumentException $exception) {
             self::assertStringStartsWith('Invalid email address', $exception->getMessage());
             self::assertArrayHasKey('issues', $exception->getContext());
             self::assertContains(EmailIssue::MissingAt->value, MixedArray::at($exception->getContext(), 'issues'));
@@ -171,7 +172,8 @@ final class EmailTest extends TestCase
         try {
             new Email($input);
             self::fail('Expected InvalidArgumentException.');
-        } catch (InvalidArgumentException $exception) {
+        }
+        catch (InvalidArgumentException $exception) {
             self::assertIsArray($exception->getContext()['issues']);
             self::assertContains($issue->value, $exception->getContext()['issues']);
             self::assertStringContainsString($issue->message(), $exception->getMessage());
@@ -251,7 +253,8 @@ final class EmailTest extends TestCase
         try {
             new Email('user@other.com', policy: $allowlist);
             self::fail('Expected InvalidArgumentException.');
-        } catch (InvalidArgumentException $exception) {
+        }
+        catch (InvalidArgumentException $exception) {
             self::assertIsArray($exception->getContext()['issues']);
             self::assertContains(EmailIssue::PolicyRejected->value, $exception->getContext()['issues']);
             self::assertSame("Domain 'other.com' is not allowed.", $exception->getContext()['policy']);

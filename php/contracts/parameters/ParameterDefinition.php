@@ -166,10 +166,12 @@ final class ParameterDefinition implements Serializable, Exportable
 
         if ($secret === null) {
             $this->secret = null;
-        } else if ($secret instanceof SecretAttribute) {
+        }
+        else if ($secret instanceof SecretAttribute) {
             $this->secret = $secret->secret;
             $this->tags(...$secret->conditions);
-        } else {
+        }
+        else {
             $this->secret = SecretEnum::from($secret);
         }
 

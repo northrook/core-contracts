@@ -178,7 +178,8 @@ final class UrlTest extends TestCase
         try {
             $url->fetch();
             self::fail('Expected CurlException.');
-        } catch (CurlException $exception) {
+        }
+        catch (CurlException $exception) {
             self::assertSame($failure, $exception);
         }
     }

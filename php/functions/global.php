@@ -250,7 +250,8 @@ function resolve_var_directory(
 
     if ($resolvedRoot !== false && \is_dir($resolvedRoot)) {
         $resolved = $resolvedRoot . \DIR_SEP . 'var';
-    } else {
+    }
+    else {
         $systemTemp = \realpath(\sys_get_temp_dir());
 
         if ($systemTemp === false) {

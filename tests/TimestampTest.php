@@ -160,7 +160,8 @@ final class TimestampTest extends TestCase
 
             self::assertSame('Asia/Tokyo', $datetime->getTimezone()->getName());
             self::assertFalse(Context::isRegistered());
-        } finally {
+        }
+        finally {
             \date_default_timezone_set($previous);
         }
     }

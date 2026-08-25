@@ -437,7 +437,8 @@ final class ContextManager implements Resettable
 
             if (! isset($entries[$key])) {
                 $entries[$key] = $value;
-            } else {
+            }
+            else {
                 throw new InvalidArgumentException(
                     message: $caller . ' requires unique Context entries.',
                 );

@@ -171,7 +171,8 @@ readonly class Href implements Reference
 
         try {
             $normalized = new \Uri\Rfc3986\Uri($string)->toString();
-        } catch (InvalidUriException $exception) {
+        }
+        catch (InvalidUriException $exception) {
             throw new InvalidArgumentException(
                 message : $exception->getMessage(),
                 context : [
@@ -286,7 +287,8 @@ readonly class Href implements Reference
 
         try {
             $host = new \Uri\Rfc3986\Uri($this->value)->getHost();
-        } catch (InvalidUriException) {
+        }
+        catch (InvalidUriException) {
             return false;
         }
 

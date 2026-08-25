@@ -117,7 +117,8 @@ final class BacktraceTest extends TestCase
     {
         try {
             $this->throwForBacktrace();
-        } catch (\RuntimeException $e) {
+        }
+        catch (\RuntimeException $e) {
             $bt = Backtrace::from($e);
         }
 

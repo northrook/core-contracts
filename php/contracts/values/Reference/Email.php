@@ -180,27 +180,32 @@ final readonly class Email implements Reference
 
         if ($string === '') {
             $issues[] = EmailIssue::Empty;
-        } else {
+        }
+        else {
             if (\strlen($string) > self::MAX_ADDRESS) {
                 $issues[] = EmailIssue::AddressTooLong;
             }
 
             if (\preg_match('/[\x00-\x1F\x7F]/', $string) === 1) {
                 $issues[] = EmailIssue::ControlCharacter;
-            } elseif (\preg_match('/[\x80-\xFF]/', $string) === 1 && \preg_match('//u', $string) !== 1) {
+            }
+            elseif (\preg_match('/[\x80-\xFF]/', $string) === 1 && \preg_match('//u', $string) !== 1) {
                 $issues[] = EmailIssue::InvalidUtf8;
-            } else {
+            }
+            else {
                 $at = self::separatorOffset($string);
 
                 if ($at === null) {
                     $issues[] = EmailIssue::MissingAt;
-                } else {
+                }
+                else {
                     $local  = \substr($string, 0, $at);
                     $domain = \substr($string, $at + 1);
 
                     if (\str_contains($domain, '@')) {
                         $issues[] = EmailIssue::MultipleAt;
-                    } else {
+                    }
+                    else {
                         $quoted = self::validateLocal($local, $allowQuoted, $issues);
                         $domain = self::validateDomain($domain, $issues);
                     }
@@ -349,7 +354,7 @@ final readonly class Email implements Reference
             return;
         }
 
-        for ($i = 1; $i < ( $length - 1 ); $i++) {
+        for ($i = 1; $i < $length - 1; $i++) {
             $char = $local[$i];
 
             if ($char === '"') {
@@ -363,7 +368,7 @@ final readonly class Email implements Reference
 
             $i++;
 
-            if ($i >= ( $length - 1 ) || \ord($local[$i]) < 32) {
+            if ($i >= $length - 1 || \ord($local[$i]) < 32) {
                 $issues[] = EmailIssue::QuotedInvalidEscape;
                 return;
             }

@@ -82,7 +82,8 @@ final class OPcacheTest extends TestCase
             self::assertArrayHasKey('opcache_enabled', $telemetry['status']);
             self::assertArrayHasKey('memory_usage', $telemetry['status']);
             self::assertArrayHasKey('opcache_statistics', $telemetry['status']);
-        } else {
+        }
+        else {
             self::assertNull($telemetry['status']);
         }
     }

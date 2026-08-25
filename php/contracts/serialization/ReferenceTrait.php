@@ -39,7 +39,8 @@ trait ReferenceTrait
             static::normalize($value);
 
             return true;
-        } catch (\Throwable) {
+        }
+        catch (\Throwable) {
             return false;
         }
     }
@@ -70,7 +71,8 @@ trait ReferenceTrait
 
         try {
             return new static($value);
-        } catch (\Throwable $exception) {
+        }
+        catch (\Throwable $exception) {
             if ($throw) {
                 throw new RuntimeException(
                     message : self::class . ' failed to initialize via from(): ' . $exception->getMessage(),

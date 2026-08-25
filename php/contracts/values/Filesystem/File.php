@@ -79,7 +79,8 @@ final readonly class File extends Path
         if ($directory instanceof Directory) {
             $filesystem ??= $directory->filesystem;
             $parent     = $directory;
-        } else {
+        }
+        else {
             $parent = new Directory(
                 $directory === null ? \sys_get_temp_dir() : (string) $directory,
                 filesystem: $filesystem,
@@ -191,7 +192,8 @@ final readonly class File extends Path
     {
         try {
             return $this->filesystem->fileSize($this->value);
-        } catch (FilesystemException $exception) {
+        }
+        catch (FilesystemException $exception) {
             throw new RuntimeException(
                 message : "Unable to determine size of '{$this->value}'.",
                 context : ['path' => $this->value],
@@ -209,7 +211,8 @@ final readonly class File extends Path
     {
         try {
             $mtime = $this->filesystem->modifiedTime($this->value);
-        } catch (FilesystemException $exception) {
+        }
+        catch (FilesystemException $exception) {
             throw new RuntimeException(
                 message : "Unable to determine modification time of '{$this->value}'.",
                 context : ['path' => $this->value],
@@ -232,7 +235,8 @@ final readonly class File extends Path
     {
         try {
             $ctime = $this->filesystem->createdTime($this->value);
-        } catch (FilesystemException $exception) {
+        }
+        catch (FilesystemException $exception) {
             throw new RuntimeException(
                 message : "Unable to determine creation time of '{$this->value}'.",
                 context : ['path' => $this->value],
@@ -267,7 +271,8 @@ final readonly class File extends Path
     ): null|string {
         try {
             return $this->filesystem->readFile($this->value);
-        } catch (FilesystemException $exception) {
+        }
+        catch (FilesystemException $exception) {
             if ($throw) {
                 throw new RuntimeException(
                     message : "Unable to read file '{$this->value}'.",
@@ -319,7 +324,8 @@ final readonly class File extends Path
             $this->filesystem->writeFileAtomically($this->value, $content);
 
             return true;
-        } catch (FilesystemException) {
+        }
+        catch (FilesystemException) {
             return false;
         }
     }
@@ -357,7 +363,8 @@ final readonly class File extends Path
             $this->filesystem->appendToFile($this->value, $content, $lock);
 
             return true;
-        } catch (FilesystemException) {
+        }
+        catch (FilesystemException) {
             return false;
         }
     }

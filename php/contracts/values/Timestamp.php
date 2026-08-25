@@ -56,7 +56,8 @@ final readonly class Timestamp implements \Stringable
         if ($timestamp === null) {
             $precision       = \hrtime(true);
             $this->precision = \is_int($precision) ? $precision : (int) $precision;
-        } else {
+        }
+        else {
             $this->precision = null;
         }
 
@@ -140,7 +141,8 @@ final readonly class Timestamp implements \Stringable
             }
 
             return $instance->setTimezone($timezone);
-        } catch (\Throwable $exception) {
+        }
+        catch (\Throwable $exception) {
             throw new RuntimeException(
                 message : 'Failed to create DateTimeImmutable from timestamp ' . $this->number,
                 context : \func_get_args(),
