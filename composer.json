@@ -29,7 +29,8 @@
         "php/contracts/serialization",
         "php/contracts/structures",
         "php/contracts/pathfinder",
-        "php/contracts/values"
+        "php/contracts/values",
+        "php/contracts/view"
       ]
     },
     "files": [

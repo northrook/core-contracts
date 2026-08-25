@@ -102,8 +102,8 @@ final class GlobalFunctionsTest extends TestCase
 
     #[DataProvider('provideIsClassCases')]
     public function testIsClass(
-        mixed $value,
-        bool  $expected,
+        mixed    $value,
+        bool     $expected,
         mixed ...$composedOf,
     ): void {
         self::assertSame($expected, \is_class($value, ...$composedOf));

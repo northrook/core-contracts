@@ -225,11 +225,19 @@ final class CallbackTest extends TestCase
 
     public function testUnserializeDefaultsMissingArgsToEmptyList(): void
     {
-        $callback = new \ReflectionClass(Callback::class)->newInstanceWithoutConstructor();
-        $callback->__unserialize(['descriptor' => 'strlen']);
+        $callback = Callback::restore('strlen');
 
         self::assertInstanceOf(Callback::class, $callback);
         self::assertSame(5, $callback('hello'));
+    }
+
+    public function testRestoreRebuildsFromSerializedShape(): void
+    {
+        $original   = Callback::staticMethod(\DateTimeImmutable::class, 'createFromFormat', 'Y-m-d');
+        $serialized = $original->__serialize();
+        $restored   = Callback::restore($serialized['descriptor'], $serialized['args']);
+
+        self::assertInstanceOf(\DateTimeImmutable::class, $restored('2026-08-25'));
     }
 
     public function testInvokableWithCallTimeArgsOnly(): void

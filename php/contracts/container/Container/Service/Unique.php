@@ -11,7 +11,7 @@ use Northrook\Container\BindingAttribute;
  *
  * These are locked to the container primary reference.
  *
- * If {@see \Northrook\ContainerInterface::get()} is called with a `reference` on a `unique`, an {@see \Northrook\Container\ContainerException} will be thrown.
+ * If {@see \Northrook\ContainerInterface::get()} or {@see \Northrook\ContainerInterface::has()} is called with a non-default `reference` on a `unique`, resolution fails ({@see \Northrook\Container\ServiceNotFoundException} on {@see \Northrook\ContainerInterface::get()}).
  *
  * Incompatible with {@see Shared}, {@see Inline}, and {@see Scoped}.
  */

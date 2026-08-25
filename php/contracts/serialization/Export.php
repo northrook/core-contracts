@@ -91,7 +91,6 @@ final class Export implements Resettable
     public static function object(
         object $object,
     ): string {
-
         if ($object instanceof \UnitEnum) {
             return '\\' . \ltrim(\var_export($object, true), '\\');
         }
@@ -103,7 +102,7 @@ final class Export implements Resettable
         if ($object instanceof Constant) {
             return $object->constant;
         }
-        
+
         $exporter = static::exporter();
 
         if ($exporter === Exporter::Reflection) {

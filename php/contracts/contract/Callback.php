@@ -186,6 +186,23 @@ final class Callback
     }
 
     /**
+     * @param string|object|array{0: string, 1: string} $descriptor
+     * @param list<mixed>                                 $args
+     */
+    public static function restore(
+        mixed $descriptor,
+        array $args = [],
+    ): static {
+        $callback = new \ReflectionClass(static::class)->newInstanceWithoutConstructor();
+        $callback->__unserialize([
+            'descriptor' => $descriptor,
+            'args'       => $args,
+        ]);
+
+        return $callback;
+    }
+
+    /**
      * @return array{descriptor: string|object|array{0: string, 1: string}, args: list<mixed>}
      */
     public function __serialize(): array
