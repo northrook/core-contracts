@@ -22,6 +22,12 @@ final class ExportTest extends TestCase
         Export::reset();
     }
 
+    private static function useExporter(
+        Exporter $exporter,
+    ): void {
+        new \ReflectionProperty(Export::class, 'exporter')->setValue(null, $exporter);
+    }
+
     /**
      * @return list<array{0: \Northrook\Export\Exporter}>
      */
@@ -476,9 +482,9 @@ final class ExportTest extends TestCase
         self::assertSame(1, $hydrated->value);
     }
 
-    public function testSetExporterAndReset(): void
+    public function testExporterOverrideAndReset(): void
     {
-        Export::setExporter(Exporter::Reflection);
+        self::useExporter(Exporter::Reflection);
         self::assertSame(Exporter::Reflection, Export::exporter());
 
         Export::reset();
@@ -509,7 +515,7 @@ final class ExportTest extends TestCase
     public function testObjectRoundTripOnEachBackend(
         Exporter $exporter,
     ): void {
-        Export::setExporter($exporter);
+        self::useExporter($exporter);
         $dto = new ExportPublicDtoFixture('ok', 2);
 
         $hydrated = self::evalDump(Export::object($dto));
@@ -523,7 +529,7 @@ final class ExportTest extends TestCase
     public function testNestedObjectGraphRoundTripOnEachBackend(
         Exporter $exporter,
     ): void {
-        Export::setExporter($exporter);
+        self::useExporter($exporter);
 
         $hydrated = self::evalDump(Export::value([
             'dto'   => new ExportPublicDtoFixture('nested', 1),
@@ -541,7 +547,7 @@ final class ExportTest extends TestCase
 
         foreach ([Exporter::Symfony, Exporter::Polyfill] as $exporter) {
             Export::reset();
-            Export::setExporter($exporter);
+            self::useExporter($exporter);
             $hydrated = self::evalDump(Export::object($date));
             self::assertInstanceOf(\DateTimeImmutable::class, $hydrated);
             self::assertSame($date->format('c'), $hydrated->format('c'));
@@ -550,7 +556,7 @@ final class ExportTest extends TestCase
 
     public function testReflectionDateTimeRestoreSkipsConstructor(): void
     {
-        Export::setExporter(Exporter::Reflection);
+        self::useExporter(Exporter::Reflection);
         $hydrated = self::evalDump(Export::object(new \DateTimeImmutable('2024-01-15T12:00:00+00:00')));
 
         self::assertInstanceOf(\DateTimeImmutable::class, $hydrated);
@@ -566,7 +572,7 @@ final class ExportTest extends TestCase
 
         foreach ([Exporter::Symfony, Exporter::Polyfill] as $exporter) {
             Export::reset();
-            Export::setExporter($exporter);
+            self::useExporter($exporter);
             $hydrated = self::evalDump(Export::object($plain));
             self::assertSame(1, $hydrated->x);
             self::assertSame('two', $hydrated->y);
@@ -575,7 +581,7 @@ final class ExportTest extends TestCase
 
     public function testReflectionExportOmitsStdClassDynamicProperties(): void
     {
-        Export::setExporter(Exporter::Reflection);
+        self::useExporter(Exporter::Reflection);
         $plain    = new \stdClass;
         $plain->x = 1;
 
@@ -587,7 +593,7 @@ final class ExportTest extends TestCase
 
     public function testReflectionSkipsStaticAndVirtualProperties(): void
     {
-        Export::setExporter(Exporter::Reflection);
+        self::useExporter(Exporter::Reflection);
         $export = Export::object(new ExportHookFixture('Ada', 'Lovelace'));
 
         self::assertStringNotContainsString('ignored', $export);
@@ -639,7 +645,7 @@ final class ExportTest extends TestCase
     {
         foreach ([Exporter::Symfony, Exporter::Polyfill] as $exporter) {
             Export::reset();
-            Export::setExporter($exporter);
+            self::useExporter($exporter);
 
             try {
                 Export::object(new class('x') {
@@ -657,7 +663,7 @@ final class ExportTest extends TestCase
 
     public function testAnonymousClassReflectionDumpIsNotValidPhp(): void
     {
-        Export::setExporter(Exporter::Reflection);
+        self::useExporter(Exporter::Reflection);
         $dump = Export::object(new class {
             public int $a = 1;
         });
@@ -712,7 +718,7 @@ final class ExportTest extends TestCase
 
     public function testReflectionBackendDoesNotUseFailsafeCatch(): void
     {
-        Export::setExporter(Exporter::Reflection);
+        self::useExporter(Exporter::Reflection);
         Export::setFailsafe();
 
         $dump = Export::object(new class {
@@ -724,7 +730,7 @@ final class ExportTest extends TestCase
 
     public function testFailsafeOffThrowsForUnexportableObject(): void
     {
-        Export::setExporter(Exporter::Symfony);
+        self::useExporter(Exporter::Symfony);
         Export::setFailsafe(false);
 
         $this->expectException(RuntimeException::class);

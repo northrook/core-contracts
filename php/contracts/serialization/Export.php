@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Northrook;
 
 use \Northrook\Export\Exporter;
-use Northrook\Context\DebugOnly;
 use Northrook\Contracts\Exportable;
 use Northrook\Contracts\Resettable;
 use Northrook\Export\Constant;
@@ -32,13 +31,6 @@ final class Export implements Resettable
         bool $set = true,
     ): bool {
         return self::$failsafe = $set;
-    }
-
-    #[DebugOnly]
-    public static function setExporter(
-        Exporter $exporter,
-    ): void {
-        self::$exporter = $exporter;
     }
 
     public static function exporter(): Exporter
@@ -99,6 +91,7 @@ final class Export implements Resettable
     public static function object(
         object $object,
     ): string {
+
         if ($object instanceof \UnitEnum) {
             return '\\' . \ltrim(\var_export($object, true), '\\');
         }
@@ -110,7 +103,7 @@ final class Export implements Resettable
         if ($object instanceof Constant) {
             return $object->constant;
         }
-
+        
         $exporter = static::exporter();
 
         if ($exporter === Exporter::Reflection) {
