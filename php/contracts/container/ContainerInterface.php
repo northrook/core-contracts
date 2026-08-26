@@ -69,19 +69,24 @@ interface ContainerInterface extends \Psr\Container\ContainerInterface
     /**
      * Whether this binding exists and has already been materialized.
      *
-     * `true` only when the instance is initialized.
+     * Shared / Unique: `true` when the shared cache holds `(id, reference)`.
+     * Scoped: `true` when the scoped cache holds `(id, reference, consumer)`.
+     * Inline: always `false` (instances are not retained).
      *
-     * When this returns `true`, {@see get()} returns the same instance.
+     * When this returns `true`, {@see get()} with the same `(id, reference)`
+     * — and the same `consumer` for Scoped — returns that cached instance.
      *
      * @template T of object
-     * @param  class-string<T> $id
-     * @param  null|string     $reference binding key, or `null` for primary binding
+     * @param  class-string<T>      $id
+     * @param  null|string          $reference binding key, or `null` for primary binding
+     * @param  null|class-string    $consumer  scoped owner FQCN; defaults to `$id` (same as {@see get()})
      *
-     * @phpstan-assert-if-true T $this->get()
+     * @phpstan-assert-if-true T $this->get($id, $reference)
      */
     public function initialized(
         string      $id,
         null|string $reference = null,
+        null|string $consumer = null,
     ): bool;
 
     public function hasParameter(
