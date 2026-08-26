@@ -36,21 +36,21 @@ final class NativeLogger extends AbstractLogger
         string|\Stringable $message,
         array              $context = [],
     ): void {
-        $level = LogLevel::resolve($level)->name();
-
         if ($message instanceof \Throwable) {
             $context['exception'] ??= $message;
             $message              = $message->getMessage();
         }
 
+        $label     = LogLevel::resolve($level)->label();
         $message   = self::interpolate((string) $message, $context);
         $exception = $context['exception'] ?? null;
+        $timestamp = new \DateTimeImmutable()->format('Y-m-d H:i:s v');
 
         if ($exception instanceof \Throwable) {
             $message .= \PHP_EOL . $exception;
         }
 
-        $line = "[{$level}] {$message}";
+        $line = "{$timestamp} [{$label}] {$message}";
 
         if ($this->logFile !== null && $this->appendToFile($line)) {
             return;

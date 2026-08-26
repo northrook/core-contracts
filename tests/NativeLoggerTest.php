@@ -7,6 +7,7 @@ namespace Northrook\Contracts\Tests;
 use Northrook\Logger\LogLevel;
 use Northrook\Logger\NativeLogger;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\InvalidArgumentException;
 
@@ -37,8 +38,8 @@ final class NativeLoggerTest extends TestCase
             ),
         );
 
-        self::assertStringContainsString(
-            '[info] Generated 3 files.',
+        self::assertMatchesRegularExpression(
+            '/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \d{3} \[INFO\] Generated 3 files\./',
             $output,
         );
     }
@@ -52,8 +53,8 @@ final class NativeLoggerTest extends TestCase
             ),
         );
 
-        self::assertStringContainsString(
-            '[warning] Enum level.',
+        self::assertMatchesRegularExpression(
+            '/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \d{3} \[WARN\] Enum level\./',
             $output,
         );
     }
@@ -66,8 +67,8 @@ final class NativeLoggerTest extends TestCase
             ),
         );
 
-        self::assertStringContainsString(
-            '[error] Something failed.',
+        self::assertMatchesRegularExpression(
+            '/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \d{3} \[ERRO\] Something failed\./',
             $output,
         );
         self::assertStringContainsString(
@@ -83,8 +84,8 @@ final class NativeLoggerTest extends TestCase
         new NativeLogger($file)->warning('Persisted.');
 
         self::assertFileExists($file);
-        self::assertStringContainsString(
-            '[warning] Persisted.',
+        self::assertMatchesRegularExpression(
+            '/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \d{3} \[WARN\] Persisted\.\n$/',
             (string) \file_get_contents($file),
         );
     }
@@ -99,9 +100,52 @@ final class NativeLoggerTest extends TestCase
         new NativeLogger($directory)->info('Directory target.');
 
         self::assertFileExists($expected);
-        self::assertStringContainsString(
-            '[info] Directory target.',
+        self::assertMatchesRegularExpression(
+            '/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \d{3} \[INFO\] Directory target\.\n$/',
             (string) \file_get_contents($expected),
+        );
+    }
+
+    public function testLineUsesLibraryLabelAndTimestamp(): void
+    {
+        $file   = $this->tempPath('format.log');
+        $before = \time();
+
+        new NativeLogger($file)->critical('Uniform label.');
+
+        $after = \time();
+        $line  = \rtrim((string) \file_get_contents($file));
+
+        self::assertMatchesRegularExpression(
+            '/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) \d{3} \[CRIT\] Uniform label\.$/',
+            $line,
+            'Line must be `{Y-m-d H:i:s v} [{4-char label}] {message}`',
+        );
+
+        \preg_match(
+            '/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) (\d{3})/',
+            $line,
+            $matches,
+        );
+
+        $logged = \strtotime($matches[1]);
+        self::assertNotFalse($logged);
+        self::assertGreaterThanOrEqual($before, $logged);
+        self::assertLessThanOrEqual($after, $logged);
+    }
+
+    #[DataProvider('provideLevelLabels')]
+    public function testLogFileUsesExpectedLabel(
+        string $method,
+        string $label,
+    ): void {
+        $file = $this->tempPath("{$method}.log");
+
+        new NativeLogger($file)->{$method}('Label check.');
+
+        self::assertStringContainsString(
+            "[{$label}] Label check.",
+            (string) \file_get_contents($file),
         );
     }
 
@@ -110,6 +154,21 @@ final class NativeLoggerTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
 
         new NativeLogger()->log('verbose', 'Not a PSR-3 level.');
+    }
+
+    /**
+     * @return \Generator<string, array{string, string}>
+     */
+    public static function provideLevelLabels(): \Generator
+    {
+        yield 'debug' => ['debug', 'DBUG'];
+        yield 'info' => ['info', 'INFO'];
+        yield 'notice' => ['notice', 'NOTE'];
+        yield 'warning' => ['warning', 'WARN'];
+        yield 'error' => ['error', 'ERRO'];
+        yield 'critical' => ['critical', 'CRIT'];
+        yield 'alert' => ['alert', 'ALRT'];
+        yield 'emergency' => ['emergency', 'EMRG'];
     }
 
     /**

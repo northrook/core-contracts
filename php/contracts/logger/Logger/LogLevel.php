@@ -64,6 +64,18 @@ enum LogLevel: int
      */
     case EMERGENCY = 600;
 
+    /** @var array<non-empty-lowercase-string, int> */
+    public const array CASES = [
+        \Psr\Log\LogLevel::DEBUG     => 100,
+        \Psr\Log\LogLevel::INFO      => 200,
+        \Psr\Log\LogLevel::NOTICE    => 250,
+        \Psr\Log\LogLevel::WARNING   => 300,
+        \Psr\Log\LogLevel::ERROR     => 400,
+        \Psr\Log\LogLevel::CRITICAL  => 500,
+        \Psr\Log\LogLevel::ALERT     => 550,
+        \Psr\Log\LogLevel::EMERGENCY => 600,
+    ];
+
     /** @var array<int, non-empty-lowercase-string> */
     public const array NAMES = [
         100 => \Psr\Log\LogLevel::DEBUG,
@@ -76,16 +88,16 @@ enum LogLevel: int
         600 => \Psr\Log\LogLevel::EMERGENCY,
     ];
 
-    /** @var array<non-empty-lowercase-string, int> */
-    public const array CASES = [
-        \Psr\Log\LogLevel::DEBUG     => 100,
-        \Psr\Log\LogLevel::INFO      => 200,
-        \Psr\Log\LogLevel::NOTICE    => 250,
-        \Psr\Log\LogLevel::WARNING   => 300,
-        \Psr\Log\LogLevel::ERROR     => 400,
-        \Psr\Log\LogLevel::CRITICAL  => 500,
-        \Psr\Log\LogLevel::ALERT     => 550,
-        \Psr\Log\LogLevel::EMERGENCY => 600,
+    /** @var array<int, non-empty-string> */
+    public const array LABELS = [
+        100 => 'DBUG',
+        200 => 'INFO',
+        250 => 'NOTE',
+        300 => 'WARN',
+        400 => 'ERRO',
+        500 => 'CRIT',
+        550 => 'ALRT',
+        600 => 'EMRG',
     ];
 
     /**
@@ -156,6 +168,22 @@ enum LogLevel: int
                 previous: $exception,
             );
         }
+    }
+
+    /**
+     * Returns a 4-character label for the level.
+     *
+     * @param bool $monolog
+     *
+     * @return string
+     */
+    public function label(
+        bool $monolog = false,
+    ): string {
+        if ($monolog) {
+            return \strtoupper(\substr($this->name(), 0, 4));
+        }
+        return self::LABELS[$this->value];
     }
 
     /**

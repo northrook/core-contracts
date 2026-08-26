@@ -20,6 +20,10 @@ namespace Northrook;
  */
 final readonly class Timestamp implements \Stringable
 {
+    public const string ISO8601 = 'Y-m-d\TH:i:sP';
+
+    public const string LOGGER = 'Y-m-d H:i:s v';
+
     /**
      * Monotonic nanoseconds from {@see \hrtime(true)}.
      *
