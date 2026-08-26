@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Northrook\Logger;
 
+use Northrook\Context;
 use Psr\Log\AbstractLogger;
 
 /**
@@ -36,6 +37,10 @@ final class NativeLogger extends AbstractLogger
         string|\Stringable $message,
         array              $context = [],
     ): void {
+        if (Context::isTesting()) {
+            return;
+        }
+
         if ($message instanceof \Throwable) {
             $context['exception'] ??= $message;
             $message              = $message->getMessage();

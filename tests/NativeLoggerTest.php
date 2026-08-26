@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
+use Northrook\Context;
+use Northrook\Context\AppEnv;
 use Northrook\Logger\LogLevel;
 use Northrook\Logger\NativeLogger;
+use Northrook\Singleton;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -17,6 +20,12 @@ final class NativeLoggerTest extends TestCase
     /** @var list<string> */
     private array $cleanup = [];
 
+    protected function setUp(): void
+    {
+        $this->resetContext();
+        Context::register(appEnv: AppEnv::Development);
+    }
+
     protected function tearDown(): void
     {
         foreach ($this->cleanup as $path) {
@@ -26,6 +35,19 @@ final class NativeLoggerTest extends TestCase
             elseif (\is_dir($path)) {
                 @\rmdir($path);
             }
+        }
+
+        $this->resetContext();
+    }
+
+    private function resetContext(): void
+    {
+        $property = new \ReflectionProperty(Singleton::class, '_instance');
+        $property->setValue(null, []);
+
+        foreach (['_appEnv', '_appDebug', '_osFamily'] as $propertyName) {
+            $property = new \ReflectionProperty(Context::class, $propertyName);
+            $property->setValue(null, null);
         }
     }
 
