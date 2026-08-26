@@ -8,6 +8,7 @@ use \Northrook\Export\Exporter;
 use Northrook\Contracts\Exportable;
 use Northrook\Contracts\Resettable;
 use Northrook\Export\Constant;
+use Northrook\Export\RawString;
 use Northrook\Logger\Log;
 use Symfony\Component\VarExporter\VarExporter;
 
@@ -142,6 +143,10 @@ final class Export implements Resettable
             return $object->constant;
         }
 
+        if ($object instanceof RawString) {
+            return $object->value;
+        }
+
         $exporter = static::exporter();
 
         if ($exporter === Exporter::Reflection) {
@@ -223,6 +228,23 @@ final class Export implements Resettable
         string $name,
     ): Constant {
         return Constant::export($name);
+    }
+
+    /**
+     * Dump-time token that emits {@see $value} verbatim into generated PHP.
+     *
+     * Use when a nested graph already holds exported source (or a hand-written
+     * expression) and must not be re-quoted by {@see string()} / {@see value()}.
+     * The dump does not validate the source.
+     *
+     * @param string  $value  PHP source to emit.
+     *
+     * @return \Northrook\Export\RawString
+     */
+    public static function raw(
+        string $value,
+    ): RawString {
+        return RawString::export($value);
     }
 
     /**

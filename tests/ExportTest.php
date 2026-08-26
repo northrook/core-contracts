@@ -335,6 +335,57 @@ final class ExportTest extends TestCase
         );
     }
 
+    public function testRawEmitsTheGivenSource(): void
+    {
+        $nested = Export::class(Parameter::class, 'k', 1, Type::Value, null, []);
+        self::assertStringEndsWith(";\n", $nested);
+        $nested = \substr($nested, 0, -2);
+
+        $export = Export::array([
+            'expr'   => Export::raw('\\strlen("abc")'),
+            'quoted' => Export::raw(Export::string("o'clock")),
+            'nested' => Export::raw($nested),
+        ]);
+
+        self::assertSame(
+            <<<'PHP'
+                [
+                    'expr'   => \strlen("abc"),
+                    'quoted' => 'o\'clock',
+                    'nested' => new \Northrook\Parameter(
+                    'k',
+                    1,
+                    \Northrook\Parameter\Type::Value,
+                    null,
+                    [],
+                ),
+                ]
+                PHP,
+            $export,
+        );
+
+        $hydrated = self::evalDump($export);
+        self::assertSame(3, $hydrated['expr']);
+        self::assertSame("o'clock", $hydrated['quoted']);
+        self::assertInstanceOf(Parameter::class, $hydrated['nested']);
+        self::assertSame(1, $hydrated['nested']->value);
+    }
+
+    public function testRawDoesNotRequotePlainStrings(): void
+    {
+        $already = Export::string("line\nbreak");
+
+        self::assertSame(
+            "'line'.\"\\n\".'break'",
+            Export::value(Export::raw($already)),
+        );
+        self::assertNotSame(
+            Export::value($already),
+            Export::value(Export::raw($already)),
+        );
+        self::assertSame("line\nbreak", self::evalDump(Export::value(Export::raw($already))));
+    }
+
     /**
      * @return list<array{0: string, 1: string}>
      */
@@ -595,6 +646,14 @@ final class ExportTest extends TestCase
         self::assertSame(\PHP_VERSION, self::evalDump(Export::value(Export::const('PHP_VERSION'))));
     }
 
+    public function testValueEmitsRawStringSource(): void
+    {
+        self::assertSame('\\strlen("abc")', Export::value(Export::raw('\\strlen("abc")')));
+        self::assertSame(3, self::evalDump(Export::value(Export::raw('\\strlen("abc")'))));
+        self::assertSame("''", Export::value(Export::raw("''")));
+        self::assertSame('', self::evalDump(Export::value(Export::raw("''"))));
+    }
+
     public function testPayloadAllowsScalarsAndNestedArrays(): void
     {
         self::assertSame('1', Export::value(1, true));
@@ -616,6 +675,14 @@ final class ExportTest extends TestCase
         $this->expectExceptionMessage('Cannot export value of type Northrook\Export\Constant as payload');
 
         Export::value(Export::const('PHP_VERSION'), true);
+    }
+
+    public function testPayloadRejectsRawString(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Cannot export value of type Northrook\Export\RawString as payload');
+
+        Export::value(Export::raw('\\strlen("abc")'), true);
     }
 
     public function testPayloadRejectsObjectNestedInArray(): void

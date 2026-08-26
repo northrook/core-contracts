@@ -224,7 +224,7 @@ final class AttributesTest extends TestCase
     {
         $fixture = new LoggerFixture;
 
-        $fixture->_autowire_Logger( null);
+        $fixture->_autowire_Logger(null);
 
         self::assertFalse($fixture->loggerIsExplicitlySet());
         self::assertInstanceOf(LoggerInterface::class, $fixture->loggerInstance());
@@ -240,7 +240,7 @@ final class AttributesTest extends TestCase
         $fixture = new LoggerFixture;
         $logger  = new AttributesSpyLogger;
 
-        $fixture->_autowire_Logger( $logger);
+        $fixture->_autowire_Logger($logger);
 
         self::assertSame($logger, $fixture->loggerInstance());
     }
@@ -252,7 +252,7 @@ final class AttributesTest extends TestCase
     ): void {
         $fixture = new LoggerFixture;
         $logger  = new AttributesSpyLogger;
-        $fixture->_autowire_Logger( $logger);
+        $fixture->_autowire_Logger($logger);
 
         $fixture->captureLogException($exception, continue: true);
 
@@ -276,7 +276,7 @@ final class AttributesTest extends TestCase
     {
         $fixture = new LoggerFixture;
         $logger  = new AttributesSpyLogger;
-        $fixture->_autowire_Logger( $logger);
+        $fixture->_autowire_Logger($logger);
 
         $fixture->captureLogException(
             new \RuntimeException('original'),
@@ -293,7 +293,7 @@ final class AttributesTest extends TestCase
     {
         $fixture = new LoggerFixture;
         $logger  = new AttributesSpyLogger;
-        $fixture->_autowire_Logger( $logger);
+        $fixture->_autowire_Logger($logger);
 
         $exception = new \RuntimeException('boom');
 
@@ -317,7 +317,7 @@ final class AttributesTest extends TestCase
         self::assertFalse($fixture->pathfinderIsSet());
 
         $pathfinder = new PathfinderStub;
-        $fixture->_autowire_Pathfinder( $pathfinder);
+        $fixture->_autowire_Pathfinder($pathfinder);
 
         self::assertTrue($fixture->pathfinderIsSet());
         self::assertSame($pathfinder, $fixture->pathfinderInstance());
