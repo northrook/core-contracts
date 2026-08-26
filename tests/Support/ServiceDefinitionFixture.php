@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Northrook\Contracts\Tests\Support;
 
 use Northrook\Container\Service\Autodiscover;
+use Northrook\Container\Service\Tag;
 
 #[Autodiscover(
     binding  : 'unique',
     alias    : ServiceDefinitionAliasInterface::class,
     tag      : 'fixture.tag',
-    // @phpstan-ignore-next-line Valid tag shapes.
-    tags     : [['fixture.extra', 'arg']],
+    tags     : [new Tag('fixture.extra', 'arg')],
     arguments: ['mode' => 'attribute'],
     autowire : false,
     preload  : true,

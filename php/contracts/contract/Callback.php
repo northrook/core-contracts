@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Northrook;
 
+use Northrook\Contracts\Exportable;
+
 /**
  * Serializable deferred callable with optional bound arguments.
  *
@@ -11,26 +13,29 @@ namespace Northrook;
  * hash before `unserialize`, or in-process round-trip). Descriptor checks on hydrate are
  * theatre once the blob is trusted; untrusted `unserialize` is a caller bug, not a Callback hole.
  */
-final class Callback
+final class Callback implements Exportable
 {
     /** Runtime cache only; never serialized. */
     private null|\Closure $fn = null;
 
     private function __construct(
         /** @var string|object|array{0: string, 1: string} */
-        private mixed $descriptor,
-        /** @var list<mixed> */
-        private array $boundArgs = [],
+        private string|object|array $descriptor,
+        /** @var array<array-key, mixed> */
+        private array $arguments = [],
     ) {}
 
     /**
-     * @param mixed ...$args
+     * @param callable-string  $name
+     * @param mixed   ...$arguments
+     *
+     * @return \Northrook\Callback
      */
     public static function function(
         string   $name,
-        mixed ...$args,
+        mixed ...$arguments,
     ): static {
-        return new static($name, array_values($args));
+        return new static($name, $arguments);
     }
 
     /**
@@ -45,18 +50,18 @@ final class Callback
         string   $method,
         mixed ...$args,
     ): static {
-        return new static([$class, $method], array_values($args));
+        return new static([$class, $method], $args);
     }
 
     /**
      * @param class-string $class
-     * @param mixed        ...$args
+     * @param mixed        ...$arguments
      */
     public static function instantiate(
         string   $class,
-        mixed ...$args,
+        mixed ...$arguments,
     ): static {
-        return new static(['new', $class], array_values($args));
+        return new static(['new', $class], $arguments);
     }
 
     /**
@@ -64,42 +69,40 @@ final class Callback
      *
      * Rejects {@see \Closure} — anonymous functions are not natively serializable.
      *
-     * @param object&callable $obj
-     * @param mixed           ...$args
+     * @param object&callable  $object
+     * @param mixed            ...$arguments
      */
     public static function invokable(
-        object   $obj,
-        mixed ...$args,
+        object   $object,
+        mixed ...$arguments,
     ): static {
-        if ($obj instanceof \Closure) {
+        if ($object instanceof \Closure) {
             throw new InvalidArgumentException(
                 message: 'Callback::invokable() does not accept Closure; pass a serializable invokable object',
                 context: [
-                    'name'     => 'obj',
-                    'expected' => 'serializable invokable object',
-                    'received' => $obj,
+                    'object'    => $object,
+                    'arguments' => $arguments,
                 ],
             );
         }
 
-        if (! \is_callable($obj)) {
+        if (! \is_callable($object)) {
             throw new InvalidArgumentException(
                 message: 'Object is not invokable',
                 context: [
-                    'name'     => 'obj',
-                    'expected' => 'invokable object',
-                    'received' => $obj,
+                    'object'    => $object,
+                    'arguments' => $arguments,
                 ],
             );
         }
 
-        return new static($obj, array_values($args));
+        return new static($object, $arguments);
     }
 
     public function __invoke(
-        mixed ...$args,
+        mixed ...$arguments,
     ): mixed {
-        return $this->closure()(...$this->boundArgs, ...$args);
+        return $this->closure()(...$this->arguments, ...$arguments);
     }
 
     private function closure(): \Closure
@@ -186,41 +189,81 @@ final class Callback
     }
 
     /**
-     * @param string|object|array{0: string, 1: string} $descriptor
-     * @param list<mixed>                                 $args
+     * @param string|object|array{0: string, 1: string}  $descriptor
+     * @param array<array-key, mixed>                    $arguments
      */
     public static function restore(
-        mixed $descriptor,
-        array $args = [],
+        string|object|array $descriptor,
+        array               $arguments = [],
     ): static {
-        $callback = new \ReflectionClass(static::class)->newInstanceWithoutConstructor();
+        $callback = Reflect::class(Callback::class)->getInstance();
         $callback->__unserialize([
             'descriptor' => $descriptor,
-            'args'       => $args,
+            'arguments'  => $arguments,
         ]);
 
         return $callback;
     }
 
+    public function _export(): string
+    {
+        $data = $this->__serialize();
+
+        return Export::call(
+            self::class,
+            'restore',
+            $data['descriptor'],
+            $data['arguments'],
+        );
+    }
+
     /**
-     * @return array{descriptor: string|object|array{0: string, 1: string}, args: list<mixed>}
+     * @return array{
+     *     descriptor: string|object|array{0: string, 1: string},
+     *     arguments: array<array-key,mixed>
+     * }
      */
     public function __serialize(): array
     {
         return [
             'descriptor' => $this->descriptor,
-            'args'       => $this->boundArgs,
+            'arguments'  => $this->arguments,
         ];
     }
 
     /**
-     * @param array{descriptor: string|object|array{0: string, 1: string}, args?: list<mixed>} $data
+     * @param array{
+     *      descriptor: string|object|array{0: string, 1: string},
+     *      arguments: array<array-key,mixed>
+     *  } $data
      */
     public function __unserialize(
         array $data,
     ): void {
         $this->descriptor = $data['descriptor'];
-        $this->boundArgs  = $data['args'] ?? [];
+        $this->arguments  = $data['arguments'] ?? [];
         $this->fn         = null;
+    }
+
+    /**
+     * @return array{
+     *     descriptor: string|object|array{0: string, 1: string},
+     *     arguments: array<array-key,mixed>
+     * }
+     */
+    public function __debugInfo(): array
+    {
+        return $this->__serialize();
+    }
+
+    /**
+     * @return array{
+     *     descriptor: string|object|array{0: string, 1: string},
+     *     arguments: array<array-key,mixed>
+     * }
+     */
+    public function jsonSerialize(): array
+    {
+        return $this->__serialize();
     }
 }

@@ -8,7 +8,7 @@ use Northrook\Container\Autowire;
 use Northrook\PathfinderInterface;
 
 /**
- * Autowires the container {@see PathfinderInterface} into {@see static::$pathfinder}.
+ * {@see Autowire} the container {@see PathfinderInterface} into {@see static::$pathfinder}.
  */
 trait Pathfinder
 {
@@ -19,7 +19,7 @@ trait Pathfinder
      *
      * @return void
      */
-    final public function __autowirePathfinder(
+    final public function _autowire_Pathfinder(
         #[Autowire(PathfinderInterface::class)]
         PathfinderInterface $pathfinder,
     ): void {

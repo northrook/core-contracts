@@ -56,7 +56,8 @@
     "composer-runtime-api": "^2.2",
     "northrook/hashes": "dev-main",
     "ext-fileinfo": "*",
-    "ext-intl": "*"
+    "ext-intl": "*",
+    "ext-mbstring": "*"
   },
   "require-dev": {
     "northrook/php-generator": "dev-main",

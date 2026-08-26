@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
+use Northrook\Callback;
+use Northrook\Container\Service\Tag;
 use Northrook\Export;
 use Northrook\Export\Exporter;
 use Northrook\InvalidArgumentException;
@@ -182,6 +184,133 @@ final class ExportTest extends TestCase
         self::assertSame(1, $hydrated->value);
     }
 
+    public function testClassExportEmitsNamedArguments(): void
+    {
+        $export = Export::class(Tag::class, 'role.logger', handler: 'stream', priority: 2);
+
+        self::assertSame(
+            <<<'PHP'
+                new \Northrook\Container\Service\Tag(
+                    'role.logger',
+                    handler: 'stream',
+                    priority: 2,
+                );
+
+                PHP,
+            $export,
+        );
+
+        $hydrated = self::evalDump($export);
+        self::assertInstanceOf(Tag::class, $hydrated);
+        self::assertSame('role.logger', $hydrated->reference);
+        self::assertSame(['handler' => 'stream', 'priority' => 2], $hydrated->arguments);
+    }
+
+    public function testClassExportRejectsInvalidNamedArgumentIdentifiers(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Named export arguments must be valid PHP identifiers.');
+
+        $arguments = ['bad-key' => 'value'];
+        Export::class(Tag::class, 'role.logger', ...$arguments);
+    }
+
+    public function testExportableTagRoundTripsNamedArguments(): void
+    {
+        $tag      = new Tag('role.logger', handler: 'stream', priority: 2);
+        $exported = $tag->_export();
+
+        self::assertStringContainsString("handler: 'stream'", $exported);
+        self::assertStringContainsString('priority: 2', $exported);
+
+        $hydrated = self::evalDump($exported);
+        self::assertInstanceOf(Tag::class, $hydrated);
+        self::assertSame($tag->reference, $hydrated->reference);
+        self::assertSame($tag->arguments, $hydrated->arguments);
+    }
+
+    public function testCallExportRemainsEvalableAtRoot(): void
+    {
+        $export = Export::call(Callback::class, 'restore', 'strlen', []);
+
+        self::assertStringEndsWith(");\n", $export);
+        self::assertSame(
+            <<<'PHP'
+                \Northrook\Callback::restore(
+                    'strlen',
+                    [],
+                );
+
+                PHP,
+            $export,
+        );
+
+        $hydrated = self::evalDump($export);
+        self::assertInstanceOf(Callback::class, $hydrated);
+        self::assertSame(5, $hydrated('hello'));
+    }
+
+    public function testCallExportEmitsNamedArguments(): void
+    {
+        $export = Export::call(
+            Callback::class,
+            'restore',
+            descriptor: 'strlen',
+            arguments: [],
+        );
+
+        self::assertSame(
+            <<<'PHP'
+                \Northrook\Callback::restore(
+                    descriptor: 'strlen',
+                    arguments: [],
+                );
+
+                PHP,
+            $export,
+        );
+
+        $hydrated = self::evalDump($export);
+        self::assertInstanceOf(Callback::class, $hydrated);
+        self::assertSame(4, $hydrated('abcd'));
+    }
+
+    public function testCallExportRejectsInvalidMethodIdentifiers(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Export::call method must be a valid PHP identifier.');
+
+        Export::call(Callback::class, 'bad-method');
+    }
+
+    public function testExportableCallbackRoundTripsViaRestore(): void
+    {
+        $callback = Callback::staticMethod(\DateTimeImmutable::class, 'createFromFormat', 'Y-m-d');
+        $exported = $callback->_export();
+
+        self::assertStringStartsWith('\\Northrook\\Callback::restore(', $exported);
+
+        $hydrated = self::evalDump($exported);
+        self::assertInstanceOf(Callback::class, $hydrated);
+        self::assertInstanceOf(\DateTimeImmutable::class, $hydrated('2026-08-25'));
+    }
+
+    public function testNestedCallOmitsStatementTerminator(): void
+    {
+        $export = Export::array([
+            'cb' => Callback::function(
+                'strlen',
+            ),
+        ]);
+
+        self::assertStringNotContainsString(");\n", $export);
+        self::assertStringContainsString('::restore(', $export);
+
+        $hydrated = self::evalDump($export);
+        self::assertInstanceOf(Callback::class, $hydrated['cb']);
+        self::assertSame(3, $hydrated['cb']('abc'));
+    }
+
     public function testConstEmitsTheGivenSource(): void
     {
         $export = Export::array([
@@ -206,11 +335,44 @@ final class ExportTest extends TestCase
         );
     }
 
+    /**
+     * @return list<array{0: string, 1: string}>
+     */
+    public static function provideStringDumps(): array
+    {
+        return [
+            ['',                          "''"],
+            ['hello',                     "'hello'"],
+            ["o'clock",                   "'o\\'clock'"],
+            ['c:\\tmp',                   "'c:\\\\tmp'"],
+            ["line\nbreak",               "'line'.\"\\n\".'break'"],
+            ["\n",                        '"\\n"'],
+            ["foo\n",                     "'foo'.\"\\n\""],
+            ["\nfoo",                     '"\\n".\'foo\''],
+            ["a\0b",                      "'a'.\"\\0\".'b'"],
+            ["\0",                        '"\\0"'],
+            ["a\r\nb",                    "'a'.\"\\r\".\"\\n\".'b'"],
+            ["a\n\nb",                    "'a'.\"\\n\".\"\\n\".'b'"],
+            ["abc\u{202E}cba",            "'abc'.\"\\u{202E}\".'cba'"],
+            ["line\nbreak\r\ttab\\slash", "'line'.\"\\n\".'break'.\"\\r\".'\ttab\\\\slash'"],
+        ];
+    }
+
+    #[DataProvider('provideStringDumps')]
+    public function testStringDumpAndHydration(
+        string $value,
+        string $dump,
+    ): void {
+        self::assertSame($dump, Export::string($value));
+        self::assertSame($dump, Export::value($value));
+        self::assertSame($value, self::evalDump($dump));
+        self::assertStringNotContainsString("\0", $dump);
+        self::assertStringNotContainsString("\r", $dump);
+        self::assertStringNotContainsString("\n", $dump);
+    }
+
     public function testStringEscapesQuotesAndBackslashes(): void
     {
-        self::assertSame("'o\\'clock'", Export::string("o'clock"));
-        self::assertSame("'c:\\\\tmp'", Export::string('c:\\tmp'));
-        self::assertSame("''", Export::string(''));
         self::assertSame(
             <<<'PHP'
                 [
@@ -218,6 +380,14 @@ final class ExportTest extends TestCase
                 ]
                 PHP,
             Export::array(["o'clock" => 'c:\\tmp']),
+        );
+        self::assertSame(
+            <<<'PHP'
+                [
+                    'note' => 'line'."\n".'break',
+                ]
+                PHP,
+            Export::array(['note' => "line\nbreak"]),
         );
     }
 

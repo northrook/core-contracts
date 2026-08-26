@@ -81,7 +81,7 @@ final class ServiceBindingsTest extends TestCase
         $tag = new Tag('role.logger');
 
         self::assertSame('role.logger', $tag->reference);
-        self::assertNull($tag->arguments);
+        self::assertSame([], $tag->arguments);
     }
 
     public function testTagWithArguments(): void
@@ -91,28 +91,11 @@ final class ServiceBindingsTest extends TestCase
         self::assertSame(['channel', 2], $tag->arguments);
     }
 
-    public function testTagFromString(): void
+    public function testTagWithNamedArguments(): void
     {
-        $tag = Tag::from('role.logger');
+        $tag = new Tag('role.logger', handler: 'stream', priority: 2);
 
-        self::assertSame('role.logger', $tag->reference);
-        self::assertNull($tag->arguments);
-    }
-
-    public function testTagFromArrayShiftsReference(): void
-    {
-        $tag = Tag::from(['role.logger', 'channel']);
-
-        self::assertSame('role.logger', $tag->reference);
-        self::assertSame(['channel'], $tag->arguments);
-    }
-
-    public function testTagFromMergesArrayValueWithExtraArguments(): void
-    {
-        $tag = Tag::from(['role.logger', 'inline'], 'extra');
-
-        self::assertSame('role.logger', $tag->reference);
-        self::assertSame(['extra', 'inline'], $tag->arguments);
+        self::assertSame(['handler' => 'stream', 'priority' => 2], $tag->arguments);
     }
 
     public function testTagRejectsEmptyReference(): void
@@ -202,15 +185,14 @@ final class ServiceBindingsTest extends TestCase
             \array_map(static fn(Tag $tag): string => $tag->reference, $tags),
         );
         self::assertSame(
-            [null],
-            \array_map(static fn(Tag $tag): null|array => $tag->arguments, $tags),
+            [[]],
+            \array_map(static fn(Tag $tag): array => $tag->arguments, $tags),
         );
     }
 
     public function testAutodiscoverResolvesTagList(): void
     {
-        // @phpstan-ignore-next-line Valid tag shapes.
-        $tags = new Autodiscover(tags: ['role.a', ['role.b', 'arg']])->tags;
+        $tags = new Autodiscover(tags: ['role.a', new Tag('role.b', 'arg')])->tags;
 
         if ($tags === null) {
             self::fail('Expected Autodiscover tags to be resolved.');
@@ -221,14 +203,13 @@ final class ServiceBindingsTest extends TestCase
             \array_map(static fn(Tag $tag): string => $tag->reference, $tags),
         );
         self::assertSame(
-            [null, ['arg']],
-            \array_map(static fn(Tag $tag): null|array => $tag->arguments, $tags),
+            [[], ['arg']],
+            \array_map(static fn(Tag $tag): array => $tag->arguments, $tags),
         );
     }
 
     public function testAutodiscoverCombinesTagAndTags(): void
     {
-        // @phpstan-ignore-next-line Valid tag shapes.
         $tags = new Autodiscover(
             tag: 'role.a',
             tags: ['role.b'],

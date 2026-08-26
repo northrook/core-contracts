@@ -18,6 +18,26 @@ final class Export implements Resettable
 {
     private const string INDENT = '    ';
 
+    /**
+     * Spliced as double-quoted pieces. `\0` in single quotes is backslash + `0`.
+     *
+     * @var array<string, string>
+     */
+    private const array STRING_CONTROLS = [
+        "\0"       => '\'."\\0".\'',
+        "\r"       => '\'."\\r".\'',
+        "\n"       => '\'."\\n".\'',
+        "\u{202A}" => '\'."\\u{202A}".\'',
+        "\u{202B}" => '\'."\\u{202B}".\'',
+        "\u{202C}" => '\'."\\u{202C}".\'',
+        "\u{202D}" => '\'."\\u{202D}".\'',
+        "\u{202E}" => '\'."\\u{202E}".\'',
+        "\u{2066}" => '\'."\\u{2066}".\'',
+        "\u{2067}" => '\'."\\u{2067}".\'',
+        "\u{2068}" => '\'."\\u{2068}".\'',
+        "\u{2069}" => '\'."\\u{2069}".\'',
+    ];
+
     private static null|Exporter $exporter = null;
 
     private static bool $failsafe = false;
@@ -45,9 +65,28 @@ final class Export implements Resettable
             return "''";
         }
 
-        // TODO : Look into porting the Symfony VarExporter later
+        $quoted = "'" . \addcslashes($value, "'\\") . "'";
+        $string = \str_replace(
+            \array_keys(self::STRING_CONTROLS),
+            \array_values(self::STRING_CONTROLS),
+            $quoted,
+        );
 
-        return "'" . \addcslashes($value, "'\\") . "'";
+        if ($string === $quoted) {
+            return $string;
+        }
+
+        $string = \str_replace('.\'\'.', '.', $string);
+
+        if (\str_starts_with($string, "''.")) {
+            $string = \substr($string, 3);
+        }
+
+        if (\str_ends_with($string, ".''")) {
+            $string = \substr($string, 0, -3);
+        }
+
+        return $string;
     }
 
     public static function value(
@@ -187,6 +226,8 @@ final class Export implements Resettable
     }
 
     /**
+     * Eval-able `new Class(...)` dump. Named variadic keys emit as call-site named args.
+     *
      * @param class-string  $className
      * @param mixed         ...$arguments
      *
@@ -196,31 +237,118 @@ final class Export implements Resettable
         string   $className,
         mixed ...$arguments,
     ): string {
-        $class = '\\' . \trim($className, '\\');
+        return self::invocation(
+            'new ' . self::className($className),
+            $arguments,
+        );
+    }
+
+    /**
+     * Eval-able `Class::method(...)` dump. Named variadic keys emit as call-site named args.
+     *
+     * The dump does not resolve or validate that {@see $method} exists.
+     *
+     * @param class-string     $className
+     * @param non-empty-string $method
+     * @param mixed            ...$arguments
+     *
+     * @return string
+     */
+    public static function call(
+        string   $className,
+        string   $method,
+        mixed ...$arguments,
+    ): string {
+        if (! self::isNamedArgument($method)) {
+            throw new InvalidArgumentException(
+                message: 'Export::call method must be a valid PHP identifier.',
+                context: ['method' => $method],
+            );
+        }
+
+        return self::invocation(
+            self::className($className) . '::' . $method,
+            $arguments,
+        );
+    }
+
+    /**
+     * @param non-empty-string        $callee  `new \Class` or `\Class::method`
+     * @param array<array-key, mixed> $arguments
+     */
+    private static function invocation(
+        string $callee,
+        array  $arguments,
+    ): string {
         $close = self::pad();
-        $item  = self::pad(1);
         $root  = self::$depth === 0;
 
         self::$depth++;
 
         try {
-            $arguments = \array_map(
-                static fn(mixed $argument): string => $item . Export::value($argument),
-                $arguments,
-            );
+            $args = self::formatArguments($arguments);
         }
         finally {
             self::$depth--;
         }
 
-        if ($arguments === []) {
-            $export = "new {$class}()";
+        if ($args === []) {
+            $export = "{$callee}()";
         }
         else {
-            $export = "new {$class}(\n" . \implode(",\n", $arguments) . ",\n{$close})";
+            $export = "{$callee}(\n" . \implode(",\n", $args) . ",\n{$close})";
         }
 
         return $root ? $export . ";\n" : $export;
+    }
+
+    /**
+     * @param array<array-key, mixed> $arguments
+     *
+     * @return list<string>
+     */
+    private static function formatArguments(
+        array $arguments,
+    ): array {
+        $item  = self::pad();
+        $args  = [];
+        $named = false;
+
+        foreach ($arguments as $index => $argument) {
+            if (\is_int($index)) {
+                if ($named) {
+                    throw new InvalidArgumentException(
+                        message: 'Cannot mix named and positional arguments.',
+                    );
+                }
+
+                $args[] = $item . Export::value($argument);
+                continue;
+            }
+
+            if (! self::isNamedArgument($index)) {
+                throw new InvalidArgumentException(
+                    message: 'Named export arguments must be valid PHP identifiers.',
+                    context: ['name' => $index],
+                );
+            }
+
+            $named  = true;
+            $args[] = $item . $index . ': ' . Export::value($argument);
+        }
+
+        return $args;
+    }
+
+    /**
+     * @param class-string $className
+     *
+     * @return non-empty-string
+     */
+    private static function className(
+        string $className,
+    ): string {
+        return '\\' . \trim($className, '\\');
     }
 
     /**
@@ -294,6 +422,17 @@ final class Export implements Resettable
         return \is_int($value)
             ? \strval($value)
             : Export::string($value);
+    }
+
+    /**
+     * PHP named-argument identifier: letter/`_`/high-byte first, then alnum/`_`/high-byte.
+     *
+     * Uses `\A`/`\z` (not `^`/`$`) so a trailing newline cannot match.
+     */
+    private static function isNamedArgument(
+        string $name,
+    ): bool {
+        return \preg_match('/\A[A-Za-z_\x80-\xff][A-Za-z0-9_\x80-\xff]*\z/', $name) === 1;
     }
 
     /**

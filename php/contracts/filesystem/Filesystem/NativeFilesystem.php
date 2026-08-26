@@ -780,12 +780,8 @@ final class NativeFilesystem implements FilesystemInterface
                         path   : $path,
                     );
                 }
-
-                $temp = null;
             }
-            else {
-                $temp = null;
-            }
+            $temp = null;
         }
         finally {
             if ($temp !== null && \is_file($temp)) {

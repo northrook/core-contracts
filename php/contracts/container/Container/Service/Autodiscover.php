@@ -17,7 +17,6 @@ use Northrook\Container\ServiceBinding;
  * {@see \Northrook\ContainerInterface::DEFAULT_REFERENCE} when registered via
  * {@see \Northrook\Container\ServiceDefinition::register()}.
  *
- * @phpstan-import-type TagFrom from \Northrook\Container\Service\Tag
  * @phpstan-type ArgumentMap array<non-empty-string|int<0, max>, mixed>
  */
 #[\Attribute(\Attribute::TARGET_CLASS)]
@@ -75,8 +74,8 @@ final readonly class Autodiscover implements AutodiscoverInterface
     /**
      * @param null|\Northrook\Container\ServiceBinding|string  $binding
      * @param null|class-string|class-string[]                 $alias
-     * @param null|TagFrom                                     $tag
-     * @param null|list<TagFrom>                               $tags
+     * @param null|non-empty-string                            $tag
+     * @param null|list<non-empty-string|Tag>                  $tags
      * @param null|ArgumentMap                                 $arguments
      * @param null|bool                                        $autowire
      * @param null|bool                                        $preload
@@ -86,7 +85,7 @@ final readonly class Autodiscover implements AutodiscoverInterface
     public function __construct(
         null|ServiceBinding|string $binding = null,
         null|string|array          $alias = null,
-        null|string|array          $tag = null,
+        null|string                $tag = null,
         null|array                 $tags = null,
         null|array                 $arguments = null,
         null|bool                  $autowire = null,
@@ -120,14 +119,14 @@ final readonly class Autodiscover implements AutodiscoverInterface
     }
 
     /**
-     * @param null|TagFrom      $tag
-     * @param null|list<TagFrom> $tags
+     * @param null|non-empty-string           $tag
+     * @param null|list<non-empty-string|Tag> $tags
      *
      * @return null|list<Tag>
      */
     private function resolveTags(
-        null|string|array $tag,
-        null|array        $tags,
+        null|string $tag,
+        null|array  $tags,
     ): null|array {
         if ($tag === null && $tags === null) {
             return null;
@@ -136,12 +135,12 @@ final readonly class Autodiscover implements AutodiscoverInterface
         $resolved = [];
 
         if (! empty($tag)) {
-            $resolved[] = Tag::from($tag);
+            $resolved[] = new Tag($tag);
         }
 
         if (! empty($tags)) {
             foreach ($tags as $entry) {
-                $resolved[] = Tag::from($entry);
+                $resolved[] = $entry instanceof Tag ? $entry : new Tag($entry);
             }
         }
 

@@ -28,7 +28,6 @@ use Northrook\Snapshot;
  *
  * Use {@see export()} for dumps and {@see finalize()} for the compile pipeline.
  *
- * @phpstan-import-type TagFrom from \Northrook\Container\Service\Tag
  * @phpstan-type ArgumentKey non-empty-string|int<0, max>
  * @phpstan-type ArgumentMap array<non-empty-string|int<0, max>, mixed>
  */
@@ -98,7 +97,7 @@ final class ServiceDefinition
      * @param class-string                                                        $class
      * @param ServiceBinding                                                      $binding
      * @param class-string|Alias|array<array-key, class-string>                   $aliases
-     * @param array<int, Tag|TagFrom>                                             $tags
+     * @param array<int, Tag|non-empty-string>                                    $tags
      * @param ArgumentMap                                                         $arguments
      * @param bool                                                                $autowire
      * @param bool                                                                $preload
@@ -256,7 +255,7 @@ final class ServiceDefinition
     }
 
     /**
-     * @param array<int, Tag|TagFrom> $tags
+     * @param array<int, Tag|non-empty-string> $tags
      */
     public function setTags(
         array $tags,
@@ -268,17 +267,17 @@ final class ServiceDefinition
     }
 
     /**
-     * @param TagFrom $tag
+     * @param non-empty-string $tag
      *
      * @throws ContainerException on duplicate tag reference
      */
     public function addTag(
-        string|array $tag,
-        mixed ...    $arguments,
+        string   $tag,
+        mixed ...$arguments,
     ): self {
         $this->frozen();
 
-        $resolved = Tag::from($tag, ...$arguments);
+        $resolved = new Tag($tag, ...$arguments);
 
         if ($this->hasTag($resolved->reference)) {
             throw new ContainerException(
@@ -600,17 +599,19 @@ final class ServiceDefinition
     }
 
     /**
-     * @param class-string                         $class
-     * @param null|Autodiscover                    $autodiscover
-     * @param array<array-key, class-string>       $aliases
-     * @param array<int, Tag|TagFrom>              $tags
-     * @param ArgumentMap                          $arguments
-     * @param bool                                 $autowire
-     * @param bool                                 $preload
-     * @param false|string                         $factory
-     * @param \Northrook\Callback[]      $callbacks
-     * @param ServiceBinding                       $binding
-     * @param bool                                 $locked
+     * @param class-string                      $class
+     * @param null|Autodiscover                 $autodiscover
+     * @param array<array-key, class-string>    $aliases
+     * @param array<int, Tag|non-empty-string>  $tags
+     * @param ArgumentMap                       $arguments
+     * @param bool                              $autowire
+     * @param bool                              $preload
+     * @param false|string                      $factory
+     * @param \Northrook\Callback[]             $callbacks
+     * @param ServiceBinding                    $binding
+     * @param bool                              $locked
+     *
+     * @return \Northrook\Container\ServiceDefinition
      */
     public static function register(
         string            $class,
@@ -647,11 +648,11 @@ final class ServiceDefinition
      *     class: class-string,
      *     binding: string,
      *     aliases: array<int, class-string>,
-     *     tags: list<array{reference: non-empty-string, arguments: null|array<array-key, mixed>}>,
+     *     tags: list<array{reference: non-empty-string, arguments: array<array-key, mixed>}>,
      *     autowire: bool,
      *     preload: bool,
      *     factory: false|string,
-     *     callbacks: list<array{descriptor: mixed, args: list<mixed>}>,
+     *     callbacks: list<array{descriptor: mixed, arguments: array<array-key, mixed>}>,
      *     locked: bool
      * }
      */
@@ -729,7 +730,7 @@ final class ServiceDefinition
     }
 
     /**
-     * @param array<int, Tag|TagFrom> $tags
+     * @param array<int, Tag|non-empty-string> $tags
      *
      * @return list<Tag>
      */
@@ -740,7 +741,7 @@ final class ServiceDefinition
         $seen     = [];
 
         foreach ($tags as $tag) {
-            $item = $tag instanceof Tag ? $tag : Tag::from($tag);
+            $item = $tag instanceof Tag ? $tag : new Tag($tag);
 
             if (isset($seen[$item->reference])) {
                 throw new ContainerException(
@@ -894,11 +895,11 @@ final class ServiceDefinition
      *     class: class-string,
      *     binding: string,
      *     aliases: array<int, class-string>,
-     *     tags: list<array{reference: non-empty-string, arguments: null|array<array-key, mixed>}>,
+     *     tags: list<array{reference: non-empty-string, arguments: array<array-key, mixed>}>,
      *     autowire: bool,
      *     preload: bool,
      *     factory: false|string,
-     *     callbacks: list<array{descriptor: mixed, args: list<mixed>}>,
+     *     callbacks: list<array{descriptor: mixed, arguments: array<array-key, mixed>}>,
      *     locked: bool
      * }
      */
@@ -932,17 +933,13 @@ final class ServiceDefinition
     }
 
     /**
-     * @param null|array<array-key, mixed> $arguments
+     * @param array<array-key, mixed> $arguments
      *
-     * @return null|array<array-key, mixed>
+     * @return array<array-key, mixed>
      */
     private function exportTagArguments(
-        null|array $arguments,
-    ): null|array {
-        if ($arguments === null) {
-            return null;
-        }
-
+        array $arguments,
+    ): array {
         $frozen = Snapshot::freeze($arguments);
 
         return \is_array($frozen) ? $frozen : [$frozen];

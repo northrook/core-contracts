@@ -210,20 +210,20 @@ final class CallbackTest extends TestCase
         self::assertSame(3, $restored());
     }
 
-    public function testSerializeExposesDescriptorAndArgs(): void
+    public function testSerializeExposesDescriptorAndArguments(): void
     {
         $callback = Callback::staticMethod(\DateTimeImmutable::class, 'createFromFormat', 'Y-m-d');
 
         self::assertSame(
             [
                 'descriptor' => [\DateTimeImmutable::class, 'createFromFormat'],
-                'args'       => ['Y-m-d'],
+                'arguments'  => ['Y-m-d'],
             ],
             $callback->__serialize(),
         );
     }
 
-    public function testUnserializeDefaultsMissingArgsToEmptyList(): void
+    public function testUnserializeDefaultsMissingArgumentsToEmptyList(): void
     {
         $callback = Callback::restore('strlen');
 
@@ -235,7 +235,7 @@ final class CallbackTest extends TestCase
     {
         $original   = Callback::staticMethod(\DateTimeImmutable::class, 'createFromFormat', 'Y-m-d');
         $serialized = $original->__serialize();
-        $restored   = Callback::restore($serialized['descriptor'], $serialized['args']);
+        $restored   = Callback::restore($serialized['descriptor'], $serialized['arguments']);
 
         self::assertInstanceOf(\DateTimeImmutable::class, $restored('2026-08-25'));
     }

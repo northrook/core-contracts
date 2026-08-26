@@ -18,6 +18,43 @@ final readonly class Reflect
     ) {}
 
     /**
+     * @param mixed ...$arguments
+     *
+     * @return T
+     */
+    public function newInstance(
+        mixed ...$arguments,
+    ): object {
+        try {
+            return $this->class->newInstance(...$arguments);
+        }
+        catch (\Throwable $exception) {
+            throw new RuntimeException(
+                message : 'Failed to instantiate class ' . $this->class->name,
+                context : ['class' => $this->class->name, 'arguments' => $arguments],
+                previous: $exception,
+            );
+        }
+    }
+
+    /**
+     * @return T
+     */
+    public function getInstance(): object
+    {
+        try {
+            return $this->class->newInstanceWithoutConstructor();
+        }
+        catch (\Throwable $exception) {
+            throw new RuntimeException(
+                message : 'Failed to instantiate class ' . $this->class->name,
+                context : ['class' => $this->class->name],
+                previous: $exception,
+            );
+        }
+    }
+
+    /**
      * @return array<non-empty-string, \ReflectionProperty>
      */
     public function getPropertiesMap(

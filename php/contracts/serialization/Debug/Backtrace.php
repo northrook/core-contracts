@@ -134,10 +134,9 @@ final class Backtrace implements \Countable, \IteratorAggregate
     public function at(
         int $index,
     ): self {
-        $clone        = clone $this;
-        $clone->index = $this->clamp($index);
-
-        return $clone;
+        return \clone($this, [
+            'index' => $this->clamp($index),
+        ]);
     }
 
     /**

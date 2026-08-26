@@ -7,6 +7,8 @@ namespace Northrook;
 use Northrook\Contracts\Resettable;
 use Symfony\Component\VarExporter\VarExporter;
 
+// TODO : [m] Rework required
+
 /**
  * Controlled export helpers that temporarily allow trusted serialization of
  * secret-bearing {@see Serializable} graphs in public environments.
@@ -53,7 +55,16 @@ final class Exporter implements Resettable
             throw new RuntimeException('symfony/var-exporter is required for Exporter::var().');
         }
 
-        return self::withOverride(static fn(): string => VarExporter::export($value));
+        try {
+            return self::withOverride(static fn(): string => VarExporter::export($value));
+        }
+        catch (\Symfony\Component\VarExporter\Exception\ExceptionInterface $exception) {
+            throw new RuntimeException(
+                message : 'symfony/var-exporter failed to export value.',
+                context : ['value' => $value],
+                previous: $exception,
+            );
+        }
     }
 
     /**

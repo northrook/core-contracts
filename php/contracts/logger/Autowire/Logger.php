@@ -30,7 +30,7 @@ trait Logger
      *
      * @return void
      */
-    final public function __autowireLogger(
+    final public function _autowire_Logger(
         #[Autowire(LoggerInterface::class)]
         null|LoggerInterface $logger,
         bool                 $assignNull = false,

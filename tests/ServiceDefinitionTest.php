@@ -264,7 +264,7 @@ final class ServiceDefinitionTest extends TestCase
         self::assertSame('scoped', $export['binding']);
         self::assertSame([ServiceDefinitionAliasInterface::class], $export['aliases']);
         self::assertSame(
-            [['reference' => 'export.tag', 'arguments' => null]],
+            [['reference' => 'export.tag', 'arguments' => []]],
             $export['tags'],
         );
         self::assertTrue($export['autowire']);
@@ -279,7 +279,7 @@ final class ServiceDefinitionTest extends TestCase
         $definition = ServiceDefinition::register(
             ServiceDefinitionFixtureB::class,
             aliases: [ServiceDefinitionAliasInterface::class],
-            tags: [['compiled.tag', 1]],
+            tags: [new Tag('compiled.tag', 1)],
             binding: ServiceBinding::Unique,
         );
 
@@ -463,7 +463,7 @@ final class ServiceDefinitionTest extends TestCase
         $definition = ServiceDefinition::register(ServiceDefinitionFixtureB::class);
 
         $this->expectException(ContainerException::class);
-        $definition->setTags(['dup.tag', ['dup.tag', 'arg']]);
+        $definition->setTags(['dup.tag', new Tag('dup.tag', 'arg')]);
     }
 
     public function testSetTagsAcceptsTagInstancesAndReplaces(): void
@@ -480,11 +480,11 @@ final class ServiceDefinitionTest extends TestCase
         self::assertSame([$tag], $definition->tags);
     }
 
-    public function testAddTagArrayForm(): void
+    public function testAddTagWithArguments(): void
     {
         $definition = ServiceDefinition::register(ServiceDefinitionFixtureB::class);
 
-        $definition->addTag(['array.tag', 'arg']);
+        $definition->addTag('array.tag', 'arg');
 
         self::assertTrue($definition->hasTag('array.tag'));
         self::assertSame(['arg'], $definition->getTag('array.tag')?->arguments);
@@ -757,7 +757,7 @@ final class ServiceDefinitionTest extends TestCase
         self::assertContains(
             [
                 'reference' => 'other.tag',
-                'arguments' => null,
+                'arguments' => [],
             ],
             $export['tags'],
         );

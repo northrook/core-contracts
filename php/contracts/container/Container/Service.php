@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Northrook\Container;
 
 use Northrook\Container\Service\Tag;
+use Northrook\Contracts\Exportable;
+use Northrook\Export;
+use Northrook\Serializer;
 
 /**
  * Immutable, finalized service definition for the container COMPILE phase.
@@ -15,8 +18,10 @@ use Northrook\Container\Service\Tag;
  * {@see \Northrook\ContainerInterface::DEFAULT_REFERENCE} tag when present;
  * there is no separate arguments field.
  */
-final readonly class Service
+final readonly class Service implements Exportable
 {
+    use Serializer;
+
     /**
      * @param non-empty-lowercase-string           $id
      * @param class-string                         $class
@@ -53,5 +58,23 @@ final readonly class Service
         string $alias,
     ): bool {
         return \in_array($alias, $this->aliases, true);
+    }
+
+    public function _export(): string
+    {
+        $this->guardExport();
+
+        return Export::class(
+            self::class,
+            $this->id,
+            $this->class,
+            $this->binding,
+            $this->aliases,
+            $this->tags,
+            $this->autowire,
+            $this->preload,
+            $this->factory,
+            $this->callbacks,
+        );
     }
 }

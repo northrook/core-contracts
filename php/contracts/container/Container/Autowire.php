@@ -33,6 +33,8 @@ use Northrook\PathfinderInterface;
 #[\Attribute(\Attribute::TARGET_PARAMETER | \Attribute::TARGET_PROPERTY)]
 final readonly class Autowire
 {
+    public const string METHOD_PREFIX = '_autowire_';
+
     /** @var HandlerType */
     public string $type;
 

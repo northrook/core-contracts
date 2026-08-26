@@ -220,7 +220,7 @@ readonly class Href implements Reference
             return self::Relative;
         }
 
-        $scheme = \strtolower((string) \explode(':', $value, 2)[0]);
+        $scheme = \strtolower(\explode(':', $value, 2)[0]);
 
         return match ($scheme) {
             'http'   => self::Http,
@@ -304,7 +304,7 @@ readonly class Href implements Reference
             return null;
         }
 
-        return \strtolower((string) \explode(':', $this->value, 2)[0]);
+        return \strtolower(\explode(':', $this->value, 2)[0]);
     }
 
     /**
