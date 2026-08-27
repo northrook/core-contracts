@@ -23,6 +23,9 @@ final class NativeLogger extends AbstractLogger
      */
     private readonly null|string $logFile;
 
+    /** @var list<non-empty-string> */
+    public private(set) array $entries = [];
+
     /**
      * @param null|string $path Log file to append, or directory that receives `Y-m-d.log`
      */
@@ -56,6 +59,8 @@ final class NativeLogger extends AbstractLogger
         }
 
         $line = "{$timestamp} [{$label}] {$message}";
+
+        $this->entries[] = $line;
 
         if ($this->logFile !== null && $this->appendToFile($line)) {
             return;

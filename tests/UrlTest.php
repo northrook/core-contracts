@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
-use Northrook\Context;
 use Northrook\CurlException;
 use Northrook\CurlInterface;
 use Northrook\DependencyException;
@@ -13,23 +12,12 @@ use Northrook\Reference\Href;
 use Northrook\Reference\Uri;
 use Northrook\Reference\Url;
 use Northrook\Runtime\Assert;
-use Northrook\Singleton;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Contracts\HttpClient\ResponseInterface;
 
 final class UrlTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        $this->resetContext();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->resetContext();
-    }
-
     #[DataProvider('provideAcceptedUrls')]
     public function testAcceptsHttpUrls(
         string $input,
@@ -222,19 +210,6 @@ final class UrlTest extends TestCase
         self::assertTrue($url->probe());
     }
 
-    public function testProbeFallsBackToRegisteredHttpClient(): void
-    {
-        $curl = $this->createMock(CurlInterface::class);
-        $curl->expects(self::once())->method('probeUrl')->willReturn(true);
-
-        Context::register(
-            rootDirectory: __DIR__ . '/..',
-            curlClient   : $curl,
-        );
-
-        self::assertTrue(new Url('https://example.com')->probe());
-    }
-
     public function testFetchDelegatesToHttpClient(): void
     {
         $response = $this->createStub(ResponseInterface::class);
@@ -306,11 +281,5 @@ final class UrlTest extends TestCase
         self::assertSame('content', \file_get_contents($resolved));
         @\unlink($resolved);
         @\rmdir($location);
-    }
-
-    private function resetContext(): void
-    {
-        $property = new \ReflectionProperty(Singleton::class, '_instance');
-        $property->setValue(null, []);
     }
 }

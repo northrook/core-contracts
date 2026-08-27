@@ -130,7 +130,7 @@ final readonly class Timestamp implements \Stringable
     ): \DateTimeImmutable {
         try {
             $timezone ??= Context::isRegistered()
-                ? Context::get()->timezone
+                ? Context::timezone()
                 : new \DateTimeZone(\date_default_timezone_get());
 
             $seconds      = \intdiv($this->number, 1000);

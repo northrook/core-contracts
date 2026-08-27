@@ -15,12 +15,12 @@ use Northrook\Context;
 use Northrook\Context\AppEnv;
 use Northrook\Context\ContextManager;
 use Northrook\Contracts\Serializable;
+use Northrook\Contracts\Tests\Support\ResetsContext;
 use Northrook\Contracts\Tests\Support\SecretMask;
 use Northrook\Kernel\KernelContext;
 use Northrook\Parameter\Secret as SecretPolicy;
 use Northrook\RuntimeException;
 use Northrook\Serializer;
-use Northrook\Singleton;
 use Northrook\Snapshot;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
@@ -93,11 +93,7 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
 
     private function resetIsolation(): void
     {
-        $property = new \ReflectionProperty(Singleton::class, '_instance');
-        $property->setValue(null, []);
-
-        $property = new \ReflectionProperty(ContextManager::class, 'initialized');
-        $property->setValue(null, false);
+        ResetsContext::reset();
     }
 
     // ─── Native: SensitiveParameter attribute on stored properties ─────────

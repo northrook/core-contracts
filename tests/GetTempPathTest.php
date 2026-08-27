@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace Northrook\Contracts\Tests;
 
 use Northrook\Context;
+use Northrook\Contracts\Tests\Support\ResetsContext;
+use Northrook\Hash;
 use Northrook\RuntimeException;
-use Northrook\Singleton;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -18,21 +19,27 @@ final class GetTempPathTest extends TestCase
 
     private const string TEMP_BASENAME = '/^\.temp![0-9A-HJKMNPQRSTVWXYZ]{8}$/';
 
+    private string $unregisteredBase;
+
     protected function setUp(): void
     {
-        $this->resetContext();
+        ResetsContext::reset();
+        $this->unregisteredBase =
+            \sys_get_temp_dir()
+            . \DIR_SEP
+            . Hash::checksum(\dirname(__DIR__) . '/php/functions');
     }
 
     protected function tearDown(): void
     {
-        $this->resetContext();
+        ResetsContext::reset();
     }
 
     public function testDefaultPath(): void
     {
         $path = get_temp_path();
 
-        self::assertStringStartsWith(\sys_get_temp_dir() . \DIR_SEP . 'tmp' . \DIR_SEP, $path);
+        self::assertStringStartsWith($this->unregisteredBase . \DIR_SEP . 'tmp' . \DIR_SEP, $path);
         $this->assertTempHashBasename($path);
     }
 
@@ -40,7 +47,7 @@ final class GetTempPathTest extends TestCase
     {
         $path = get_temp_path('cache');
 
-        self::assertStringStartsWith(\sys_get_temp_dir() . \DIR_SEP . 'cache' . \DIR_SEP, $path);
+        self::assertStringStartsWith($this->unregisteredBase . \DIR_SEP . 'cache' . \DIR_SEP, $path);
         $this->assertTempHashBasename($path);
     }
 
@@ -48,7 +55,7 @@ final class GetTempPathTest extends TestCase
     {
         $path = get_temp_path('');
 
-        self::assertStringStartsWith(\sys_get_temp_dir() . \DIR_SEP . 'tmp' . \DIR_SEP, $path);
+        self::assertStringStartsWith($this->unregisteredBase . \DIR_SEP . 'tmp' . \DIR_SEP, $path);
         $this->assertTempHashBasename($path);
     }
 
@@ -56,7 +63,7 @@ final class GetTempPathTest extends TestCase
     {
         $path = get_temp_path('name!!');
 
-        self::assertStringStartsWith(\sys_get_temp_dir() . \DIR_SEP . 'name' . \DIR_SEP, $path);
+        self::assertStringStartsWith($this->unregisteredBase . \DIR_SEP . 'name' . \DIR_SEP, $path);
         self::assertStringNotContainsString('name!!', $path);
         $this->assertTempHashBasename($path);
     }
@@ -65,7 +72,7 @@ final class GetTempPathTest extends TestCase
     {
         $path = get_temp_path('namespace/cache');
 
-        self::assertStringStartsWith(\sys_get_temp_dir() . \DIR_SEP . 'namespace/cache' . \DIR_SEP, $path);
+        self::assertStringStartsWith($this->unregisteredBase . \DIR_SEP . 'namespace/cache' . \DIR_SEP, $path);
         $this->assertTempHashBasename($path);
     }
 
@@ -73,7 +80,7 @@ final class GetTempPathTest extends TestCase
     {
         $path = get_temp_path('a/./b//c');
 
-        self::assertStringStartsWith(\sys_get_temp_dir() . \DIR_SEP . 'a/b/c' . \DIR_SEP, $path);
+        self::assertStringStartsWith($this->unregisteredBase . \DIR_SEP . 'a/b/c' . \DIR_SEP, $path);
         $this->assertTempHashBasename($path);
     }
 
@@ -81,7 +88,7 @@ final class GetTempPathTest extends TestCase
     {
         $path = get_temp_path('a\b\c');
 
-        self::assertStringStartsWith(\sys_get_temp_dir() . \DIR_SEP . 'a/b/c' . \DIR_SEP, $path);
+        self::assertStringStartsWith($this->unregisteredBase . \DIR_SEP . 'a/b/c' . \DIR_SEP, $path);
         $this->assertTempHashBasename($path);
     }
 
@@ -96,20 +103,20 @@ final class GetTempPathTest extends TestCase
         self::assertSame($paths, array_unique($paths));
     }
 
-    public function testUnregisteredUsesSysTemp(): void
+    public function testUnregisteredUsesSysTempChecksum(): void
     {
         self::assertFalse(Context::isRegistered());
 
         $path = get_temp_path('download');
 
-        self::assertStringStartsWith(\sys_get_temp_dir() . \DIR_SEP . 'download' . \DIR_SEP, $path);
+        self::assertStringStartsWith($this->unregisteredBase . \DIR_SEP . 'download' . \DIR_SEP, $path);
         $this->assertTempHashBasename($path);
     }
 
     public function testRegisteredUsesVarTmpSegment(): void
     {
         $context = Context::register(rootDirectory: self::ROOT);
-        $prefix  = $context->varDirectory->value . \DIR_SEP . 'tmp' . \DIR_SEP . 'download' . \DIR_SEP;
+        $prefix  = $context->varDirectory . \DIR_SEP . 'tmp' . \DIR_SEP . 'download' . \DIR_SEP;
 
         $path = get_temp_path('download');
 
@@ -137,11 +144,5 @@ final class GetTempPathTest extends TestCase
         string $path,
     ): void {
         self::assertSame(1, \preg_match(self::TEMP_BASENAME, \basename($path)));
-    }
-
-    private function resetContext(): void
-    {
-        $property = new \ReflectionProperty(Singleton::class, '_instance');
-        $property->setValue(null, []);
     }
 }

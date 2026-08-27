@@ -4,7 +4,7 @@
     "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
     "This file is @generated automatically"
   ],
-  "content-hash": "053432c739bc1715d39cd56e199c6345",
+  "content-hash": "7ff021fa827afd9a905e9ecbe153c31c",
   "packages": [
     {
       "name": "northrook/hashes",
@@ -2920,7 +2920,8 @@
     "ext-uri": "*",
     "composer-runtime-api": "^2.2",
     "ext-fileinfo": "*",
-    "ext-intl": "*"
+    "ext-intl": "*",
+    "ext-mbstring": "*"
   },
   "platform-dev": {},
   "plugin-api-version": "2.9.0"

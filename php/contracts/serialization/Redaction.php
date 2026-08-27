@@ -74,10 +74,11 @@ final class Redaction
      * @param list<non-empty-string> $tags
      */
     public static function mask(
-        mixed       $value,
-        Secret      $secret,
-        array       $tags = [],
-        null|object $subject = null,
+        mixed         $value,
+        Secret        $secret,
+        array         $tags = [],
+        null|object   $subject = null,
+        null|Redactor $redactor = null,
     ): mixed {
         /** @var array<non-empty-string, non-empty-string> $context */
         $context = [];
@@ -99,8 +100,6 @@ final class Redaction
 
             $context[\strtolower($tag)] ??= $tag;
         }
-
-        $redactor = \Northrook\Context::tryGet()?->secretRedactor;
 
         return ( $redactor ?? new Redactor )($value, $secret, $context);
     }

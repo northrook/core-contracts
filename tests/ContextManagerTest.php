@@ -10,10 +10,10 @@ use Northrook\Context\AppDebug;
 use Northrook\Context\AppEnv;
 use Northrook\Context\ContextEntry;
 use Northrook\Context\ContextManager;
+use Northrook\Contracts\Tests\Support\ResetsContext;
 use Northrook\InvalidArgumentException;
 use Northrook\Kernel\KernelContext;
 use Northrook\LogicException;
-use Northrook\Singleton;
 use Northrook\Timestamp;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -831,14 +831,7 @@ final class ContextManagerTest extends TestCase
 
     private static function resetIsolation(): void
     {
-        self::resetSingletonRegistry();
-        self::resetInitialized();
-    }
-
-    private static function resetSingletonRegistry(): void
-    {
-        $property = new \ReflectionProperty(Singleton::class, '_instance');
-        $property->setValue(null, []);
+        ResetsContext::reset();
     }
 
     private static function resetInitialized(): void

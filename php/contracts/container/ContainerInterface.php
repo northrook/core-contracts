@@ -81,7 +81,7 @@ interface ContainerInterface extends \Psr\Container\ContainerInterface
      * @param  null|string          $reference binding key, or `null` for primary binding
      * @param  null|class-string    $consumer  scoped owner FQCN; defaults to `$id` (same as {@see get()})
      *
-     * @phpstan-assert-if-true T $this->get($id, $reference)
+     * @return bool
      */
     public function initialized(
         string      $id,

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Northrook\Filesystem;
 
-use Northrook\Context;
 use Northrook\Contracts\Reference;
 use Northrook\FilesystemInterface;
 use Northrook\InvalidArgumentException;
@@ -25,10 +24,7 @@ use Northrook\Timestamp;
  * directory and typed I/O or listing matters.
  *
  * I/O and existence predicates go through {@see FilesystemInterface}. When
- * `$filesystem` is omitted, the registered {@see Context} filesystem is used,
- * falling back to a new {@see NativeFilesystem}.
- *
- *
+ * `$filesystem` is omitted, a new {@see NativeFilesystem} is used.
  */
 readonly class Path implements Reference
 {
@@ -54,7 +50,7 @@ readonly class Path implements Reference
         string|\Stringable       $path,
         null|FilesystemInterface $filesystem = null,
     ) {
-        $this->filesystem = $filesystem ?? Context::tryGet()->filesystem ?? new NativeFilesystem;
+        $this->filesystem = $filesystem ?? new NativeFilesystem;
         $this->value      = static::normalize($path);
     }
 

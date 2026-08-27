@@ -152,7 +152,7 @@ function php_ini_bytes(
  * @return non-empty-string
  */
 function resolve_root_directory(
-    null|string|\Stringable $root,
+    null|string|\Stringable $root = null,
 ): string {
     $resolved = null;
     $cwd      = \getcwd();

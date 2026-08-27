@@ -12,7 +12,7 @@ use Psr\Log\LoggerInterface;
  */
 final class Log
 {
-    private static LoggerInterface $logger;
+    private static null|LoggerInterface $logger = null;
 
     private function __construct() {}
 
@@ -129,6 +129,8 @@ final class Log
 
     private static function logger(): LoggerInterface
     {
-        return self::$logger ??= Context::tryGet()->logger ?? new NativeLogger;
+        return self::$logger ??= \Northrook\Context::isRegistered()
+            ? Context::logger()
+            : new NativeLogger;
     }
 }

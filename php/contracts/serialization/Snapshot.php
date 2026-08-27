@@ -7,7 +7,7 @@ namespace Northrook;
 // TODO : likely lives in Debug
 
 use JsonSerializable;
-use Northrook\Context\MemoryManager;
+use Northrook\Runtime\Memory;
 use Northrook\Runtime\ReservedMemory;
 use Stringable;
 use UnitEnum;
@@ -21,8 +21,7 @@ use UnitEnum;
  * Objects are walked reflectively (no `serialize` / `clone`) so dumps never rehydrate
  * service graphs or run magic methods. {@see Parameter} and other DTOs keep their
  * envelope; `$value` is redacted via {@see Redaction} when `$secret` / `#[Secret]` /
- * `#[\SensitiveParameter]` apply (honours {@see \Northrook\Context::$secretRedactor};
- * attribute `$conditions` become tag context).
+ * `#[\SensitiveParameter]` apply (attribute `$conditions` become tag context).
  *
  * Array reference cycles are broken by comparing each nested array against an ancestor
  * stack with {@see ===}. Object cycles use {@see \WeakMap} and a `[Recursion: …]` marker.
@@ -270,9 +269,9 @@ final class Snapshot implements JsonSerializable, Stringable
         null|int $maxNodes,
     ): SnapshotBudget {
         if ($maxDepth === null || $maxNodes === null) {
-            $remaining = MemoryManager::getMemoryRemaining();
+            $remaining = Memory::getRemaining();
 
-            if ($remaining === true) {
+            if ($remaining === Memory::UNLIMITED) {
                 // Unlimited `memory_limit` — still bound the walk, generously.
                 $autoDepth = self::MAX_DEPTH;
                 $autoNodes = self::MAX_NODES;
@@ -529,7 +528,7 @@ final class Snapshot implements JsonSerializable, Stringable
         }
 
         // Deep reflection can jump memory — skip when headroom is already thin.
-        $remaining = MemoryManager::getMemoryRemaining();
+        $remaining = Memory::getRemaining();
         if ($remaining && $remaining < self::CUSHION_BYTES * 4) {
             $copy = self::uncloneable($value);
             $seen->offsetSet($value, $copy);

@@ -56,7 +56,7 @@ final class ErrorReportTest extends TestCase
         self::assertSame(['user' => 'bob'], $report->dumps);
         self::assertSame($phpError, $report->phpError);
         self::assertSame([$phpError], $report->phpErrors);
-        self::assertSame(Context::get()->appEnv, $report->environment);
+        self::assertSame(Context::appEnv(), $report->environment);
     }
 
     public function testDefaultsAreEmpty(): void

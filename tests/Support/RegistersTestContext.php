@@ -8,7 +8,6 @@ use Northrook\Context;
 use Northrook\Context\AppEnv;
 use Northrook\Context\ContextManager;
 use Northrook\Kernel\KernelContext;
-use Northrook\Singleton;
 
 trait RegistersTestContext
 {
@@ -16,7 +15,7 @@ trait RegistersTestContext
 
     protected function setUpTestContext(): void
     {
-        $this->resetSingletonRegistry();
+        ResetsContext::reset();
         $this->contextManager = new ContextManager;
         Context::register(
             appEnv        : AppEnv::Testing,
@@ -27,17 +26,11 @@ trait RegistersTestContext
 
     protected function tearDownTestContext(): void
     {
-        $this->resetSingletonRegistry();
+        ResetsContext::reset();
     }
 
     protected function becomeOutbound(): void
     {
         $this->contextManager->update(KernelContext::Request);
-    }
-
-    private function resetSingletonRegistry(): void
-    {
-        $property = new \ReflectionProperty(Singleton::class, '_instance');
-        $property->setValue(null, []);
     }
 }

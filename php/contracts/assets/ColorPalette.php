@@ -185,10 +185,8 @@ final readonly class ColorPalette extends DataObject implements Exportable
      * @return self
      */
     public static function default(
-        null|ColorScheme $scheme = null,
+        ColorScheme $scheme = ColorScheme::Light,
     ): self {
-        $scheme ??= Context::tryGet()->colorScheme ?? ColorScheme::Light;
-
         return match ($scheme) {
             ColorScheme::Light => new ColorPalette(
                 'default',

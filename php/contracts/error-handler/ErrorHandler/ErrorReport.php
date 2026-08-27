@@ -31,9 +31,7 @@ final readonly class ErrorReport extends DataObject
         public null|RuntimeError $phpError = null,
         public array             $phpErrors = [],
     ) {
-        $this->environment = Context::isRegistered()
-            ? Context::get()->appEnv
-            : AppEnv::resolve();
+        $this->environment = Context::appEnv();
 
         parent::__construct();
     }

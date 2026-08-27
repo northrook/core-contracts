@@ -6,19 +6,19 @@ namespace Northrook\Contracts\Tests;
 
 use Northrook\Context;
 use Northrook\Context\System;
-use Northrook\Singleton;
+use Northrook\Contracts\Tests\Support\ResetsContext;
 use PHPUnit\Framework\TestCase;
 
 final class ContextSystemTest extends TestCase
 {
     protected function setUp(): void
     {
-        $this->resetContext();
+        ResetsContext::reset();
     }
 
     protected function tearDown(): void
     {
-        $this->resetContext();
+        ResetsContext::reset();
     }
 
     public function testBitnessProbesAreExclusive(): void
@@ -65,11 +65,5 @@ final class ContextSystemTest extends TestCase
         self::assertFalse(Context::isRegistered());
         self::assertSame(System::is(System::cli), Context::is(System::cli));
         self::assertFalse(Context::isRegistered());
-    }
-
-    private function resetContext(): void
-    {
-        $property = new \ReflectionProperty(Singleton::class, '_instance');
-        $property->setValue(null, []);
     }
 }

@@ -209,7 +209,12 @@ trait Serializer
                 'class'    => $this::class,
                 'property' => $name,
                 'type'     => $secret,
-                'context'  => Context::tryGet()?->currentContext,
+                'context'  => [
+                    'appEnv'    => Context::appEnv(),
+                    'appDebug'  => Context::appDebug(),
+                    'osFamily'  => Context::osFamily(),
+                    'isTrusted' => Context::isTrusted(),
+                ],
             ],
         );
     }

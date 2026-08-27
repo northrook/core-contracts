@@ -6,141 +6,97 @@ namespace Northrook;
 
 use Northrook\Context\AppDebug;
 use Northrook\Context\AppEnv;
-use Northrook\Context\ContextEntry;
 use Northrook\Context\ContextManager;
 use Northrook\Context\OsFamily;
 use Northrook\Contracts\ContextEnum;
 use Northrook\Contracts\PlatformContext;
 use Northrook\Contracts\RuntimeContext;
-use Northrook\Filesystem\Directory;
-use Northrook\Filesystem\NativeFilesystem;
 use Northrook\Kernel\KernelContext;
+use Northrook\Logger\Log;
 use Northrook\Logger\NativeLogger;
-use Override;
 use Psr\Log\LoggerInterface;
-
-/**
- * # Localization related Context:
- *
- * We need to be able to update them during runtime; say the runtime is passed a UK locale,
- * but the site can serve multiple languages-- the incoming request needs to be able to set that.
- *
- * Using an `enum` for this would be difficult; direct string input or check if PHP has a built-in solution.
- *
- */
 
 /**
  * @static
  */
-final class Context extends Singleton
+final class Context
 {
     public const bool CLI = \PHP_SAPI === 'cli' || \PHP_SAPI === 'phpdbg';
 
-    private static null|AppEnv   $_appEnv   = null;
-    private static null|AppDebug $_appDebug = null;
-    private static null|OsFamily $_osFamily = null;
+    private static null|Context $instance = null;
 
-    private readonly ContextManager $context;
+    public private(set) Instantiated $instantiated;
 
-    public readonly AppEnv $appEnv;
-    public readonly AppDebug $appDebug;
-    public readonly OsFamily $osFamily;
+    public private(set) AppEnv $appEnv;
+    public private(set) AppDebug $appDebug;
+    public private(set) OsFamily $osFamily;
+    public private(set) Timezone $timezone;
 
-    /** @var ContextEnum[]  */
-    public array $currentContext {
-        get => \array_map(
-            static fn(ContextEntry $context) => $context->context,
-            $this->context->current,
+    public private(set) string $rootDirectory;
+    public private(set) string $varDirectory;
+
+    public private(set) LoggerInterface $logger {
+        get => $this->logger ??= new NativeLogger(
+            \str_starts_with($this->varDirectory, $this->rootDirectory)
+                ? $this->varDirectory . DIR_SEP . 'logs'
+                : null,
         );
-    }
-
-    public private(set) Redactor $secretRedactor {
-        get => $this->secretRedactor ??= new Redactor;
-    }
-
-    public ColorScheme $colorScheme {
-        get => $this->context->resolve(ColorScheme::Light);
     }
 
     private function __construct(
-        public readonly Directory           $rootDirectory,
-        public readonly Directory           $varDirectory,
-        public readonly Timezone            $timezone,
-
-        public readonly LoggerInterface     $logger,
-        public readonly FilesystemInterface $filesystem,
-        public readonly null|CurlInterface  $curlClient,
-
-        ContextManager                      $contextManager,
-
-        null|Redactor                       $secretRedactor,
+        public readonly ContextManager $context,
     ) {
-        $this->appEnv   = Context::appEnv();
-        $this->appDebug = Context::appDebug();
-        $this->osFamily = Context::osFamily();
-        $this->context  = $contextManager;
-        if ($secretRedactor)
-            $this->secretRedactor = $secretRedactor;
+        if (Context::$instance !== null) {
+            throw new RuntimeException(
+                message: static::class . ' is already registered and cannot be instantiated twice.',
+                context: isset($this->instantiated)
+                    ? ['instantiated' => $this->instantiated]
+                    : [],
+            );
+        }
 
-        parent::__construct();
+        Context::$instance = $this;
     }
 
-    public function __destruct()
-    {
-        $this->context->__destruct();
+    public function setLogger(
+        LoggerInterface $logger,
+    ): self {
+        $this->logger = $logger;
+        return $this;
+    }
+
+    public function setTimezone(
+        int|string|\Stringable|\DateTimeZone|\DateTimeInterface $timezone,
+    ): self {
+        $this->timezone = Timezone::from($timezone);
+        return $this;
     }
 
     public static function register(
-        null|AppEnv                                              $appEnv = null,
-        null|AppDebug                                            $appDebug = null,
-        null|OsFamily                                            $osFamily = null,
-        null|ContextManager                                      $contextManager = null,
-        null|LoggerInterface                                     $logger = null,
+        null|AppEnv                                                  $appEnv = null,
+        null|AppDebug                                                $appDebug = null,
+        null|OsFamily                                                $osFamily = null,
+        null|ContextManager                                          $contextManager = null,
+        null|int|string|\Stringable|\DateTimeZone|\DateTimeInterface $timezone = null,
 
-        null|string|\Stringable                                  $rootDirectory = null,
-        null|string|\Stringable                                  $varDirectory = null,
+        null|string|\Stringable                                      $rootDirectory = null,
+        null|string|\Stringable                                      $varDirectory = null,
+    ): Context {
+        $context = new Context($contextManager ?? new ContextManager);
 
-        null|string|\Stringable|\DateTimeZone|\DateTimeInterface $timezone = null,
+        $context->appEnv   = AppEnv::resolve($appEnv);
+        $context->appDebug = AppDebug::resolve($appDebug, $context->appEnv);
+        $context->osFamily = OsFamily::resolve($osFamily);
 
-        null|CurlInterface                                       $curlClient = null,
-        null|FilesystemInterface                                 $filesystem = null,
-        null|Redactor                                            $secretRedactor = null,
-    ): static {
-        self::assertUnregistered();
+        $context->rootDirectory = \resolve_root_directory($rootDirectory);
+        $context->varDirectory  = \resolve_var_directory($context->rootDirectory, $varDirectory);
 
-        Context::$_appEnv   = AppEnv::resolve($appEnv);
-        Context::$_appDebug = AppDebug::resolve($appDebug, Context::$_appEnv);
-        Context::$_osFamily = OsFamily::resolve($osFamily);
+        $context->setTimezone($timezone ?? 'UTC');
 
-        $timezone = Timezone::from($timezone);
-
-        $logger         ??= new NativeLogger;
-        $filesystem     ??= new NativeFilesystem;
-        $contextManager ??= new ContextManager($logger);
-
-        $rootDirectory = new Directory(
-            path      : \resolve_root_directory($rootDirectory),
-            assert    : true,
-            filesystem: $filesystem,
-        );
-
-        $varDirectory = new Directory(
-            path      : \resolve_var_directory($rootDirectory, $varDirectory),
-            create    : true,
-            filesystem: $filesystem,
-        );
-
-        return new self(
-            rootDirectory : $rootDirectory,
-            varDirectory  : $varDirectory,
-            timezone      : $timezone,
-            logger        : $logger,
-            filesystem    : $filesystem,
-            curlClient    : $curlClient,
-            contextManager: $contextManager,
-            secretRedactor: $secretRedactor,
-        );
+        return $context;
     }
+
+    //region Context
 
     /**
      * Whether every given context value matches the registered {@see Context}.
@@ -212,37 +168,67 @@ final class Context extends Singleton
         return false;
     }
 
+    //endregion Context
+
+    //region Getters
+
+    public static function rootDirectory(): string
+    {
+        return Context::get()->rootDirectory ??= \resolve_root_directory();
+    }
+
+    public static function varDirectory(): string
+    {
+        return Context::get()->varDirectory ??= \resolve_var_directory(
+            Context::rootDirectory(),
+        );
+    }
+
+    public static function logger(): LoggerInterface
+    {
+        return Context::get()->logger;
+    }
+
+    public static function timezone(): Timezone
+    {
+        return Context::get()->timezone ??= Timezone::from();
+    }
+
     public static function appEnv(): AppEnv
     {
-        return Context::$_appEnv ??= AppEnv::resolve();
+        return Context::get()->appEnv ??= AppEnv::resolve();
     }
 
     public static function appDebug(): AppDebug
     {
-        return Context::$_appDebug ??= AppDebug::resolve(appEnv: Context::appEnv());
+        return Context::get()->appDebug ??= AppDebug::resolve(appEnv: Context::appEnv());
     }
 
     public static function osFamily(): OsFamily
     {
-        return Context::$_osFamily ??= OsFamily::resolve();
+        return Context::get()->osFamily ??= OsFamily::resolve();
     }
 
     public static function isProduction(): bool
     {
         return Context::appEnv() === AppEnv::Production;
     }
+
     public static function isDevelopment(): bool
     {
         return Context::appEnv() === AppEnv::Development;
     }
+
     public static function isTesting(): bool
     {
         return Context::appEnv() === AppEnv::Testing;
     }
+
     public static function isFailsafe(): bool
     {
         return Context::appEnv() === AppEnv::Failsafe;
     }
+
     public static function isStaging(): bool
     {
         return Context::appEnv() === AppEnv::Staging;
@@ -253,24 +239,46 @@ final class Context extends Singleton
         return Context::appDebug() !== AppDebug::Disabled;
     }
 
-    /**
-     * Returns the registered instance, or `null` without auto-registering.
-     */
-    public static function tryGet(): null|static
+    //endregion Getters
+
+    public static function isRegistered(): bool
     {
-        return self::isRegistered() ? self::get() : null;
+        return Context::$instance !== null;
     }
 
-    #[Override]
-    protected static function create(): static
+    private static function get(): Context
     {
-        return static::register();
+        if (Context::$instance !== null) {
+            return Context::$instance;
+        }
+
+        static::$instance = Context::register();
+
+        $backtrace = \debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)[0];
+        $timestamp = Timestamp::now();
+        $file      = $backtrace['file'] ?? null;
+        $line      = $backtrace['line'] ?? null;
+
+        if ($file !== null && $line !== null) {
+            static::$instance->instantiated = new Instantiated(
+                $file,
+                $line,
+                $timestamp->number,
+            );
+        }
+        else {
+            throw new LogicException(
+                message: 'debug_backtrace() failed to provide file/line.',
+            );
+        }
+
+        return static::$instance;
     }
 
     private static function handleUnknownType(
         string|ContextEnum $value,
     ): false {
-        ( Context::tryGet()->logger ?? new NativeLogger )->warning(
+        Log::warning(
             message: 'Unknown context type: ' . \debug_value_type($value, true),
             context: ['value' => $value],
         );

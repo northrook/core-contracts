@@ -10,13 +10,12 @@ use Northrook\Context;
 use Northrook\Context\AppEnv;
 use Northrook\Context\ContextManager;
 use Northrook\Contracts\Tests\Support\DataObjectSecretFixture;
+use Northrook\Contracts\Tests\Support\ResetsContext;
 use Northrook\Contracts\Tests\Support\SecretMask;
 use Northrook\DataObject;
 use Northrook\Kernel\KernelContext;
 use Northrook\Parameter\Secret as SecretPolicy;
-use Northrook\Redactor;
 use Northrook\RuntimeException;
-use Northrook\Singleton;
 use Northrook\Timestamp;
 use PHPUnit\Framework\TestCase;
 
@@ -169,49 +168,6 @@ final class DataObjectTest extends TestCase
         $dto->jsonSerialize();
     }
 
-    public function testCustomRedactorReceivesConditionFromAttribute(): void
-    {
-        $this->resetSingleton();
-
-        try {
-            $this->contextManager = new ContextManager;
-            Context::register(
-                rootDirectory : __DIR__ . '/..',
-                contextManager: $this->contextManager,
-                secretRedactor: new class() extends Redactor {
-                    protected function redact(
-                        mixed $value,
-                    ): mixed {
-                        $condition = \array_values($this->context)[0] ?? null;
-
-                        return "{$this->secret->name}:{$condition}:" . \gettype($value);
-                    }
-                },
-            );
-
-            $dto = new DataObjectConditionSecretFixture(token: 'abc');
-
-            // Custom redactor drives the debug channel; public wire refuses credentials.
-            self::assertSame('CREDENTIAL:oauth-token:string', $dto->__debugInfo()['token']);
-
-            $this->becomeOutbound();
-
-            try {
-                $dto->jsonSerialize();
-                self::fail('Expected RuntimeException for credential serialize');
-            }
-            catch (RuntimeException $exception) {
-                self::assertStringContainsString(
-                    'Cannot serialize credential property $token',
-                    $exception->getMessage(),
-                );
-            }
-        }
-        finally {
-            $this->resetSingleton();
-        }
-    }
-
     private function becomeOutbound(): void
     {
         $this->contextManager->update(KernelContext::Request);
@@ -219,11 +175,7 @@ final class DataObjectTest extends TestCase
 
     private function resetSingleton(): void
     {
-        $property = new \ReflectionProperty(Singleton::class, '_instance');
-        $property->setValue(null, []);
-
-        $initialized = new \ReflectionProperty(ContextManager::class, 'initialized');
-        $initialized->setValue(null, false);
+        ResetsContext::reset();
     }
 }
 
@@ -291,16 +243,6 @@ final readonly class DataObjectCredentialFixture extends DataObject
     public function __construct(
         #[Secret(type: SecretPolicy::CREDENTIAL)]
         public string $dsn,
-    ) {
-        parent::__construct();
-    }
-}
-
-final readonly class DataObjectConditionSecretFixture extends DataObject
-{
-    public function __construct(
-        #[Secret(SecretPolicy::CREDENTIAL, 'oauth-token')]
-        public string $token,
     ) {
         parent::__construct();
     }

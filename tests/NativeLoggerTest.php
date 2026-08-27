@@ -6,9 +6,9 @@ namespace Northrook\Contracts\Tests;
 
 use Northrook\Context;
 use Northrook\Context\AppEnv;
+use Northrook\Contracts\Tests\Support\ResetsContext;
 use Northrook\Logger\LogLevel;
 use Northrook\Logger\NativeLogger;
-use Northrook\Singleton;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -22,7 +22,7 @@ final class NativeLoggerTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->resetContext();
+        ResetsContext::reset();
         Context::register(appEnv: AppEnv::Development);
     }
 
@@ -37,18 +37,7 @@ final class NativeLoggerTest extends TestCase
             }
         }
 
-        $this->resetContext();
-    }
-
-    private function resetContext(): void
-    {
-        $property = new \ReflectionProperty(Singleton::class, '_instance');
-        $property->setValue(null, []);
-
-        foreach (['_appEnv', '_appDebug', '_osFamily'] as $propertyName) {
-            $property = new \ReflectionProperty(Context::class, $propertyName);
-            $property->setValue(null, null);
-        }
+        ResetsContext::reset();
     }
 
     public function testWritesInterpolatedMessageToErrorLog(): void
@@ -61,7 +50,7 @@ final class NativeLoggerTest extends TestCase
         );
 
         self::assertMatchesRegularExpression(
-            '/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \d{3} \[INFO\] Generated 3 files\./',
+            '/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \d{3} \[INFO] Generated 3 files\./',
             $output,
         );
     }
@@ -76,7 +65,7 @@ final class NativeLoggerTest extends TestCase
         );
 
         self::assertMatchesRegularExpression(
-            '/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \d{3} \[WARN\] Enum level\./',
+            '/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \d{3} \[WARN] Enum level\./',
             $output,
         );
     }
@@ -90,7 +79,7 @@ final class NativeLoggerTest extends TestCase
         );
 
         self::assertMatchesRegularExpression(
-            '/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \d{3} \[ERRO\] Something failed\./',
+            '/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \d{3} \[ERRO] Something failed\./',
             $output,
         );
         self::assertStringContainsString(
@@ -107,7 +96,7 @@ final class NativeLoggerTest extends TestCase
 
         self::assertFileExists($file);
         self::assertMatchesRegularExpression(
-            '/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \d{3} \[WARN\] Persisted\.\n$/',
+            '/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \d{3} \[WARN] Persisted\.\n$/',
             (string) \file_get_contents($file),
         );
     }
@@ -123,7 +112,7 @@ final class NativeLoggerTest extends TestCase
 
         self::assertFileExists($expected);
         self::assertMatchesRegularExpression(
-            '/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \d{3} \[INFO\] Directory target\.\n$/',
+            '/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \d{3} \[INFO] Directory target\.\n$/',
             (string) \file_get_contents($expected),
         );
     }
@@ -139,7 +128,7 @@ final class NativeLoggerTest extends TestCase
         $line  = \rtrim((string) \file_get_contents($file));
 
         self::assertMatchesRegularExpression(
-            '/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) \d{3} \[CRIT\] Uniform label\.$/',
+            '/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) \d{3} \[CRIT] Uniform label\.$/',
             $line,
             'Line must be `{Y-m-d H:i:s v} [{4-char label}] {message}`',
         );

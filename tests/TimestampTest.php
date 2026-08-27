@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Northrook\Contracts\Tests;
 
 use Northrook\Context;
+use Northrook\Contracts\Tests\Support\ResetsContext;
 use Northrook\RuntimeException;
-use Northrook\Singleton;
 use Northrook\Timestamp;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -15,8 +15,7 @@ final class TimestampTest extends TestCase
 {
     protected function tearDown(): void
     {
-        $property = new \ReflectionProperty(Singleton::class, '_instance');
-        $property->setValue(null, []);
+        ResetsContext::reset();
     }
 
     // -------------------------------------------------------------------------
@@ -169,8 +168,8 @@ final class TimestampTest extends TestCase
     public function testFormatDefaultsToIso8601WithMilliseconds(): void
     {
         Context::register(
-            rootDirectory: \dirname(__DIR__),
             timezone     : 'UTC',
+            rootDirectory: \dirname(__DIR__),
         );
 
         $formatted = new Timestamp(0)->format();

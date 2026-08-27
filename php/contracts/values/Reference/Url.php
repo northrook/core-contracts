@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Northrook\Reference;
 
-use Northrook\Context;
 use Northrook\CurlException;
 use Northrook\CurlInterface;
 use Northrook\DependencyException;
@@ -26,8 +25,8 @@ use function Northrook\get_temp_path;
  * empty hosts, and single-character schemes (drive-letter footgun — use
  * {@see Path} / {@see File} for filesystem locations).
  *
- * Transport helpers ({@see probe()}, {@see fetch()}, {@see download()}) use
- * the injected {@see CurlInterface}, then the registered {@see Context} client.
+ * Transport helpers ({@see probe()}, {@see fetch()}, {@see download()}) require
+ * an injected {@see CurlInterface}.
  */
 final class Url extends Uri
 {
@@ -156,19 +155,17 @@ final class Url extends Uri
     private function httpClient(
         string $method,
     ): CurlInterface {
-        $http = $this->http ?? Context::tryGet()?->curlClient;
-
-        if ($http !== null) {
-            return $http;
+        if (! $this->http) {
+            throw new DependencyException(
+                message: "`{$method}` requires an injected CurlInterface instance.",
+                context: [
+                    'method' => $method,
+                    'url'    => $this->value,
+                ],
+            );
         }
 
-        throw new DependencyException(
-            message: "`{$method}` requires an injected or globally registered CurlInterface instance.",
-            context: [
-                'method' => $method,
-                'url'    => $this->value,
-            ],
-        );
+        return $this->http;
     }
 
     // -------------------------------------------------------------------------

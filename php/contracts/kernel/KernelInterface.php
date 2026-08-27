@@ -5,18 +5,34 @@ declare(strict_types=1);
 namespace Northrook;
 
 use Northrook\Context\ContextManager;
+use Northrook\Contracts\Resettable;
+use Northrook\Http\RequestInterface;
+use Northrook\Http\ResponseInterface;
 
-interface KernelInterface
+interface KernelInterface extends Resettable
 {
-    private(set) ContextManager $context { get; }
+    public private(set) ContextManager $context { get; }
+
+    public private(set) ContainerInterface $container { get; }
+
+    public private(set) bool $booted { get; }
 
     public static function initialize(
-        Context $context,
+        RuntimeOptions $options,
     ): static;
 
     public function boot(): static;
 
     public function run(): int;
 
-    public function container(): ContainerInterface;
+    public function handle(
+        RequestInterface $request,
+    ): ResponseInterface;
+
+    public function terminate(
+        RequestInterface  $request,
+        ResponseInterface $response,
+    ): void;
+
+    public function reset(): void;
 }
