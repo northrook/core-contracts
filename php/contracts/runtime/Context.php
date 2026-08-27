@@ -35,13 +35,7 @@ final class Context
     public private(set) string $rootDirectory;
     public private(set) string $varDirectory;
 
-    public private(set) LoggerInterface $logger {
-        get => $this->logger ??= new NativeLogger(
-            \str_starts_with($this->varDirectory, $this->rootDirectory)
-                ? $this->varDirectory . DIR_SEP . 'logs'
-                : null,
-        );
-    }
+    public private(set) LoggerInterface $logger;
 
     private function __construct(
         public readonly ContextManager $context,
@@ -76,13 +70,17 @@ final class Context
         null|AppEnv                                                  $appEnv = null,
         null|AppDebug                                                $appDebug = null,
         null|OsFamily                                                $osFamily = null,
-        null|ContextManager                                          $contextManager = null,
         null|int|string|\Stringable|\DateTimeZone|\DateTimeInterface $timezone = null,
 
         null|string|\Stringable                                      $rootDirectory = null,
         null|string|\Stringable                                      $varDirectory = null,
+
+        null|ContextManager                                          $contextManager = null,
+        null|LoggerInterface                                         $logger = null,
     ): Context {
-        $context = new Context($contextManager ?? new ContextManager);
+        $context = new Context(
+            $contextManager ?? new ContextManager,
+        );
 
         $context->appEnv   = AppEnv::resolve($appEnv);
         $context->appDebug = AppDebug::resolve($appDebug, $context->appEnv);
@@ -91,7 +89,19 @@ final class Context
         $context->rootDirectory = \resolve_root_directory($rootDirectory);
         $context->varDirectory  = \resolve_var_directory($context->rootDirectory, $varDirectory);
 
+        $context->logger = $logger ?? new NativeLogger(
+                \str_starts_with($context->varDirectory, $context->rootDirectory)
+                    ? $context->varDirectory . DIR_SEP . 'logs'
+                    : null,
+            );
+
+
         $context->setTimezone($timezone ?? 'UTC');
+
+        if ($logger) {
+            $context->logger = $logger;
+            $context->context->setLogger($logger, false);
+        }
 
         return $context;
     }

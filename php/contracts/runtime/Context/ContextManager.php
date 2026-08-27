@@ -11,6 +11,7 @@ use Northrook\InvalidArgumentException;
 use Northrook\Kernel\KernelContext;
 use Northrook\LogicException;
 use Northrook\RingBuffer;
+use Northrook\RuntimeException;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -38,6 +39,8 @@ final class ContextManager implements Resettable
      * @var \Northrook\RingBuffer<\Northrook\Context\ContextEntry>
      */
     private readonly RingBuffer $contextHistory;
+
+    private null|LoggerInterface $logger = null;
 
     /**
      * @var array<ContextKey, \Northrook\Context\ContextEntry>
@@ -67,11 +70,10 @@ final class ContextManager implements Resettable
      *
      * @var bool
      */
-    private(set) bool $frozen = false;
+    public private(set) bool $frozen = false;
 
-    public function __construct(
-        private readonly null|LoggerInterface $logger = null,
-    ) {
+    public function __construct()
+    {
         if (self::$initialized) {
             throw new LogicException(
                 message: 'Cannot instantiate multiple ContextManagers.',
@@ -84,6 +86,29 @@ final class ContextManager implements Resettable
     public function __destruct()
     {
         self::$initialized = false;
+    }
+
+    /**
+     *
+     * @param \Psr\Log\LoggerInterface  $logger
+     * @param bool                      $throw
+     *
+     * @return void
+     */
+    public function setLogger(
+        LoggerInterface $logger,
+        bool            $throw = true,
+    ): void {
+        if ($this->logger && $throw) {
+            throw new RuntimeException(
+                message: $this::class . ' . already has a LoggerInterface assigned',
+                context: [
+                    'provided' => $logger::class,
+                    'current'  => $this->logger::class,
+                ],
+            );
+        }
+        $this->logger ??= $logger;
     }
 
     //region Get
@@ -345,17 +370,12 @@ final class ContextManager implements Resettable
         bool $set = true,
     ): void {
         if ($set === false && Context::isUntrusted()) {
-            $exception = new LogicException(
+            throw new LogicException(
                 message: 'Cannot unfreeze context in an untrusted context.',
                 context: [
                     'context' => $this->current,
                 ],
             );
-            $this->logger?->critical(
-                $exception->getMessage(),
-                ['exception' => $exception],
-            );
-            throw $exception;
         }
 
         $this->frozen = $set;
@@ -364,15 +384,10 @@ final class ContextManager implements Resettable
     private function editable(): void
     {
         if ($this->frozen) {
-            $exception = new LogicException(
+            throw new LogicException(
                 message: 'Cannot modify frozen context.',
                 context: ['contextManager' => $this],
             );
-            $this->logger?->critical(
-                $exception->getMessage(),
-                ['exception' => $exception],
-            );
-            throw $exception;
         }
     }
 
