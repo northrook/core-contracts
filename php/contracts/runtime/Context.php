@@ -95,7 +95,6 @@ final class Context
                     : null,
             );
 
-
         $context->setTimezone($timezone ?? 'UTC');
 
         if ($logger) {
