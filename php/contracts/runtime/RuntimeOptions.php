@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare( strict_types = 1 );
 
 namespace Northrook;
 
@@ -9,12 +9,19 @@ use Northrook\Context\AppEnv;
 
 final readonly class RuntimeOptions
 {
+    /**
+     * @param \Northrook\Context\AppEnv    $appEnv
+     * @param \Northrook\Context\AppDebug  $appDebug
+     * @param non-empty-string             $rootDirectory
+     * @param null|non-empty-string        $sourceDirectory
+     * @param null|non-empty-string        $varDirectory
+     */
     public function __construct(
-        public AppEnv      $appEnv,
-        public AppDebug    $appDebug,
-        public string      $rootDirectory,
-        public null|string $sourceDirectory = null,
-        public null|string $varDirectory = null,
+        public AppEnv        $appEnv,
+        public AppDebug      $appDebug,
+        public string        $rootDirectory,
+        public null | string $sourceDirectory = null,
+        public null | string $varDirectory = null,
     ) {}
 
     /**
@@ -29,28 +36,29 @@ final readonly class RuntimeOptions
      * @return \Northrook\RuntimeOptions
      */
     public static function from(
-        null|string $app_env = null,
-        null|string $app_debug = null,
-        null|string $root_dir = null,
-        null|string $source_dir = null,
-        null|string $var_dir = null,
-    ): self {
-        $appEnv          = AppEnv::resolve($app_env);
-        $appDebug        = AppDebug::resolve($app_debug, $appEnv);
-        $rootDirectory   = \resolve_root_directory($root_dir);
+        null | string $app_env = null,
+        null | string $app_debug = null,
+        null | string $root_dir = null,
+        null | string $source_dir = null,
+        null | string $var_dir = null,
+    ) : self
+    {
+        $appEnv          = AppEnv::resolve( $app_env );
+        $appDebug        = AppDebug::resolve( $app_debug, $appEnv );
+        $rootDirectory   = \resolve_root_directory( $root_dir );
         $sourceDirectory = $source_dir
-            ? Normalize::path($rootDirectory . \DIR_SEP . $source_dir)
+            ? Normalize::path( $rootDirectory . \DIR_SEP . $source_dir )
             : null;
-        $varDirectory = $var_dir
-            ? \resolve_var_directory($rootDirectory, $var_dir)
+        $varDirectory    = $var_dir
+            ? \resolve_var_directory( $rootDirectory, $var_dir )
             : null;
 
         return new self(
-            appEnv         : $appEnv,
-            appDebug       : $appDebug,
-            rootDirectory  : $rootDirectory,
-            sourceDirectory: $sourceDirectory,
-            varDirectory   : $varDirectory,
+            appEnv          : $appEnv,
+            appDebug        : $appDebug,
+            rootDirectory   : $rootDirectory,
+            sourceDirectory : $sourceDirectory,
+            varDirectory    : $varDirectory,
         );
     }
 }
