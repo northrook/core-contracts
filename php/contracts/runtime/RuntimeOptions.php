@@ -39,7 +39,7 @@ final readonly class RuntimeOptions
         $appDebug        = AppDebug::resolve($app_debug, $appEnv);
         $rootDirectory   = \resolve_root_directory($root_dir);
         $sourceDirectory = $source_dir
-            ? \dir_path($rootDirectory . \DIR_SEP . $source_dir)
+            ? Normalize::path($rootDirectory . \DIR_SEP . $source_dir)
             : null;
         $varDirectory = $var_dir
             ? \resolve_var_directory($rootDirectory, $var_dir)
