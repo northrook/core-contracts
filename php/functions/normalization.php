@@ -14,7 +14,7 @@ function dir_path(
         );
     }
 
-    $path = \strtr($string, '\\', \DIR_SEP);
+    $path = \strtr((string) $string, '\\', \DIR_SEP);
 
     $prefix   = \str_starts_with($path, \DIR_SEP) ? \DIR_SEP : null;
     $suffix   = $trailingSeparator ? \DIR_SEP : null;

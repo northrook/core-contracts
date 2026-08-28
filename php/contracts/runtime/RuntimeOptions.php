@@ -23,6 +23,7 @@ final readonly class RuntimeOptions
      * @param null|string  $app_env
      * @param null|string  $app_debug
      * @param null|string  $root_dir
+     * @param null|string  $source_dir
      * @param null|string  $var_dir
      *
      * @return \Northrook\RuntimeOptions
@@ -34,11 +35,13 @@ final readonly class RuntimeOptions
         null|string $source_dir = null,
         null|string $var_dir = null,
     ): self {
-        $appEnv        = AppEnv::resolve($app_env);
-        $appDebug      = AppDebug::resolve($app_debug, $appEnv);
-        $rootDirectory = \resolve_root_directory($root_dir);
-        $sourceDirectory = $rootDirectory .
-        $varDirectory  = $var_dir
+        $appEnv          = AppEnv::resolve($app_env);
+        $appDebug        = AppDebug::resolve($app_debug, $appEnv);
+        $rootDirectory   = \resolve_root_directory($root_dir);
+        $sourceDirectory = $source_dir
+            ? \dir_path($rootDirectory . \DIR_SEP . $source_dir)
+            : null;
+        $varDirectory = $var_dir
             ? \resolve_var_directory($rootDirectory, $var_dir)
             : null;
 
@@ -46,7 +49,7 @@ final readonly class RuntimeOptions
             appEnv         : $appEnv,
             appDebug       : $appDebug,
             rootDirectory  : $rootDirectory,
-            sourceDirectory: $source_dir,
+            sourceDirectory: $sourceDirectory,
             varDirectory   : $varDirectory,
         );
     }
