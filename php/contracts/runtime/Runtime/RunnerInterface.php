@@ -6,5 +6,8 @@ namespace Northrook\Runtime;
 
 interface RunnerInterface
 {
+    /**
+     * @return int<0,254>
+     */
     public function run(): int;
 }

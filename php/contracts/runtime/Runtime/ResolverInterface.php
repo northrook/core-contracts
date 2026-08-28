@@ -6,5 +6,5 @@ namespace Northrook\Runtime;
 
 interface ResolverInterface
 {
-    public function resolve(): ResolvedCallable;
+    public function __invoke(): ResolvedCallable;
 }
