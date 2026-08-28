@@ -12,7 +12,7 @@ interface RuntimeInterface
     public RuntimeOptions $options { get; }
 
     public function getRunner(
-        null|object $application,
+        object $application,
     ): RunnerInterface;
 
     public function getResolver(
