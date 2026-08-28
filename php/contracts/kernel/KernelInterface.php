@@ -11,11 +11,11 @@ use Northrook\Http\ResponseInterface;
 
 interface KernelInterface extends Resettable
 {
-    public private(set) ContextManager $context { get; }
+    public ContextManager $context { get; }
 
-    public private(set) ContainerInterface $container { get; }
+    public ContainerInterface $container { get; }
 
-    public private(set) bool $booted { get; }
+    public bool $booted { get; }
 
     public static function initialize(
         RuntimeOptions $options,
