@@ -38,13 +38,25 @@ enum KernelContext implements RuntimeContext
      */
     case Response;
 
+    /**
+     * Releasing runtime resources and completing deferred work.
+     */
+    case Shutdown;
+
+    /**
+     * Kernel execution has ended.
+     */
+    case Terminated;
+
     public function order(): int
     {
         return match ($this) {
             self::Boot => 0,
             self::Compile => 1,
             self::Initializing => 2,
-            default => 3,
+            self::Runtime, self::Request, self::Response => 3,
+            self::Shutdown => 4,
+            self::Terminated => 5,
         };
     }
 }

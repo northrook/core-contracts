@@ -579,6 +579,29 @@ final class ContextManagerTest extends TestCase
         self::assertTrue($manager->has(KernelContext::Runtime));
     }
 
+    public function testKernelContextMayAdvanceThroughTerminalStages(): void
+    {
+        $manager = $this->manager();
+        $manager->update(KernelContext::Runtime);
+
+        $manager->replace(KernelContext::Shutdown);
+        $manager->replace(KernelContext::Terminated);
+
+        self::assertTrue($manager->has(KernelContext::Terminated));
+    }
+
+    public function testKernelContextRejectsTerminatedToRuntimeRegression(): void
+    {
+        $manager = $this->manager();
+        $this->registerTrusted($manager);
+        $manager->update(KernelContext::Terminated);
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('Invalid KernelContext case order.');
+
+        $manager->replace(KernelContext::Runtime);
+    }
+
     public function testKernelContextRejectsRegressionToBoot(): void
     {
         $manager = $this->manager();
