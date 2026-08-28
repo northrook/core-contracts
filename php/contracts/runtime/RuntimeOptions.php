@@ -13,6 +13,7 @@ final readonly class RuntimeOptions
         public AppEnv      $appEnv,
         public AppDebug    $appDebug,
         public string      $rootDirectory,
+        public null|string $sourceDirectory = null,
         public null|string $varDirectory = null,
     ) {}
 
@@ -30,20 +31,23 @@ final readonly class RuntimeOptions
         null|string $app_env = null,
         null|string $app_debug = null,
         null|string $root_dir = null,
+        null|string $source_dir = null,
         null|string $var_dir = null,
     ): self {
         $appEnv        = AppEnv::resolve($app_env);
         $appDebug      = AppDebug::resolve($app_debug, $appEnv);
         $rootDirectory = \resolve_root_directory($root_dir);
+        $sourceDirectory = $rootDirectory .
         $varDirectory  = $var_dir
             ? \resolve_var_directory($rootDirectory, $var_dir)
             : null;
 
         return new self(
-            appEnv       : $appEnv,
-            appDebug     : $appDebug,
-            rootDirectory: $rootDirectory,
-            varDirectory : $varDirectory,
+            appEnv         : $appEnv,
+            appDebug       : $appDebug,
+            rootDirectory  : $rootDirectory,
+            sourceDirectory: $source_dir,
+            varDirectory   : $varDirectory,
         );
     }
 }

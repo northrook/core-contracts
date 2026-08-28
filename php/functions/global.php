@@ -158,7 +158,7 @@ function resolve_root_directory(
     $cwd      = \getcwd();
 
     if ($root !== null) {
-        $explicit = \trim((string) $root);
+        $explicit = \dir_path(\trim((string) $root));
 
         if ($explicit !== '') {
             return $explicit;
@@ -169,7 +169,7 @@ function resolve_root_directory(
         foreach (['APPROOT', 'PROJECT_ROOT'] as $envKey) {
             $env = \getenv($envKey);
 
-            if (\is_string($env) && ( $env = \trim($env) ) !== '') {
+            if (\is_string($env) && ( $env = \dir_path(\trim($env)) ) !== '') {
                 return $env;
             }
         }
