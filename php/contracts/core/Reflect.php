@@ -130,7 +130,7 @@ final readonly class Reflect
                 $attribute = $attributes[0];
 
                 if ($attribute instanceof \ReflectionAttribute) {
-                    /** @var A $attribute */
+                    /** @var \ReflectionAttribute<A> $attribute */
                     return $attribute;
                 }
             }
