@@ -19,4 +19,13 @@ interface RuntimeInterface
         callable                 $callable,
         null|\ReflectionFunction $reflector = null,
     ): ResolverInterface;
+
+    /**
+     * @param mixed $status
+     *
+     * @return int<0,254>
+     */
+    public static function validateExitCode(
+        mixed $status,
+    ): int;
 }

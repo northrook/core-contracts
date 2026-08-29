@@ -21,7 +21,7 @@ final class NormalizeTest extends TestCase
     #[DataProvider('providePathCases')]
     public function testPath(
         null|string|Stringable|array $input,
-        string                       $expected,
+        null|string                  $expected,
         bool                         $traversal = false,
         bool                         $trailingSeparator = false,
     ): void {
@@ -33,9 +33,9 @@ final class NormalizeTest extends TestCase
 
     public static function providePathCases(): \Generator
     {
-        yield 'null' => [null, ''];
-        yield 'empty' => ['', ''];
-        yield 'empty arr' => [[], ''];
+        yield 'null' => [null, null];
+        yield 'empty' => ['', null];
+        yield 'empty arr' => [[], null];
 
         yield 'mixed separators' => ['assets\\\/scripts///app.js', 'assets/scripts/app.js'];
         yield 'dot segments' => ['a/./b/./c', 'a/b/c'];
@@ -100,9 +100,9 @@ final class NormalizeTest extends TestCase
 
     public function testPathDoesNotThrowOnEmptyByDefault(): void
     {
-        self::assertSame('', Normalize::path(null));
-        self::assertSame('', Normalize::path(''));
-        self::assertSame('', Normalize::path([]));
+        self::assertNull(Normalize::path(null));
+        self::assertNull(Normalize::path(''));
+        self::assertNull(Normalize::path([]));
     }
 
     public function testPathRejectsOversizedPath(): void

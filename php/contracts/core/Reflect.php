@@ -58,10 +58,10 @@ final readonly class Reflect
      * @return array<non-empty-string, \ReflectionProperty>
      */
     public function getPropertiesMap(
-        bool           $onlyPublic = false,
+        bool         $onlyPublic = false,
         false|object $onlyInitialized = false,
-        bool           $includeStatic = false,
-        bool           $includeVirtual = false,
+        bool         $includeStatic = false,
+        bool         $includeVirtual = false,
     ): array {
         $array = [];
         $class = $this->class;

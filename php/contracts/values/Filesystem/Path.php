@@ -113,7 +113,7 @@ readonly class Path implements Reference
             );
         }
 
-        if ($normalized === '') {
+        if ($normalized === null) {
             throw new InvalidArgumentException(
                 message: 'Path normalized to an empty string.',
                 context: [
@@ -167,7 +167,11 @@ readonly class Path implements Reference
         }
 
         return new Path(
-            path      : Normalize::path($parts, traversal: true),
+            path      : Normalize::path(
+                $parts,
+                traversal: true,
+                throwOnEmpty: true,
+            ),
             filesystem: $this->filesystem,
         );
     }
@@ -391,6 +395,66 @@ readonly class Path implements Reference
         }
     }
 
+    /**
+     * Whether `$other` is this path, a subpath of it, a parent of it, or shares
+     * a common directory prefix after both are resolved to absolute form.
+     *
+     * Invalid `$other` values return false. Existence on disk is not required.
+     */
+    public function sharesBaseWith(
+        string|\Stringable $other,
+    ): bool {
+        try {
+            $path      = $this->absolute()->value;
+            $otherPath = new self((string) $other, $this->filesystem)->absolute()->value;
+        }
+        catch (\Throwable) {
+            return false;
+        }
+
+        if ($path === $otherPath) {
+            return true;
+        }
+
+        $segments      = self::pathSegments($path);
+        $otherSegments = self::pathSegments($otherPath);
+
+        if ($segments === [] || $otherSegments === []) {
+            return self::pathsNest($path, $otherPath);
+        }
+
+        $shared = 0;
+        $limit  = \min(\count($segments), \count($otherSegments));
+
+        while ($shared < $limit && $segments[$shared] === $otherSegments[$shared]) {
+            $shared++;
+        }
+
+        return $shared > 0;
+    }
+
+    /**
+     * @return list<non-empty-string>
+     */
+    private static function pathSegments(
+        string $absolutePath,
+    ): array {
+        return \array_values(\array_filter(
+            \explode(\DIR_SEP, \rtrim($absolutePath, \DIR_SEP)),
+            static fn(string $part): bool => $part !== '',
+        ));
+    }
+
+    private static function pathsNest(
+        string $path,
+        string $otherPath,
+    ): bool {
+        $prefix      = \rtrim($path, \DIR_SEP) . \DIR_SEP;
+        $otherPrefix = \rtrim($otherPath, \DIR_SEP) . \DIR_SEP;
+
+        return \str_starts_with($path, $otherPrefix) || \str_starts_with($otherPath, $prefix);
+    }
+
     // -------------------------------------------------------------------------
     // Resolution
     // -------------------------------------------------------------------------
@@ -440,7 +504,11 @@ readonly class Path implements Reference
         }
 
         return new static(
-            path      : Normalize::path([$cwd, $this->value], traversal: true),
+            path      : Normalize::path(
+                [$cwd, $this->value],
+                traversal: true,
+                throwOnEmpty: true,
+            ),
             filesystem: $this->filesystem,
         );
     }
@@ -657,7 +725,11 @@ readonly class Path implements Reference
                 $patterns[] = $item;
             }
             else {
-                $patterns[] = Normalize::path([$base, $item], traversal: true);
+                $patterns[] = Normalize::path(
+                    [$base, $item],
+                    traversal: true,
+                    throwOnEmpty: true,
+                );
             }
         }
 

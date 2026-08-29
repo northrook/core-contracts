@@ -103,6 +103,22 @@ final class PathTest extends TestCase
         self::assertFalse($path->equals(''));
     }
 
+    public function testSharesBaseWith(): void
+    {
+        $path = new Path('/var/www');
+
+        self::assertTrue($path->sharesBaseWith('/var/www'));
+        self::assertTrue($path->sharesBaseWith('/var/www/app'));
+        self::assertTrue($path->sharesBaseWith('/var/log'));
+        self::assertTrue($path->sharesBaseWith(new Path('/var/www/public')));
+        self::assertFalse($path->sharesBaseWith('/etc/passwd'));
+        self::assertFalse($path->sharesBaseWith(''));
+        self::assertFalse($path->sharesBaseWith('file:///tmp/x'));
+
+        self::assertTrue(new Path('/')->sharesBaseWith('/etc'));
+        self::assertTrue(new Path('/etc/passwd')->sharesBaseWith('/'));
+    }
+
     public function testTypedViews(): void
     {
         $path = new Path('/x/y.txt');

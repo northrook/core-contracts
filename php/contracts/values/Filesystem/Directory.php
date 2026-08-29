@@ -173,8 +173,12 @@ final readonly class Directory extends Path
             );
         }
 
-        $joined = Normalize::path([$this->value, $segment], traversal: true);
-        $path   = new Path($joined, $this->filesystem);
+        $joined = Normalize::path(
+            [$this->value, $segment],
+            traversal: true,
+            throwOnEmpty: true,
+        );
+        $path = new Path($joined, $this->filesystem);
 
         if (! $this->contains($path)) {
             throw new InvalidArgumentException(
@@ -359,7 +363,11 @@ final readonly class Directory extends Path
                 $patterns[] = $item;
             }
             else {
-                $patterns[] = Normalize::path([$this->value, $item], traversal: true);
+                $patterns[] = Normalize::path(
+                    [$this->value, $item],
+                    traversal: true,
+                    throwOnEmpty: true,
+                );
             }
         }
 

@@ -46,9 +46,9 @@ final class Normalize
      * @param null|array<null|string|Stringable>|string|Stringable $path
      * @param bool                                                 $traversal          Resolve `..` segments
      * @param bool                                                 $trailingSeparator  `true` ensure trailing {@see \DIR_SEP}; `false` strip it (roots like `/` kept)
-     * @param bool                                                 $throwOnEmpty       Throw instead of returning `''`
+     * @param bool                                                 $throwOnEmpty       Throw instead of returning `null`
      *
-     * @return string
+     * @return ($throwOnEmpty is true ? non-empty-string : null|non-empty-string)
      *
      * @throws InvalidArgumentException When `$throwOnEmpty` is set and the result is empty
      * @throws RuntimeException When the result exceeds {@see \MAX_PATH_LENGTH}
@@ -58,7 +58,7 @@ final class Normalize
         bool                         $traversal = false,
         bool                         $trailingSeparator = false,
         bool                         $throwOnEmpty = false,
-    ): string {
+    ): null|string {
         if ($path === null || $path === '' || $path === []) {
             return (
                 $throwOnEmpty
@@ -70,7 +70,7 @@ final class Normalize
                             'received' => $path,
                         ],
                     )
-                    : ''
+                    : null
             );
         }
 
@@ -106,7 +106,7 @@ final class Normalize
                             'received' => $path,
                         ],
                     )
-                    : ''
+                    : null
             );
         }
 
@@ -156,7 +156,7 @@ final class Normalize
                             'received' => $path,
                         ],
                     )
-                    : ''
+                    : null
             );
         }
 

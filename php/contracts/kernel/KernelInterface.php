@@ -21,6 +21,13 @@ interface KernelInterface extends Resettable
 
     public function boot(): static;
 
+    /**
+     * Runs the Kernel, and returns an Exit Code.
+     *
+     * Valdiated through {@see \Northrook\RuntimeInterface::validateExitCode()}.
+     *
+     * @return int<0,254>
+     */
     public function run(): int;
 
     public function reset(): void;

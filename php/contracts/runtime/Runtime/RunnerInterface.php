@@ -7,9 +7,11 @@ namespace Northrook\Runtime;
 interface RunnerInterface
 {
     /**
-     * Exit status from the application runner.
+     * Exit Code from the application runner.
      *
-     * The generated runtime bootstrap validates int<0,254> before calling exit().
+     * Valdiated through {@see \Northrook\RuntimeInterface::validateExitCode()}.
+     *
+     * @return int<0,254>
      */
     public function run(): int;
 }
