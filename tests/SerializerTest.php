@@ -8,7 +8,6 @@ use Northrook\Assets\AssetType;
 use Northrook\Container\Secret;
 use Northrook\Context;
 use Northrook\Context\AppEnv;
-use Northrook\Context\ContextManager;
 use Northrook\Contracts\Serializable;
 use Northrook\Contracts\Tests\Support\ResetsContext;
 use Northrook\Contracts\Tests\Support\SecretMask;
@@ -31,17 +30,13 @@ use PHPUnit\Framework\TestCase;
  */
 final class SerializerTest extends TestCase
 {
-    private ContextManager $contextManager;
+    private Context $context;
 
     protected function setUp(): void
     {
         $this->resetIsolation();
 
-        $this->contextManager = new ContextManager;
-        Context::register(
-            appEnv        : AppEnv::Testing,
-            contextManager: $this->contextManager,
-        );
+        $this->context = Context::register(appEnv: AppEnv::Testing);
         Exporter::reset();
     }
 
@@ -207,7 +202,7 @@ final class SerializerTest extends TestCase
     public function testRuntimeContextAllowsCredentialSerializeAfterRequestContext(): void
     {
         $this->becomeOutbound();
-        $this->contextManager->update(KernelContext::Runtime);
+        $this->context->update(KernelContext::Runtime);
 
         $parameter = new Parameter(
             key   : 'db.dsn',
@@ -246,7 +241,7 @@ final class SerializerTest extends TestCase
 
     public function testExportAllowsCredentialWhenRuntime(): void
     {
-        $this->contextManager->update(KernelContext::Runtime);
+        $this->context->update(KernelContext::Runtime);
 
         $parameter = new Parameter(
             key   : 'db.dsn',
@@ -266,7 +261,7 @@ final class SerializerTest extends TestCase
 
     private function becomeOutbound(): void
     {
-        $this->contextManager->update(KernelContext::Request);
+        $this->context->update(KernelContext::Request);
         self::assertTrue(Context::is(KernelContext::Request));
     }
 

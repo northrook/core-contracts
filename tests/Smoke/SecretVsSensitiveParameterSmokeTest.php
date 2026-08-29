@@ -13,7 +13,6 @@ namespace Northrook\Contracts\Tests\Smoke;
 use Northrook\Container\Secret;
 use Northrook\Context;
 use Northrook\Context\AppEnv;
-use Northrook\Context\ContextManager;
 use Northrook\Contracts\Serializable;
 use Northrook\Contracts\Tests\Support\ResetsContext;
 use Northrook\Contracts\Tests\Support\SecretMask;
@@ -42,17 +41,13 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
 {
     public const string MARKER = 'SMOKE_SECRET_MARKER_hunter2';
 
-    private ContextManager $contextManager;
+    private Context $context;
 
     protected function setUp(): void
     {
         $this->resetIsolation();
 
-        $this->contextManager = new ContextManager;
-        Context::register(
-            appEnv        : AppEnv::Testing,
-            contextManager: $this->contextManager,
-        );
+        $this->context = Context::register(appEnv: AppEnv::Testing);
     }
 
     protected function tearDown(): void
@@ -88,7 +83,7 @@ final class SecretVsSensitiveParameterSmokeTest extends TestCase
 
     private function becomeOutbound(): void
     {
-        $this->contextManager->update(KernelContext::Request);
+        $this->context->update(KernelContext::Request);
     }
 
     private function resetIsolation(): void

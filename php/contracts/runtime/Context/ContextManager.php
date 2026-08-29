@@ -211,9 +211,11 @@ final class ContextManager implements Resettable
         if ($current?->context === $context) {
             return $current->context;
         }
+
         if ($current) {
             $this->contextHistory->push($current);
         }
+
         $this->context[$context::class] = new ContextEntry($context);
         return $current?->context;
     }

@@ -108,6 +108,15 @@ final readonly class Timestamp implements \Stringable
         return new self;
     }
 
+    public static function precision(): int
+    {
+        $precision = \hrtime(true);
+
+        return \is_int($precision)
+            ? $precision
+            : (int) $precision;
+    }
+
     /**
      * @return numeric-string 13-digit millisecond string
      */

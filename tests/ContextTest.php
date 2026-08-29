@@ -7,7 +7,6 @@ namespace Northrook\Contracts\Tests;
 use Northrook\Context;
 use Northrook\Context\AppDebug;
 use Northrook\Context\AppEnv;
-use Northrook\Context\ContextManager;
 use Northrook\Context\OsFamily;
 use Northrook\Contracts\ContextEnum;
 use Northrook\Contracts\Tests\Support\ResetsContext;
@@ -56,8 +55,7 @@ final class ContextTest extends TestCase
         $this->expectExceptionMessage('already registered');
 
         Context::register(
-            rootDirectory : self::ROOT,
-            contextManager: $first->context,
+            rootDirectory: self::ROOT,
         );
     }
 
@@ -270,13 +268,11 @@ final class ContextTest extends TestCase
 
     public function testRuntimeIsUsesRegisteredContextManager(): void
     {
-        $manager = new ContextManager;
-        Context::register(
-            appEnv        : AppEnv::Testing,
-            rootDirectory : self::ROOT,
-            contextManager: $manager,
+        $context = Context::register(
+            appEnv       : AppEnv::Testing,
+            rootDirectory: self::ROOT,
         );
-        $manager->update(KernelContext::Request);
+        $context->update(KernelContext::Request);
 
         self::assertTrue(Context::is(KernelContext::Request));
         self::assertTrue(Context::is(KernelContext::class));
@@ -314,16 +310,14 @@ final class ContextTest extends TestCase
 
     public function testHttpKernelContextIsUntrusted(): void
     {
-        $manager = new ContextManager;
-        Context::register(
-            appEnv        : AppEnv::Testing,
-            rootDirectory : self::ROOT,
-            contextManager: $manager,
+        $context = Context::register(
+            appEnv       : AppEnv::Testing,
+            rootDirectory: self::ROOT,
         );
 
         self::assertTrue(Context::isTrusted());
 
-        $manager->update(KernelContext::Request);
+        $context->update(KernelContext::Request);
 
         self::assertTrue(Context::isUntrusted());
         self::assertFalse(Context::isTrusted());

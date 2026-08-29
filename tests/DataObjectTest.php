@@ -8,7 +8,6 @@ use Northrook\Assets\AssetType;
 use Northrook\Container\Secret;
 use Northrook\Context;
 use Northrook\Context\AppEnv;
-use Northrook\Context\ContextManager;
 use Northrook\Contracts\Tests\Support\DataObjectSecretFixture;
 use Northrook\Contracts\Tests\Support\ResetsContext;
 use Northrook\Contracts\Tests\Support\SecretMask;
@@ -21,17 +20,13 @@ use PHPUnit\Framework\TestCase;
 
 final class DataObjectTest extends TestCase
 {
-    private ContextManager $contextManager;
+    private Context $context;
 
     protected function setUp(): void
     {
         $this->resetSingleton();
 
-        $this->contextManager = new ContextManager;
-        Context::register(
-            appEnv        : AppEnv::Testing,
-            contextManager: $this->contextManager,
-        );
+        $this->context = Context::register(appEnv: AppEnv::Testing);
     }
 
     protected function tearDown(): void
@@ -170,7 +165,7 @@ final class DataObjectTest extends TestCase
 
     private function becomeOutbound(): void
     {
-        $this->contextManager->update(KernelContext::Request);
+        $this->context->update(KernelContext::Request);
     }
 
     private function resetSingleton(): void

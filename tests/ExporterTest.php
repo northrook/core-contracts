@@ -7,7 +7,6 @@ namespace Northrook\Contracts\Tests;
 use Northrook\Container\Secret;
 use Northrook\Context;
 use Northrook\Context\AppEnv;
-use Northrook\Context\ContextManager;
 use Northrook\Contracts\Serializable;
 use Northrook\Contracts\Tests\Support\ResetsContext;
 use Northrook\Exporter;
@@ -19,17 +18,13 @@ use PHPUnit\Framework\TestCase;
 
 final class ExporterTest extends TestCase
 {
-    private ContextManager $contextManager;
+    private Context $context;
 
     protected function setUp(): void
     {
         $this->resetIsolation();
 
-        $this->contextManager = new ContextManager;
-        Context::register(
-            appEnv        : AppEnv::Testing,
-            contextManager: $this->contextManager,
-        );
+        $this->context = Context::register(appEnv: AppEnv::Testing);
         Exporter::reset();
     }
 
@@ -152,7 +147,7 @@ final class ExporterTest extends TestCase
 
     private function becomeOutbound(): void
     {
-        $this->contextManager->update(KernelContext::Request);
+        $this->context->update(KernelContext::Request);
     }
 
     private function resetIsolation(): void
