@@ -10,7 +10,7 @@ namespace Northrook;
 final readonly class Reflect
 {
     /**
-     * @param \ReflectionClass<T> $class
+     * @param \ReflectionClass<T>  $class
      */
     private function __construct(
         /** @var \ReflectionClass<T> */
@@ -18,7 +18,7 @@ final readonly class Reflect
     ) {}
 
     /**
-     * @param mixed ...$arguments
+     * @param mixed  ...$arguments
      *
      * @return T
      */
@@ -58,10 +58,10 @@ final readonly class Reflect
      * @return array<non-empty-string, \ReflectionProperty>
      */
     public function getPropertiesMap(
-        bool         $onlyPublic = false,
+        bool           $onlyPublic = false,
         false|object $onlyInitialized = false,
-        bool         $includeStatic = false,
-        bool         $includeVirtual = false,
+        bool           $includeStatic = false,
+        bool           $includeVirtual = false,
     ): array {
         $array = [];
         $class = $this->class;
@@ -108,9 +108,40 @@ final readonly class Reflect
     }
 
     /**
+     * @template A of object
+     *
+     * @param \Reflector       $from
+     * @param class-string<A>  $name
+     * @param int              $flags
+     *
+     * @return null|\ReflectionAttribute<A>
+     */
+    public static function attribute(
+        \Reflector $from,
+        string     $name,
+        int        $flags = 0,
+    ): null|object {
+        if (\method_exists($from, 'getAttributes')) {
+            $attributes = $from->getAttributes(
+                $name,
+                $flags,
+            );
+            if (\count($attributes) === 1) {
+                $attribute = $attributes[0];
+
+                if ($attribute instanceof \ReflectionAttribute) {
+                    /** @var A $attribute */
+                    return $attribute;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
      * @template TClass of object
      *
-     * @param TClass|class-string<TClass> $class
+     * @param TClass|class-string<TClass>  $class
      *
      * @return \Northrook\Reflect<TClass>
      */
