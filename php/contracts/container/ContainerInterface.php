@@ -67,6 +67,19 @@ interface ContainerInterface extends \Psr\Container\ContainerInterface
     ): bool;
 
     /**
+     * Register a live object under runtime-only class-string ids.
+     *
+     * Injected ids are available to {@see get()}, {@see has()}, and autowiring
+     * for the primary binding only. They are not part of {@see export()}.
+     *
+     * @param class-string ...$ids
+     */
+    public function inject(
+        object    $instance,
+        string ...$ids,
+    ): void;
+
+    /**
      * Whether this binding exists and has already been materialized.
      *
      * Shared / Unique: `true` when the shared cache holds `(id, reference)`.
