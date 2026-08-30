@@ -20,7 +20,7 @@ use Northrook\Container\ServiceBinding;
  * @phpstan-type ArgumentMap array<non-empty-string|int<0, max>, mixed>
  */
 #[\Attribute(\Attribute::TARGET_CLASS)]
-final readonly class Autodiscover implements AutodiscoverInterface
+readonly class Autodiscover implements AutodiscoverInterface
 {
     public null|ServiceBinding $binding;
 
