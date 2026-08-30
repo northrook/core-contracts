@@ -119,8 +119,8 @@ readonly class Autodiscover implements AutodiscoverInterface
     }
 
     /**
-     * @param null|non-empty-string           $tag
-     * @param null|list<non-empty-string|Tag> $tags
+     * @param null|non-empty-string|Tag        $tag
+     * @param null|list<non-empty-string|Tag>  $tags
      *
      * @return null|list<Tag>
      */
