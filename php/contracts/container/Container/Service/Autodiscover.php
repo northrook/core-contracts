@@ -74,7 +74,7 @@ readonly class Autodiscover implements AutodiscoverInterface
     /**
      * @param null|\Northrook\Container\ServiceBinding|string  $binding
      * @param null|class-string|class-string[]                 $alias
-     * @param null|non-empty-string                            $tag
+     * @param null|non-empty-string|Tag                        $tag
      * @param null|list<non-empty-string|Tag>                  $tags
      * @param null|ArgumentMap                                 $arguments
      * @param null|bool                                        $autowire
@@ -85,7 +85,7 @@ readonly class Autodiscover implements AutodiscoverInterface
     public function __construct(
         null|ServiceBinding|string $binding = null,
         null|string|array          $alias = null,
-        null|string                $tag = null,
+        null|string|Tag            $tag = null,
         null|array                 $tags = null,
         null|array                 $arguments = null,
         null|bool                  $autowire = null,
@@ -108,7 +108,7 @@ readonly class Autodiscover implements AutodiscoverInterface
      *
      * @return null|list<Callback>
      */
-    private function resolveCallbacks(
+    protected function resolveCallbacks(
         null|Callback|array $callbacks = null,
     ): null|array {
         if ($callbacks === null || $callbacks === []) {
@@ -124,9 +124,9 @@ readonly class Autodiscover implements AutodiscoverInterface
      *
      * @return null|list<Tag>
      */
-    private function resolveTags(
-        null|string $tag,
-        null|array  $tags,
+    protected function resolveTags(
+        null|string|Tag $tag,
+        null|array      $tags,
     ): null|array {
         if ($tag === null && $tags === null) {
             return null;
@@ -135,7 +135,7 @@ readonly class Autodiscover implements AutodiscoverInterface
         $resolved = [];
 
         if (! empty($tag)) {
-            $resolved[] = new Tag($tag);
+            $resolved[] = $tag instanceof Tag ? $tag : new Tag($tag);
         }
 
         if (! empty($tags)) {
