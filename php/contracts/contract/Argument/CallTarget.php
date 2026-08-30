@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Northrook\Argument;
 
 use Northrook\InvalidArgumentException;
+use Northrook\RuntimeException;
 
 /**
  * Named function, or class plus optional method.
@@ -75,6 +76,32 @@ final readonly class CallTarget
         if ($validate) {
             $this->validate();
         }
+    }
+
+    /**
+     * @param mixed ...$arguments
+     *
+     * @return mixed
+     */
+    public function __invoke(
+        mixed ...$arguments,
+    ): mixed {
+        if ($this->function) {
+            return ( $this->function )(...$arguments);
+        }
+
+        if (\is_callable([$this->class, $this->method])) {
+            return [$this->class, $this->method](...$arguments);
+        }
+
+        if ($this->class) {
+            return new $this->class(...$arguments);
+        }
+
+        throw new RuntimeException(
+            message: 'CallTarget is not a valid callable',
+            context: ['callTarget' => $this],
+        );
     }
 
     /**
