@@ -1,32 +1,96 @@
 <?php
 
-/**
- * @noinspection PhpUndefinedNamespaceInspection
- * @noinspection PhpUndefinedClassInspection
- */
-
 declare(strict_types=1);
 
 namespace Northrook\Http;
 
+use Northrook\Http\Request\Method;
+use Northrook\Http\Request\Scheme;
 use Symfony\Component\HttpFoundation\{FileBag, HeaderBag, InputBag, ParameterBag, ServerBag};
 
 /**
- * HTTP request abstraction aligned with Symfony HttpFoundation bags.
- *
- * Implementations wrap superglobals and expose typed access to attributes,
- * query, body, server, file, cookie, and header data.
- *
- * @property-read  ParameterBag     $attributes Custom parameters
- * @property-read  InputBag<string> $request    Request body parameters `$_POST`
- * @property-read  InputBag<string> $query      Query string parameters `$_GET`
- * @property-read  ServerBag        $server     Server and execution environment parameters `$_SERVER`
- * @property-read  FileBag          $files      Uploaded files `$_FILES`
- * @property-read  InputBag<string> $cookies    Cookies `$_COOKIE`
- * @property-read  HeaderBag        $headers    Headers from `$_SERVER`
+ * HTTP request abstraction for handling a {@see \Symfony\Component\HttpFoundation\Request}.
  */
 interface RequestInterface
 {
+    /**
+     * Custom parameters.
+     */
+    public ParameterBag $parameterBag { get; }
+
+    /**
+     * Request body parameters ($_POST).
+     *
+     * @var InputBag<string>
+     */
+    public InputBag $request { get; }
+
+    /**
+     * Query string parameters ($_GET).
+     *
+     * @var InputBag<string>
+     */
+    public InputBag $query { get; }
+
+    /**
+     * Headers (taken from the $_SERVER).
+     */
+    public HeaderBag $headers { get; }
+
+    /**
+     * Cookies ($_COOKIE).
+     *
+     * @var InputBag<string>
+     */
+    public InputBag $cookies { get; }
+
+    /**
+     * Server and execution environment parameters ($_SERVER).
+     */
+    public ServerBag $server { get; }
+
+    /**
+     * Uploaded files ($_FILES).
+     */
+    public FileBag $files { get; }
+
+    /**
+     * The request method.
+     */
+    public Method $method { get; }
+
+    /**
+     * Gets the request's scheme.
+     */
+    public Scheme $scheme { get; }
+
+    /**
+     * Returns the HTTP host being requested.
+     *
+     * The port name will be appended to the host if it's non-standard.
+     */
+    public string $httpHost { get; }
+
+    /**
+     * Gets the scheme and HTTP host.
+     *
+     * If the URL was called with basic authentication, the user
+     * and the password are not added to the generated string.
+     */
+    public string $schemeAndHttpHost { get; }
+
+    /**
+     * Returns the requested URI (path and query string).
+     *
+     * @return string raw, unencoded URI
+     */
+    public string $requestUri { get; }
+
+    /**
+     * Get the locale.
+     */
+    public string $locale { get; }
+
     /**
      * Creates a new request with values from PHP's super globals.
      */
@@ -46,38 +110,6 @@ interface RequestInterface
         string $key,
         mixed  $default = null,
     ): mixed;
-
-    /**
-     * Gets the request's scheme.
-     */
-    public function getScheme(): string;
-
-    /**
-     * Returns the HTTP host being requested.
-     *
-     * The port name will be appended to the host if it's non-standard.
-     */
-    public function getHttpHost(): string;
-
-    /**
-     * Gets the scheme and HTTP host.
-     *
-     * If the URL was called with basic authentication, the user
-     * and the password are not added to the generated string.
-     */
-    public function getSchemeAndHttpHost(): string;
-
-    /**
-     * Returns the requested URI (path and query string).
-     *
-     * @return string raw, unencoded URI
-     */
-    public function getRequestUri(): string;
-
-    /**
-     * Get the locale.
-     */
-    public function getLocale(): string;
 
     /**
      * Whether the request contains a Session object.

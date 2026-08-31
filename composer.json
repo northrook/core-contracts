@@ -68,7 +68,8 @@
     "phpstan/phpstan": "^2.2",
     "symfony/var-exporter": "^8.1",
     "tempest/highlight": "^2.27",
-    "tracy/tracy": "^2.12"
+    "tracy/tracy": "^2.12",
+    "symfony/http-foundation": "^8.1"
   },
   "scripts": {
     "phpstan": "vendor/bin/phpstan analyse",
