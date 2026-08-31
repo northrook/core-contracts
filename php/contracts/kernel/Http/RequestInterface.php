@@ -23,7 +23,7 @@ interface RequestInterface
      *
      * @var InputBag<string>
      */
-    public InputBag $request { get; }
+    public InputBag $parameters { get; }
 
     /**
      * Query string parameters ($_GET).
@@ -56,6 +56,10 @@ interface RequestInterface
 
     /**
      * The request method.
+     *
+     * Use {@see Method::$name} for the verb string.
+     *
+     * Validates {@see Method::isSafe()}, {@see Method::isCacheable()}, and {@see Method::isIdempotent()}.
      */
     public Method $method { get; }
 
