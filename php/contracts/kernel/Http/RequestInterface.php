@@ -16,7 +16,7 @@ interface RequestInterface
     /**
      * Custom parameters.
      */
-    public ParameterBag $parameterBag { get; }
+    public ParameterBag $attributes { get; }
 
     /**
      * Request body parameters ($_POST).
