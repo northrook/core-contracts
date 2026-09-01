@@ -42,6 +42,31 @@ function match_charset(
 }
 
 /**
+ * @param array<array-key, mixed> $array
+ *
+ * @return non-empty-string[]
+ */
+function string_keys(
+    array $array,
+): array {
+    $keys = [];
+    foreach ($array as $key => $value) {
+        $string = (string) $key;
+
+        if (\trim($string) === '') {
+            throw new \Northrook\InvalidArgumentException(
+                message: 'Key must be a non-empty string,' . \debug_value_type($key) . ' provided',
+                context: ['array' => $array, 'key' => $key],
+            );
+        }
+
+        $keys[] = $string;
+    }
+
+    return $keys;
+}
+
+/**
  * Recursively normalizes array key order for stable fingerprints.
  *
  * - Associative arrays are sorted with {@see ksort()}
