@@ -154,9 +154,11 @@ final class OnEvent
         $type           = $eventParameter->getType();
 
         if ($type === null || ! $this->typeAcceptsEvent($type)) {
-            $label = $type instanceof \ReflectionNamedType
-                ? $type->getName()
-                : (string) $type;
+            $label = match (true) {
+                $type instanceof \ReflectionNamedType => $type->getName(),
+                $type === null => '',
+                default => \string($type),
+            };
 
             throw new InvalidArgumentException(
                 message: $this::class . " listener '{$class}::{$method}' parameter 0 must accept '{$this->event}'" . ( $label !== '' ? ", got '{$label}'." : '.' ),

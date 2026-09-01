@@ -112,7 +112,7 @@ final class Timezone extends \DateTimeZone implements \Stringable
             $resolve = null;
         }
         else {
-            $resolve = \trim((string) $resolve) ?: null;
+            $resolve = \trim(\string($resolve)) ?: null;
         }
 
         try {

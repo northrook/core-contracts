@@ -170,7 +170,7 @@ final readonly class Email implements Reference
         null|callable      $policy,
         bool               $dnsCheck,
     ): array {
-        $string = \trim((string) $value);
+        $string = \trim(\string($value));
 
         $issues       = [];
         $policyReason = null;

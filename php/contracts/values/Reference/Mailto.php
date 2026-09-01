@@ -82,7 +82,7 @@ final readonly class Mailto extends Href
     public static function normalize(
         string|\Stringable $value,
     ): string {
-        $string = (string) $value;
+        $string = \string($value);
 
         if ($string === '') {
             throw new InvalidArgumentException(
@@ -125,7 +125,7 @@ final readonly class Mailto extends Href
             return null;
         }
 
-        $string = (string) $value;
+        $string = \string($value);
 
         try {
             if (self::isMailtoHref($string)) {

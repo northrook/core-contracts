@@ -50,7 +50,7 @@ final class NativeLogger extends AbstractLogger
         }
 
         $label     = LogLevel::resolve($level)->label();
-        $message   = self::interpolate((string) $message, $context);
+        $message   = self::interpolate(\string($message), $context);
         $exception = $context['exception'] ?? null;
         $timestamp = new \DateTimeImmutable()->format('Y-m-d H:i:s v');
 
@@ -79,8 +79,11 @@ final class NativeLogger extends AbstractLogger
         $replace = [];
 
         foreach ($context as $key => $value) {
-            if ($value === null || \is_scalar($value) || $value instanceof \Stringable) {
-                $replace['{' . $key . '}'] = (string) $value;
+            if ($value === null) {
+                $replace['{' . $key . '}'] = '';
+            }
+            elseif (\is_scalar($value) || $value instanceof \Stringable) {
+                $replace['{' . $key . '}'] = \string($value);
             }
         }
 

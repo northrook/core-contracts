@@ -64,7 +64,7 @@ class Uri implements Reference
             return;
         }
 
-        $string = (string) $uri;
+        $string = \string($uri);
 
         if ($string === '') {
             throw new InvalidArgumentException(
@@ -121,7 +121,7 @@ class Uri implements Reference
     public static function normalize(
         string|\Stringable $value,
     ): string {
-        $string = (string) $value;
+        $string = \string($value);
 
         if ($string === '') {
             throw new InvalidArgumentException(
@@ -382,7 +382,7 @@ class Uri implements Reference
     public function append(
         string|\Stringable $string,
     ): static {
-        $addon = (string) $string;
+        $addon = \string($string);
 
         if ($addon === '') {
             return $this;
@@ -693,7 +693,7 @@ class Uri implements Reference
     public function resolve(
         string|\Stringable $reference,
     ): static {
-        $string = (string) $reference;
+        $string = \string($reference);
 
         try {
             return $this->withRfc($this->rfc()->resolve($string));

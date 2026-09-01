@@ -89,7 +89,7 @@ readonly class Href implements Reference
     public static function normalize(
         string|\Stringable $value,
     ): string {
-        $string = (string) $value;
+        $string = \string($value);
 
         if ($string === '') {
             throw new InvalidArgumentException(

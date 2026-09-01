@@ -12,8 +12,8 @@ class FileNotFoundException extends FilesystemException
         null|array              $context = null,
         null|\Throwable         $previous = null,
     ) {
-        if ($path instanceof \Stringable) {
-            $path = $path->__toString();
+        if ($path !== null) {
+            $path = \string($path);
         }
 
         $message ??=

@@ -95,10 +95,9 @@ enum StatusCode: int
     public static function resolve(
         mixed $value,
     ): self {
-        if (\is_numeric($value) && $value >= 100 && $value < 600) {
-            $code = (int) $value;
-        }
-        else {
+        $code = \int($value);
+
+        if ($code < 100 || $code >= 600) {
             throw new InvalidArgumentException(
                 'Unable to resolve HTTP status code from ' . \debug_value_type($value),
                 ['value' => $value],

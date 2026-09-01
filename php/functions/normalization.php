@@ -7,14 +7,14 @@ function dir_path(
     bool              $trailingSeparator = false,
     bool              $throwOnTraversal = false,
 ): string {
-    if (\trim((string) $string) !== (string) $string) {
+    if (\trim(\string($string)) !== \string($string)) {
         throw new \Northrook\InvalidArgumentException(
             message: 'Path strings cannot be bracketed by whitespace',
             context: ['string' => $string],
         );
     }
 
-    $path = \strtr((string) $string, '\\', \DIR_SEP);
+    $path = \strtr(\string($string), '\\', \DIR_SEP);
 
     $prefix   = \str_starts_with($path, \DIR_SEP) ? \DIR_SEP : null;
     $suffix   = $trailingSeparator ? \DIR_SEP : null;

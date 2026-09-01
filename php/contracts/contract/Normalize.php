@@ -82,7 +82,7 @@ final class Normalize
                     continue;
                 }
 
-                $part = (string) $part;
+                $part = \string($part);
 
                 if ($part !== '') {
                     $segments[] = $part;
@@ -92,7 +92,7 @@ final class Normalize
             $path = \implode(\DIR_SEP, $segments);
         }
         else {
-            $path = (string) $path;
+            $path = \string($path);
         }
 
         if ($path === '') {
@@ -181,7 +181,7 @@ final class Normalize
         null|string|Stringable $path = null,
         bool                   $trailingSeparator = false,
     ): string {
-        $path = (string) ( $path ?? '' );
+        $path = \string($path ?? '');
 
         if ($path === '') {
             return '';
@@ -291,7 +291,7 @@ final class Normalize
                     continue;
                 }
 
-                $part = (string) $part;
+                $part = \string($part);
 
                 if ($part !== '') {
                     $parts[] = $part;
@@ -301,7 +301,7 @@ final class Normalize
             $url = \implode('/', $parts);
         }
         else {
-            $url = (string) $url;
+            $url = \string($url);
         }
 
         if ($url === '') {

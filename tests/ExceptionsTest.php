@@ -95,6 +95,21 @@ final class ExceptionsTest extends TestCase
         );
     }
 
+    public function testUndefinedEntryExceptionCoercesNumericStringKey(): void
+    {
+        $exception = new UndefinedEntryException('42');
+
+        self::assertSame(42, $exception->getKey());
+        self::assertSame(42, $exception->getContext()['key']);
+    }
+
+    public function testUndefinedEntryExceptionKeepsNonNumericStringKey(): void
+    {
+        $exception = new UndefinedEntryException('404abc');
+
+        self::assertSame('404abc', $exception->getKey());
+    }
+
     #[DataProvider('provideFileNotFoundEmptyPaths')]
     public function testFileNotFoundExceptionGenericMessageWithoutPath(
         null|string $path,

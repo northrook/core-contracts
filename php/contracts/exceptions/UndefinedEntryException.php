@@ -28,7 +28,7 @@ class UndefinedEntryException extends RuntimeException
             $string = \trim((string) $key);
 
             $context['key'] = \is_numeric($string)
-                ? \intval($string)
+                ? \int($string)
                 : $string;
         }
 

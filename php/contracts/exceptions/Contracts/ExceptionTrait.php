@@ -113,9 +113,7 @@ trait ExceptionTrait
         }
 
         $message = \trim(match (true) {
-            \is_scalar($message) => \is_bool($message) ? ( $message ? 'true' : 'false' ) : (string) $message,
-            $message instanceof \Stringable => $message->__toString(),
-            $message instanceof \BackedEnum => \strval($message->value),
+            \is_scalar($message), $message instanceof \Stringable, $message instanceof \UnitEnum => \string($message),
             default => '',
         });
 

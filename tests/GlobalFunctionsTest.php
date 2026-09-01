@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace Northrook\Contracts\Tests;
 
+use Northrook\Context\AppDebug;
+use Northrook\Http\Response\StatusCode;
+use Northrook\InvalidArgumentException;
 use Northrook\RuntimeException;
+use Northrook\Timestamp;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -78,6 +82,134 @@ final class GlobalFunctionsTest extends TestCase
         yield 'digit' => [\CHARSET_DIGIT, ctype_digit(...)];
         yield 'alnum' => [\CHARSET_ALNUM, ctype_alnum(...)];
         yield 'xdigit' => [\CHARSET_XDIGIT, ctype_xdigit(...)];
+    }
+
+    // endregion
+
+    // region int
+
+    #[DataProvider('provideIntCases')]
+    public function testInt(
+        mixed $value,
+        int   $expected,
+    ): void {
+        self::assertSame($expected, \int($value));
+    }
+
+    /**
+     * @return \Generator<string, array{0: mixed, 1: int}>
+     */
+    public static function provideIntCases(): \Generator
+    {
+        yield 'int zero' => [0, 0];
+        yield 'int positive' => [42, 42];
+        yield 'int negative' => [-5, -5];
+        yield 'float truncates toward zero' => [404.9, 404];
+        yield 'float whole number' => [1.0, 1];
+        yield 'numeric string' => ['404', 404];
+        yield 'numeric string with plus' => ['+404', 404];
+        yield 'numeric string with decimal' => ['404.0', 404];
+        yield 'numeric string with trailing space' => ['404 ', 404];
+        yield 'scientific notation string' => ['1e2', 100];
+        yield 'backed enum' => [StatusCode::NotFound, 404];
+        yield 'timestamp milliseconds' => [new Timestamp(1_000), 1_000];
+        yield 'date time seconds' => [new \DateTimeImmutable('@1700000000'), 1_700_000_000];
+        yield 'stringable numeric' => [
+            new class implements \Stringable {
+                public function __toString(): string
+                {
+                    return '99';
+                }
+            },
+            99,
+        ];
+    }
+
+    #[DataProvider('provideIntRejectsNonNumeric')]
+    public function testIntRejectsNonNumeric(
+        mixed $value,
+    ): void {
+        $this->expectException(InvalidArgumentException::class);
+
+        \int($value);
+    }
+
+    /**
+     * @return \Generator<string, array{0: mixed}>
+     */
+    public static function provideIntRejectsNonNumeric(): \Generator
+    {
+        yield 'null' => [null];
+        yield 'true' => [true];
+        yield 'false' => [false];
+        yield 'array' => [[404]];
+        yield 'non-numeric string' => ['abc'];
+        yield 'partial numeric string' => ['404abc'];
+        yield 'object' => [new \stdClass];
+        yield 'stringable non-numeric' => [new class implements \Stringable {
+            public function __toString(): string
+            {
+                return 'nope';
+            }
+        }];
+    }
+
+    // endregion
+
+    // region string
+
+    #[DataProvider('provideStringCases')]
+    public function testString(
+        mixed  $value,
+        string $expected,
+    ): void {
+        self::assertSame($expected, \string($value));
+    }
+
+    /**
+     * @return \Generator<string, array{0: mixed, 1: string}>
+     */
+    public static function provideStringCases(): \Generator
+    {
+        yield 'string empty' => ['', ''];
+        yield 'string value' => ['hello', 'hello'];
+        yield 'int zero' => [0, '0'];
+        yield 'int positive' => [42, '42'];
+        yield 'float' => [3.14, '3.14'];
+        yield 'true' => [true, 'true'];
+        yield 'false' => [false, 'false'];
+        yield 'backed enum' => [StatusCode::NotFound, '404'];
+        yield 'unit enum' => [AppDebug::Enabled, 'Enabled'];
+        yield 'timestamp milliseconds' => [new Timestamp(1_000), '0000000001000'];
+        yield 'stringable' => [
+            new class implements \Stringable {
+                public function __toString(): string
+                {
+                    return 'ok';
+                }
+            },
+            'ok',
+        ];
+    }
+
+    #[DataProvider('provideStringRejectsUnsupported')]
+    public function testStringRejectsUnsupported(
+        mixed $value,
+    ): void {
+        $this->expectException(InvalidArgumentException::class);
+
+        \string($value);
+    }
+
+    /**
+     * @return \Generator<string, array{0: mixed}>
+     */
+    public static function provideStringRejectsUnsupported(): \Generator
+    {
+        yield 'null' => [null];
+        yield 'array' => [['a']];
+        yield 'object' => [new \stdClass];
+        yield 'date time' => [new \DateTimeImmutable('@1700000000')];
     }
 
     // endregion

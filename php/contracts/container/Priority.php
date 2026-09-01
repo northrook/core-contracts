@@ -105,7 +105,7 @@ final class Priority implements \Stringable, Resettable
 
     public function __toString(): string
     {
-        return (string) $this->get();
+        return \string($this->get());
     }
 
     /**

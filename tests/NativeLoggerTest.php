@@ -55,6 +55,21 @@ final class NativeLoggerTest extends TestCase
         );
     }
 
+    public function testInterpolatesBooleanContextAsTrueFalse(): void
+    {
+        $output = $this->captureErrorLog(
+            static fn(NativeLogger $logger) => $logger->info(
+                'Enabled={enabled} Disabled={disabled}',
+                ['enabled' => true, 'disabled' => false],
+            ),
+        );
+
+        self::assertMatchesRegularExpression(
+            '/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} \d{3} \[INFO] Enabled=true Disabled=false/',
+            $output,
+        );
+    }
+
     public function testAcceptsLogLevelEnum(): void
     {
         $output = $this->captureErrorLog(

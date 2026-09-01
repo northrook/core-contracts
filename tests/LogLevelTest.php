@@ -8,6 +8,7 @@ use Northrook\Logger\LogLevel;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\InvalidArgumentException as PsrInvalidArgumentException;
 
 #[CoversClass(LogLevel::class)]
 final class LogLevelTest extends TestCase
@@ -58,5 +59,17 @@ final class LogLevelTest extends TestCase
         yield 'critical' => [LogLevel::CRITICAL, 'CRIT'];
         yield 'alert' => [LogLevel::ALERT, 'ALER'];
         yield 'emergency' => [LogLevel::EMERGENCY, 'EMER'];
+    }
+
+    public function testResolveAcceptsNumericString(): void
+    {
+        self::assertSame(LogLevel::ERROR, LogLevel::resolve('400'));
+    }
+
+    public function testResolveRejectsInvalidNumericString(): void
+    {
+        $this->expectException(PsrInvalidArgumentException::class);
+
+        LogLevel::resolve('400abc');
     }
 }

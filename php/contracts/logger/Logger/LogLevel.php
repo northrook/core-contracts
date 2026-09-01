@@ -110,7 +110,7 @@ enum LogLevel: int
     ): self {
         return match (true) {
             $level instanceof LogLevel => $level,
-            \is_numeric($level) => self::fromValue((int) $level),
+            \is_numeric($level) => self::fromValue(\int($level)),
             \is_string($level) => self::fromName($level),
             default => throw new InvalidArgumentException(
                 'Unable to resolve valid LogLevel from ' . \debug_value_type($level, true),

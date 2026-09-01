@@ -31,8 +31,9 @@ final readonly class Headers implements \IteratorAggregate, \Countable, \Stringa
     /**
      * Returns true if the HTTP header is defined.
      */
-    public function has(string $key): bool
-    {
+    public function has(
+        string $key,
+    ): bool {
         return $this->headerBag->has($key);
     }
 
@@ -130,8 +131,9 @@ final readonly class Headers implements \IteratorAggregate, \Countable, \Stringa
      *
      * @return \Northrook\Http\Response\Headers
      */
-    public function remove(string $key): self
-    {
+    public function remove(
+        string $key,
+    ): self {
         $this->headerBag->remove($key);
         return $this;
     }

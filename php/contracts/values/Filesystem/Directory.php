@@ -159,7 +159,7 @@ final readonly class Directory extends Path
     private function pathUnder(
         string|\Stringable $segment,
     ): string {
-        $segment = (string) $segment;
+        $segment = \string($segment);
 
         if ($segment === '' || Normalize::isAbsolutePath($segment)) {
             throw new InvalidArgumentException(
@@ -240,7 +240,7 @@ final readonly class Directory extends Path
         string|\Stringable|Path|File|self $path,
     ): bool {
         try {
-            $candidate = new Path((string) $path, $this->filesystem)->absolute()->value;
+            $candidate = new Path(\string($path), $this->filesystem)->absolute()->value;
             $root      = $this->absolute()->value;
         }
         catch (\Throwable) {
@@ -517,7 +517,7 @@ final readonly class Directory extends Path
         string|\Stringable|Path|self $target,
         bool                         $alwaysOverwrite = false,
     ): static {
-        $destination = (string) $target;
+        $destination = \string($target);
 
         $this->filesystem->syncDirectory(
             sourceDirectory     : $this->value,
@@ -541,7 +541,7 @@ final readonly class Directory extends Path
         bool                         $alwaysOverwrite = false,
         bool                         $deleteMissing = false,
     ): self {
-        $destination = (string) $target;
+        $destination = \string($target);
 
         $this->filesystem->syncDirectory(
             sourceDirectory     : $this->value,

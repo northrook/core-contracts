@@ -146,7 +146,7 @@ final class ParameterDefinition implements Serializable, Exportable
 
         // Stringable is accepted for convenience; stored + validated as string.
         if ($set instanceof \Stringable) {
-            $set = $set->__toString();
+            $set = \string($set);
         }
 
         $this->value = $set;

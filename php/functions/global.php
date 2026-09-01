@@ -42,6 +42,82 @@ function match_charset(
 }
 
 /**
+ * Coerces a mixed value to an integer.
+ *
+ * Resolution order:
+ *
+ * - {@see \BackedEnum} => backing value
+ * - {@see \Northrook\Timestamp} => {@see Timestamp::$number}
+ * - {@see \DateTimeInterface} => {@see \DateTimeInterface::getTimestamp()}
+ * - {@see \Stringable} => string cast, then numeric check
+ * - scalar => numeric check
+ *
+ * Accepts any value {@see \is_numeric()} considers numeric after resolution.
+ * Floats are truncated toward zero.
+ *
+ * @param mixed $value
+ *
+ * @return int
+ *
+ * @throws \Northrook\InvalidArgumentException when no integer can be derived
+ */
+function int(
+    mixed $value,
+): int {
+    $match = match (true) {
+        $value instanceof \BackedEnum => $value->value,
+        $value instanceof \Northrook\Timestamp => $value->number,
+        $value instanceof \DateTimeInterface => $value->getTimestamp(),
+        $value instanceof \Stringable => $value->__toString(),
+        default => $value,
+    };
+
+    if (\is_numeric($match)) {
+        return (int) $match;
+    }
+
+    throw new \Northrook\InvalidArgumentException(
+        message: 'Unable to derive integer from value ' . \debug_value_type($value),
+    );
+}
+
+/**
+ * Coerces a mixed value to a string.
+ *
+ * Resolution order:
+ *
+ * - {@see \BackedEnum} => backing value as string
+ * - {@see \UnitEnum} => case name
+ * - {@see \Northrook\Timestamp} => {@see Timestamp::$string}
+ * - {@see \Stringable} => {@see \Stringable::__toString()}
+ * - `string` => as-is
+ * - `bool` => `'true'` or `'false'`
+ * - `int` / `float` => {@see \strval()}
+ *
+ * @param mixed $value
+ *
+ * @return string
+ *
+ * @throws \Northrook\InvalidArgumentException when no string can be derived
+ */
+function string(
+    mixed $value,
+): string {
+    return match (true) {
+        $value instanceof \BackedEnum => \strval($value->value),
+        $value instanceof \UnitEnum => $value->name,
+        $value instanceof \Northrook\Timestamp => $value->string,
+        $value instanceof \Stringable => $value->__toString(),
+        \is_string($value) => $value,
+        \is_bool($value) => $value ? 'true' : 'false',
+        \is_scalar($value) => \strval($value),
+        default => throw new \Northrook\InvalidArgumentException(
+            message: 'Unable to derive string from value ' . \debug_value_type($value),
+        ),
+    };
+}
+
+/**
  * @param array<array-key, mixed> $array
  *
  * @return non-empty-string[]
@@ -51,7 +127,7 @@ function string_keys(
 ): array {
     $keys = [];
     foreach ($array as $key => $value) {
-        $string = (string) $key;
+        $string = \string($key);
 
         if (\trim($string) === '') {
             throw new \Northrook\InvalidArgumentException(
@@ -169,7 +245,7 @@ function php_ini_bytes(
 /**
  * Resolve the project root directory.
  *
- * Order: explicit `$root` → `APPROOT` → `PROJECT_ROOT` → Composer install path →
+ * Order: explicit `$root` => `APPROOT` => `PROJECT_ROOT` => Composer install path =>
  * walk up from cwd looking for `composer.json` + `vendor/autoload.php`.
  *
  * @param null|string|\Stringable $root
@@ -183,7 +259,7 @@ function resolve_root_directory(
     $cwd      = \getcwd();
 
     if ($root !== null) {
-        $explicit = \trim((string) $root);
+        $explicit = \trim(\string($root));
 
         if ($explicit !== '') {
             return $explicit;
@@ -263,14 +339,14 @@ function resolve_var_directory(
     null|string|\Stringable $var = null,
 ): string {
     if ($var !== null) {
-        $explicit = \trim((string) $var);
+        $explicit = \trim(\string($var));
 
         if ($explicit !== '') {
             return $explicit;
         }
     }
 
-    $rootString   = (string) $root;
+    $rootString   = \string($root);
     $resolvedRoot = \realpath($rootString);
 
     if ($resolvedRoot !== false && \is_dir($resolvedRoot)) {

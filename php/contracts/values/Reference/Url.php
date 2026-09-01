@@ -57,7 +57,7 @@ final class Url extends Uri
     public static function normalize(
         string|\Stringable $value,
     ): string {
-        $string = (string) $value;
+        $string = \string($value);
 
         if ($string === '') {
             throw new InvalidArgumentException(
@@ -244,7 +244,7 @@ final class Url extends Uri
     ): File {
         $location = $destination === null
             ? get_temp_path('download')
-            : (string) $destination;
+            : \string($destination);
 
         $path = $this->httpClient(__METHOD__)->download($this->value, $location);
 

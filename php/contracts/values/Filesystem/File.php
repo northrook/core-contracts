@@ -82,7 +82,7 @@ final readonly class File extends Path
         }
         else {
             $parent = new Directory(
-                $directory === null ? \sys_get_temp_dir() : (string) $directory,
+                $directory === null ? \sys_get_temp_dir() : \string($directory),
                 filesystem: $filesystem,
             );
         }

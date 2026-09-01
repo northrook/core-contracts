@@ -64,7 +64,7 @@ readonly class Path implements Reference
     public static function normalize(
         string|\Stringable $value,
     ): string {
-        $string = (string) $value;
+        $string = \string($value);
 
         if ($string === '') {
             throw new InvalidArgumentException(
@@ -159,7 +159,7 @@ readonly class Path implements Reference
         $parts = [$this->value];
 
         foreach ($segments as $segment) {
-            $part = (string) $segment;
+            $part = \string($segment);
 
             if ($part !== '') {
                 $parts[] = $part;
@@ -406,7 +406,7 @@ readonly class Path implements Reference
     ): bool {
         try {
             $path      = $this->absolute()->value;
-            $otherPath = new self((string) $other, $this->filesystem)->absolute()->value;
+            $otherPath = new self(\string($other), $this->filesystem)->absolute()->value;
         }
         catch (\Throwable) {
             return false;
@@ -519,7 +519,7 @@ readonly class Path implements Reference
     public function relativeTo(
         self|string|\Stringable $from,
     ): static {
-        $fromPath = new self((string) $from, $this->filesystem)->absolute()->value;
+        $fromPath = new self(\string($from), $this->filesystem)->absolute()->value;
         $toPath   = $this->absolute()->value;
 
         if ($fromPath === $toPath) {
@@ -652,7 +652,7 @@ readonly class Path implements Reference
         string|\Stringable|self $target,
         bool                    $alwaysOverwrite = false,
     ): static {
-        $destination = (string) $target;
+        $destination = \string($target);
 
         $this->filesystem->copyFile(
             $this->value,
@@ -673,7 +673,7 @@ readonly class Path implements Reference
         string|\Stringable|self $target,
         bool                    $overwrite = false,
     ): static {
-        $destination = (string) $target;
+        $destination = \string($target);
 
         $this->filesystem->move(
             $this->value,
