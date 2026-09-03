@@ -53,7 +53,6 @@
     "psr/log": "@stable",
     "psr/container": "@stable",
     "psr/event-dispatcher": "@stable",
-    "symfony/http-client-contracts": "^3.7",
     "composer-runtime-api": "^2.2",
     "northrook/hashes": "dev-main",
     "ext-fileinfo": "*",
@@ -67,6 +66,7 @@
     "phpunit/phpunit": "^13",
     "phpstan/phpstan": "^2.2",
     "symfony/var-exporter": "^8.1",
+    "symfony/http-client-contracts": "^3.7",
     "tempest/highlight": "^2.27",
     "tracy/tracy": "^2.12",
     "symfony/http-foundation": "^8.1"

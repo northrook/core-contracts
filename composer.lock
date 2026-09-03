@@ -4,7 +4,7 @@
     "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
     "This file is @generated automatically"
   ],
-  "content-hash": "bb4b641851da13e80ee2a1169406c49e",
+  "content-hash": "c4d0963723caa3cea705dcaf259b5e1a",
   "packages": [
     {
       "name": "northrook/hashes",
@@ -12,16 +12,17 @@
       "source": {
         "type": "git",
         "url": "https://github.com/northrook/hashes.git",
-        "reference": "e9d61438b2cbc5d3e8e7ab01e6b10ab783f2dcbe"
+        "reference": "32c16e41b9507ecd5623ab2a4011b68c161db0fe"
       },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/northrook/hashes/zipball/e9d61438b2cbc5d3e8e7ab01e6b10ab783f2dcbe",
-        "reference": "e9d61438b2cbc5d3e8e7ab01e6b10ab783f2dcbe",
+        "url": "https://api.github.com/repos/northrook/hashes/zipball/32c16e41b9507ecd5623ab2a4011b68c161db0fe",
+        "reference": "32c16e41b9507ecd5623ab2a4011b68c161db0fe",
         "shasum": ""
       },
       "require": {
         "ext-hash": "*",
+        "ext-mbstring": "*",
         "ext-random": "*",
         "php": ">=8.5"
       },
@@ -51,7 +52,7 @@
       "support": {
         "source": "https://github.com/northrook/hashes/tree/main"
       },
-      "time": "2026-08-23T13:36:14+00:00"
+      "time": "2026-08-27T06:57:26+00:00"
     },
     {
       "name": "psr/container",
@@ -205,88 +206,6 @@
         "source": "https://github.com/php-fig/log/tree/3.0.2"
       },
       "time": "2024-09-11T13:17:53+00:00"
-    },
-    {
-      "name": "symfony/http-client-contracts",
-      "version": "v3.7.1",
-      "source": {
-        "type": "git",
-        "url": "https://github.com/symfony/http-client-contracts.git",
-        "reference": "41fc42d276aeff21192465331ebbab7d83a743c0"
-      },
-      "dist": {
-        "type": "zip",
-        "url": "https://api.github.com/repos/symfony/http-client-contracts/zipball/41fc42d276aeff21192465331ebbab7d83a743c0",
-        "reference": "41fc42d276aeff21192465331ebbab7d83a743c0",
-        "shasum": ""
-      },
-      "require": {
-        "php": ">=8.1"
-      },
-      "type": "library",
-      "extra": {
-        "thanks": {
-          "url": "https://github.com/symfony/contracts",
-          "name": "symfony/contracts"
-        },
-        "branch-alias": {
-          "dev-main": "3.7-dev"
-        }
-      },
-      "autoload": {
-        "psr-4": {
-          "Symfony\\Contracts\\HttpClient\\": ""
-        },
-        "exclude-from-classmap": [
-          "/Test/"
-        ]
-      },
-      "notification-url": "https://packagist.org/downloads/",
-      "license": [
-        "MIT"
-      ],
-      "authors": [
-        {
-          "name": "Nicolas Grekas",
-          "email": "p@tchwork.com"
-        },
-        {
-          "name": "Symfony Community",
-          "homepage": "https://symfony.com/contributors"
-        }
-      ],
-      "description": "Generic abstractions related to HTTP clients",
-      "homepage": "https://symfony.com",
-      "keywords": [
-        "abstractions",
-        "contracts",
-        "decoupling",
-        "interfaces",
-        "interoperability",
-        "standards"
-      ],
-      "support": {
-        "source": "https://github.com/symfony/http-client-contracts/tree/v3.7.1"
-      },
-      "funding": [
-        {
-          "url": "https://symfony.com/sponsor",
-          "type": "custom"
-        },
-        {
-          "url": "https://github.com/fabpot",
-          "type": "github"
-        },
-        {
-          "url": "https://github.com/nicolas-grekas",
-          "type": "github"
-        },
-        {
-          "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
-          "type": "tidelift"
-        }
-      ],
-      "time": "2026-06-05T06:23:12+00:00"
     }
   ],
   "packages-dev": [
@@ -613,12 +532,12 @@
       "source": {
         "type": "git",
         "url": "https://codeberg.org/northrook/php-generator.git",
-        "reference": "a35ca3bb594e6ab81478d2659b2254ae4fb692ae75decf5114e2bbe2916fcab4"
+        "reference": "85143e0546ddbc294cbf0f3e9e8cc5043481c61fdb2b716c54a0379405ae09f3"
       },
       "dist": {
         "type": "zip",
-        "url": "https://codeberg.org/api/v1/repos/northrook/php-generator/archive/a35ca3bb594e6ab81478d2659b2254ae4fb692ae75decf5114e2bbe2916fcab4.zip",
-        "reference": "a35ca3bb594e6ab81478d2659b2254ae4fb692ae75decf5114e2bbe2916fcab4",
+        "url": "https://codeberg.org/api/v1/repos/northrook/php-generator/archive/85143e0546ddbc294cbf0f3e9e8cc5043481c61fdb2b716c54a0379405ae09f3.zip",
+        "reference": "85143e0546ddbc294cbf0f3e9e8cc5043481c61fdb2b716c54a0379405ae09f3",
         "shasum": ""
       },
       "require": {
@@ -653,7 +572,7 @@
         "issues": "https://codeberg.org/northrook/php-generator/issues",
         "source": "https://codeberg.org/northrook/php-generator/branch/main"
       },
-      "time": "2026-08-23T11:49:11+00:00"
+      "time": "2026-08-27T08:08:46+00:00"
     },
     {
       "name": "phar-io/manifest",
@@ -775,11 +694,11 @@
     },
     {
       "name": "phpstan/phpstan",
-      "version": "2.2.9",
+      "version": "2.2.12",
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/phpstan/phpstan/zipball/13d6b4f347bad222da436580c8304fa6f83e6bd0",
-        "reference": "13d6b4f347bad222da436580c8304fa6f83e6bd0",
+        "url": "https://api.github.com/repos/phpstan/phpstan/zipball/174b0d88710f00a42598886504dd7a146f91ace5",
+        "reference": "174b0d88710f00a42598886504dd7a146f91ace5",
         "shasum": ""
       },
       "require": {
@@ -835,7 +754,7 @@
           "type": "github"
         }
       ],
-      "time": "2026-08-22T07:38:16+00:00"
+      "time": "2026-08-31T19:09:43+00:00"
     },
     {
       "name": "phpunit/php-code-coverage",
@@ -1222,16 +1141,16 @@
     },
     {
       "name": "phpunit/phpunit",
-      "version": "13.3.1",
+      "version": "13.3.2",
       "source": {
         "type": "git",
         "url": "https://github.com/sebastianbergmann/phpunit.git",
-        "reference": "fc024931d6ad047404e9d86536735923fe63a06b"
+        "reference": "22104a5ceb8d642e6b30ab00211d53d88e2db368"
       },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/fc024931d6ad047404e9d86536735923fe63a06b",
-        "reference": "fc024931d6ad047404e9d86536735923fe63a06b",
+        "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/22104a5ceb8d642e6b30ab00211d53d88e2db368",
+        "reference": "22104a5ceb8d642e6b30ab00211d53d88e2db368",
         "shasum": ""
       },
       "require": {
@@ -1245,8 +1164,8 @@
         "phar-io/manifest": "^2.0.4",
         "phar-io/version": "^3.2.1",
         "php": ">=8.4.1",
-        "phpunit/php-code-coverage": "^14.3",
-        "phpunit/php-file-iterator": "^7.0.1",
+        "phpunit/php-code-coverage": "^14.3.1",
+        "phpunit/php-file-iterator": "^7.0.2",
         "phpunit/php-invoker": "^7.0.0",
         "phpunit/php-text-template": "^6.0.0",
         "phpunit/php-timer": "^9.0.0",
@@ -1302,7 +1221,7 @@
       "support": {
         "issues": "https://github.com/sebastianbergmann/phpunit/issues",
         "security": "https://github.com/sebastianbergmann/phpunit/security/policy",
-        "source": "https://github.com/sebastianbergmann/phpunit/tree/13.3.1"
+        "source": "https://github.com/sebastianbergmann/phpunit/tree/13.3.2"
       },
       "funding": [
         {
@@ -1310,7 +1229,7 @@
           "type": "other"
         }
       ],
-      "time": "2026-08-13T13:14:23+00:00"
+      "time": "2026-08-27T08:40:49+00:00"
     },
     {
       "name": "sebastian/cli-parser",
@@ -2542,6 +2461,88 @@
       "time": "2026-06-05T06:23:12+00:00"
     },
     {
+      "name": "symfony/http-client-contracts",
+      "version": "v3.7.3",
+      "source": {
+        "type": "git",
+        "url": "https://github.com/symfony/http-client-contracts.git",
+        "reference": "35be0019e2c2c9fba80f9dc033290a5240f7b44f"
+      },
+      "dist": {
+        "type": "zip",
+        "url": "https://api.github.com/repos/symfony/http-client-contracts/zipball/35be0019e2c2c9fba80f9dc033290a5240f7b44f",
+        "reference": "35be0019e2c2c9fba80f9dc033290a5240f7b44f",
+        "shasum": ""
+      },
+      "require": {
+        "php": ">=8.1"
+      },
+      "type": "library",
+      "extra": {
+        "thanks": {
+          "url": "https://github.com/symfony/contracts",
+          "name": "symfony/contracts"
+        },
+        "branch-alias": {
+          "dev-main": "3.7-dev"
+        }
+      },
+      "autoload": {
+        "psr-4": {
+          "Symfony\\Contracts\\HttpClient\\": ""
+        },
+        "exclude-from-classmap": [
+          "/Test/"
+        ]
+      },
+      "notification-url": "https://packagist.org/downloads/",
+      "license": [
+        "MIT"
+      ],
+      "authors": [
+        {
+          "name": "Nicolas Grekas",
+          "email": "p@tchwork.com"
+        },
+        {
+          "name": "Symfony Community",
+          "homepage": "https://symfony.com/contributors"
+        }
+      ],
+      "description": "Generic abstractions related to HTTP clients",
+      "homepage": "https://symfony.com",
+      "keywords": [
+        "abstractions",
+        "contracts",
+        "decoupling",
+        "interfaces",
+        "interoperability",
+        "standards"
+      ],
+      "support": {
+        "source": "https://github.com/symfony/http-client-contracts/tree/v3.7.3"
+      },
+      "funding": [
+        {
+          "url": "https://symfony.com/sponsor",
+          "type": "custom"
+        },
+        {
+          "url": "https://github.com/fabpot",
+          "type": "github"
+        },
+        {
+          "url": "https://github.com/nicolas-grekas",
+          "type": "github"
+        },
+        {
+          "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+          "type": "tidelift"
+        }
+      ],
+      "time": "2026-08-04T08:41:16+00:00"
+    },
+    {
       "name": "symfony/http-foundation",
       "version": "v8.1.6",
       "source": {
@@ -2796,16 +2797,16 @@
     },
     {
       "name": "symfony/var-exporter",
-      "version": "v8.1.5",
+      "version": "v8.1.6",
       "source": {
         "type": "git",
         "url": "https://github.com/symfony/var-exporter.git",
-        "reference": "b8f7dd85493e8372c7c81a1547caaaf86b9c16d1"
+        "reference": "802362f41128c430fd6685491e1fb72127fae78a"
       },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/symfony/var-exporter/zipball/b8f7dd85493e8372c7c81a1547caaaf86b9c16d1",
-        "reference": "b8f7dd85493e8372c7c81a1547caaaf86b9c16d1",
+        "url": "https://api.github.com/repos/symfony/var-exporter/zipball/802362f41128c430fd6685491e1fb72127fae78a",
+        "reference": "802362f41128c430fd6685491e1fb72127fae78a",
         "shasum": ""
       },
       "require": {
@@ -2855,7 +2856,7 @@
         "serialize"
       ],
       "support": {
-        "source": "https://github.com/symfony/var-exporter/tree/v8.1.5"
+        "source": "https://github.com/symfony/var-exporter/tree/v8.1.6"
       },
       "funding": [
         {
@@ -2875,20 +2876,20 @@
           "type": "tidelift"
         }
       ],
-      "time": "2026-08-13T16:11:28+00:00"
+      "time": "2026-08-29T06:30:03+00:00"
     },
     {
       "name": "tempest/highlight",
-      "version": "2.27.1",
+      "version": "2.28.0",
       "source": {
         "type": "git",
         "url": "https://github.com/tempestphp/highlight.git",
-        "reference": "a65bd95f70d01e082285e3c3f01cc33b6ddac1dd"
+        "reference": "aa53fcf1c6775f2d422ed953684d41a15370e1f9"
       },
       "dist": {
         "type": "zip",
-        "url": "https://api.github.com/repos/tempestphp/highlight/zipball/a65bd95f70d01e082285e3c3f01cc33b6ddac1dd",
-        "reference": "a65bd95f70d01e082285e3c3f01cc33b6ddac1dd",
+        "url": "https://api.github.com/repos/tempestphp/highlight/zipball/aa53fcf1c6775f2d422ed953684d41a15370e1f9",
+        "reference": "aa53fcf1c6775f2d422ed953684d41a15370e1f9",
         "shasum": ""
       },
       "require": {
@@ -2926,7 +2927,7 @@
       "description": "Fast, extensible, server-side code highlighting",
       "support": {
         "issues": "https://github.com/tempestphp/highlight/issues",
-        "source": "https://github.com/tempestphp/highlight/tree/2.27.1"
+        "source": "https://github.com/tempestphp/highlight/tree/2.28.0"
       },
       "funding": [
         {
@@ -2934,7 +2935,7 @@
           "type": "github"
         }
       ],
-      "time": "2026-08-17T13:10:55+00:00"
+      "time": "2026-08-28T08:32:31+00:00"
     },
     {
       "name": "theseer/tokenizer",
