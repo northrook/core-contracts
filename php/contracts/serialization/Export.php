@@ -114,6 +114,14 @@ final class Export implements Resettable
             return Export::string($value);
         }
 
+        if ($value instanceof \UnitEnum) {
+            return Export::enum($value);
+        }
+
+        if ($value instanceof RawString) {
+            return $value->value;
+        }
+
         if ($isPayload && ! \is_array($value)) {
             throw new InvalidArgumentException(
                 message: 'Cannot export value of type ' . \get_debug_type($value) . ' as payload',
@@ -128,51 +136,57 @@ final class Export implements Resettable
         };
     }
 
-    public static function object(
-        object $object,
+    public static function enum(
+        \UnitEnum $value,
     ): string {
-        if ($object instanceof \UnitEnum) {
-            return '\\' . \ltrim(\var_export($object, true), '\\');
+        return '\\' . \ltrim(\var_export($value, true), '\\');
+    }
+
+    public static function object(
+        object $value,
+    ): string {
+        if ($value instanceof \UnitEnum) {
+            return '\\' . \ltrim(\var_export($value, true), '\\');
         }
 
-        if ($object instanceof Exportable) {
-            return $object->_export();
+        if ($value instanceof Exportable) {
+            return $value->_export();
         }
 
-        if ($object instanceof Constant) {
-            return $object->constant;
+        if ($value instanceof Constant) {
+            return $value->constant;
         }
 
-        if ($object instanceof RawString) {
-            return $object->value;
+        if ($value instanceof RawString) {
+            return $value->value;
         }
 
         $exporter = static::exporter();
 
         if ($exporter === Exporter::Reflection) {
             return self::serializeClassState(
-                $object::class,
-                self::properties($object),
+                $value::class,
+                self::properties($value),
             );
         }
 
         try {
             return $exporter === Exporter::Symfony
-                ? self::symfonyVarExporter($object)
-                : self::deepclone($object);
+                ? self::symfonyVarExporter($value)
+                : self::deepclone($value);
         }
         catch (\Throwable $exception) {
             $exportException = new RuntimeException(
-                message : 'Failed to export ' . $object::class . ' using ' . $exporter->value,
+                message : 'Failed to export ' . $value::class . ' using ' . $exporter->value,
                 context : [
-                    'object'   => $object,
+                    'object'   => $value,
                     'exporter' => $exporter,
                 ],
                 previous: $exception,
             );
             if (self::$failsafe) {
                 Log::alert($exportException);
-                return self::serializeClassState($object::class, self::properties($object));
+                return self::serializeClassState($value::class, self::properties($value));
             }
             throw $exportException;
         }
@@ -270,9 +284,9 @@ final class Export implements Resettable
      *
      * The dump does not resolve or validate that {@see $method} exists.
      *
-     * @param class-string     $className
-     * @param non-empty-string $method
-     * @param mixed            ...$arguments
+     * @param class-string      $className
+     * @param non-empty-string  $method
+     * @param mixed             ...$arguments
      *
      * @return string
      */
@@ -295,8 +309,8 @@ final class Export implements Resettable
     }
 
     /**
-     * @param non-empty-string        $callee  `new \Class` or `\Class::method`
-     * @param array<array-key, mixed> $arguments
+     * @param non-empty-string         $callee  `new \Class` or `\Class::method`
+     * @param array<array-key, mixed>  $arguments
      */
     private static function invocation(
         string $callee,
@@ -325,7 +339,7 @@ final class Export implements Resettable
     }
 
     /**
-     * @param array<array-key, mixed> $arguments
+     * @param array<array-key, mixed>  $arguments
      *
      * @return list<string>
      */
@@ -363,7 +377,7 @@ final class Export implements Resettable
     }
 
     /**
-     * @param class-string $className
+     * @param class-string  $className
      *
      * @return non-empty-string
      */
